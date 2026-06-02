@@ -1,0 +1,213 @@
+\section{Các phương pháp xây dựng mô hình bảo toàn tính đối xứng}
+\label{sec:phuong-phap}
+
+% ============================================================
+% MỤC TIÊU CHƯƠNG:
+% Trình bày 2 hướng chính để đưa tính đối xứng vào AI,
+% cùng các ứng dụng thực tế và giới hạn của chúng.
+% Nguồn: Slides Part 1 (trang 15–55), Tutorial Part 1
+% ============================================================
+
+% ─────────────────────────────────────────────────────────────
+% HƯỚNG 1: CAN THIỆP DỮ LIỆU (OFF-THE-SHELF MODELS)
+% Dùng model bình thường + xử lý dữ liệu đầu vào/đầu ra
+% để đạt được tính invariance/equivariance.
+% ─────────────────────────────────────────────────────────────
+
+\subsection{Hướng 1: Can thiệp dữ liệu trên các mô hình có sẵn}
+\label{subsec:off-the-shelf}
+% Đoạn giới thiệu ngắn: 2 hướng song song, ưu điểm chung
+% của off-the-shelf là kế thừa toàn bộ tính chất của base model,
+% dễ kết hợp nhiều symmetries.
+
+\subsubsection{Tăng cường dữ liệu (Data Augmentation)}
+\label{subsubsec:data-augmentation}
+% Trình bày:
+%   - Cơ chế: thêm {g·x} vào training set với g ∈ G
+%   - Ưu điểm: đơn giản, áp dụng với supervised & contrastive learning
+%   - Nhược điểm: chỉ approximate symmetry,
+%     "does not guarantee invariance everywhere"
+%   - Mở rộng: Equivariant representation learning
+%     * Muốn f(a(x)) = T_a · f(x) thay vì chỉ invariance
+%     * Loss: ||f(a(x)) - MLP(a, f(x))||
+%     * Phiên bản tuyến tính: bảo toàn inner products
+%       E[f(a(x'))^T f(a(x)) - f(x)^T f(x')]^2 = 0
+%       ⟹ T_a là rotation, là group representation
+%     (Shakerinava et al 2022, Gupta et al 2023)
+
+\subsubsection{Chuẩn hóa (Canonicalization)}
+\label{subsubsec:canonicalization}
+% Trình bày:
+%   - Cơ chế: đưa data về canonical form → feed vào model
+%     Ví dụ: sort sequence → permutation invariant
+%     Để equivariant: sort → feed → invert sort
+%   - Có thể học được (Kaba et al 2022, Zhang et al 2019)
+%   - Thách thức 1: không phải lúc nào cũng dễ
+%     (đồ thị → graph isomorphism problem)
+%   - Thách thức 2: Continuity issue (Dym et al 2024)
+%     * Ví dụ cụ thể từ slides: vectors [5,3.01,3] → sorted
+%       output far from [5,3,3] sorted output
+%     * Theorem: không có continuous canonicalization
+%       cho permutations trong d>1 và SO(2)
+
+\subsubsection{Lấy trung bình Nhóm và Khung (Group/Frame Averaging)}
+\label{subsubsec:frame-averaging}
+% ĐÂY LÀ PHẦN CỦA PHÚC — Paper 3: Frame Averaging (Puny et al 2022)
+
+% Group Averaging (Reynolds operator):
+%   - Invariant: f̄(x) = (1/|G|) Σ_{g∈G} f(g^{-1}·x)
+%   - Equivariant: f̄(x) = (1/|G|) Σ_{g∈G} g·f(g^{-1}·x)
+%   - Universal approximation (Yarotsky 2021)
+%   - Ví dụ: Janossy pooling (Murphy et al 2019),
+%     SignNet cho sign flips của eigenvectors (Lim et al 2023)
+%   - Nhược điểm: expensive khi |G| lớn → cần approximation
+
+% Frame Averaging (Puny et al 2022):
+%   - Thay vì average trên toàn bộ G, chỉ average trên F(X) ⊂ G
+%   - F(X) được trích xuất từ data, phải thỏa F(g·X) = g·F(X)
+%   - Công thức: ⟨Φ⟩_F(X) = (1/|F(X)|) Σ_{g∈F(X)} ρ₂(g)Φ(ρ₁(g)^{-1}X)
+%   - Ví dụ PCA Frame cho point clouds/proteins:
+%     F(X) = {(α₁v₁,...,αdvd, t) | αᵢ ∈ {-1,+1}} (sign flips của eigenvectors)
+%     Đạt E(3)/SE(3) equivariance với chi phí thấp
+
+% Bảng so sánh 3 phương pháp:
+%   Canonicalization:  cheap, NOT continuous
+%   Frame Averaging:   cheaper than full, continuous
+%   Group Averaging:   most expensive, continuous, universal
+
+% Nội dung đã có trong file gốc (công thức LaTeX của Văn Sỹ)
+% — giữ nguyên và mở rộng phần này.
+
+Một trong những phương pháp mạnh mẽ nhất để trang bị tính bất biến (invariance) hoặc tương biến (equivariance) cho một mô hình học máy thông thường là sử dụng toán tử Reynolds, hay còn gọi là kỹ thuật lấy trung bình nhóm (Group Averaging). Cụ thể, cho một mạng nơ-ron cơ sở $\Phi$, ta có thể tạo ra một hàm tương biến $\langle \Phi \rangle_G$ bằng cách tính trung bình đầu ra của $\Phi$ trên toàn bộ các phép biến đổi $g$ thuộc nhóm đối xứng $G$:
+\begin{equation}
+    \langle \Phi \rangle_G(X) = \frac{1}{|G|} \sum_{g \in G} \rho_2(g)\Phi(\rho_1(g)^{-1}X)
+\end{equation}
+Mặc dù phương pháp này đảm bảo tính đối xứng tuyệt đối và bảo toàn khả năng biểu diễn của mô hình cơ sở, nó vấp phải trở ngại cực lớn về độ phức tạp tính toán khi nhóm $G$ quá lớn hoặc có số phần tử vô hạn (ví dụ: nhóm hoán vị $S_n$ hoặc nhóm phép quay $SO(3)$).
+
+Để giải quyết bài toán tính toán này, kỹ thuật \textbf{Frame Averaging (Trung bình hóa Khung)} đã được đề xuất \cite{puny2022frame}. Thay vì tính trung bình trên toàn bộ nhóm $G$, phương pháp này chỉ thực hiện lấy trung bình trên một tập hợp con nhỏ $\mathcal{F}(X) \subset G$ được gọi là ``khung'' (frame). Tập hợp $\mathcal{F}(X)$ này được trích xuất dựa trên chính đặc trưng của dữ liệu đầu vào $X$. Để đảm bảo tính tương biến, khung $\mathcal{F}$ phải thỏa mãn điều kiện $\mathcal{F}(\rho_1(g)X) = g\mathcal{F}(X)$. Khi đó, công thức xấp xỉ trở thành:
+\begin{equation}
+    \langle \Phi \rangle_{\mathcal{F}}(X) = \frac{1}{|\mathcal{F}(X)|} \sum_{g \in \mathcal{F}(X)} \rho_2(g)\Phi(\rho_1(g)^{-1}X)
+\end{equation}
+
+\textbf{Ứng dụng PCA Frame cho Đám mây điểm (Point Clouds):}
+Trong thực tiễn, đối với dữ liệu không gian 3 chiều như đồ thị phân tử hoặc đám mây điểm, Phân tích thành phần chính (PCA) thường được sử dụng để xây dựng khung. Thuật toán tính tâm của đám mây điểm và trích xuất các vector riêng (eigenvectors) từ ma trận hiệp phương sai. Khi dữ liệu đầu vào bị xoay hoặc tịnh tiến, PCA Frame tự động tính phép xoay ngược để chiếu dữ liệu về canonical frame trước khi đưa qua mạng. Phương pháp này đạt tính bất biến với $E(3)$ với chi phí tính toán cực kỳ thấp.
+
+% ─────────────────────────────────────────────────────────────
+% HƯỚNG 2: XÂY DỰNG KIẾN TRÚC TỪ ĐẦU (CONSTRUCTED MODELS)
+% Thiết kế lớp mạng có tính equivariant "hard-coded" vào kiến trúc.
+% ─────────────────────────────────────────────────────────────
+
+\subsection{Hướng 2: Xây dựng kiến trúc equivariant từ đầu}
+\label{subsec:constructed}
+% Đoạn giới thiệu: Cấu trúc tổng quát: equivariant layers + invariant pooling.
+% Ví dụ tiêu biểu: CNNs, GNNs, DeepSet.
+
+\subsubsection{Lớp tuyến tính đẳng biến và Chia sẻ tham số}
+\label{subsubsec:linear-equivariant}
+% Trình bày:
+%   - Equivariance constraint: WP_gx = P_gWx ∀g ∈ G
+%     ⟹ cấu trúc trong W: parameter sharing
+%   - Quy tắc: W_ij = W_kl nếu ∃τ∈G: (τ(i),τ(j))=(k,l)
+%   - Ví dụ 1 — Shift/Cyclic group C_n:
+%     n parameters → convolution matrix
+%     (CNN được derive từ đây)
+%   - Ví dụ 2 — All permutations S_n:
+%     chỉ 2 parameters (identity + sum) → DeepSet, PointNet
+%     [F(X)]_i = α₁xᵢ + α₂ Σⱼ xⱼ
+%   - Mở rộng: tensors → higher-order GNNs,
+%     invariant graph networks (basis size = 15)
+%   (Ravanbakhsh 2017, Maron 2019, 2020)
+
+\subsubsection{Tích chập nhóm (Group Convolution)}
+\label{subsubsec:group-convolution}
+% Trình bày:
+%   - Regular convolution là trường hợp đặc biệt:
+%     f ⋆ ψ(x) = Σ_{y∈ℤ²} f(y)ψ(y−x)
+%   - Group convolution: thay translations bằng group bất kỳ:
+%     f ⋆ ψ(g) = Σ_{h∈G} f(h)ψ(g⁻¹h)
+%   - Group equivariant CNNs (Cohen & Welling, ICML 2016)
+
+\subsubsection{Lý thuyết bất biến và đa thức bất biến}
+\label{subsubsec:invariant-theory}
+% Trình bày:
+%   - Ý tưởng: xấp xỉ invariant functions qua invariant polynomials
+%   - First fundamental theorem (O(d)):
+%     Mọi O(d)-invariant function f(v₁,...,vₙ) = h((vᵢᵀvⱼ)ᵢⱼ)
+%     (inner products là đủ)
+%   - O(d)-equivariant:
+%     f(v₁,...,vₙ) = h((vᵢᵀvⱼ)ᵢⱼ) · Σvₜ
+%   - Translation-invariant:
+%     f(v₁,...,vₙ) = h(v₂−v₁, v₃−v₁, ..., vₙ−v₁)
+%   - Áp dụng: point clouds, Lorentz group, O(d)+permutations
+%   (Villar et al 2021)
+
+\subsubsection{Phương pháp tensor (Tensor Methods)}
+\label{subsubsec:tensor-methods}
+% Trình bày:
+%   - Vấn đề: equivariant MLP bị hạn chế bởi Schur's Lemma
+%     (linear equivariant maps quá restrictive,
+%     ví dụ: rotation trên ℝ² → chỉ có identity)
+%   - Giải pháp: dùng tensor power x⊗k ∈ (ℝᵈ)^k
+%     equivariant MLP trên x⊗k → universality (k đủ lớn)
+%   - Thách thức: decompose group representation trên (ℝᵈ)^k
+%     * Dễ cho rotations/reflections
+%     * Khó cho finite groups → Clebsch–Gordan problem
+
+\subsubsection{Ứng dụng: NequIP và Mạng E(3)-equivariant}
+\label{subsubsec:nequip}
+% ĐÂY LÀ PHẦN CỦA THỊNH — Paper 2: NequIP (Batzner et al 2022)
+
+% Trình bày:
+%   - Bài toán atomistic systems:
+%     * Graph of atoms: 3 symmetries (translation, rotation, permutation)
+%     * Mục tiêu: predict energy, forces
+%   - NequIP (Neural Equivariant Interatomic Potentials):
+%     * E(3)-equivariant message-passing GNN
+%     * Equivariant update: xᵢ^{ℓ+1} = xᵢ^ℓ + C Σⱼ (xᵢ−xⱼ) φ(hᵢ,hⱼ,||xᵢ−xⱼ||²,aᵢⱼ)
+%     * Force = ∂energy/∂position → free via autograd
+%   - Kết quả: "up to 3 orders of magnitude fewer training data"
+%   - Mở rộng: Equiformer (equivariant graph transformer, ICLR 2023)
+%   - Protein generation: Chroma, RFDiffusion dùng equivariant GNNs
+
+% ─────────────────────────────────────────────────────────────
+% ỨNG DỤNG & GIỚI HẠN
+% ─────────────────────────────────────────────────────────────
+
+\subsection{Ứng dụng: Equivariance trong Robotics}
+\label{subsec:robotics}
+% Trình bày:
+%   - Trực quan: xoay robot + action → action cũng xoay
+%   - Theorem: MDPs có equivariant optimal policies:
+%     π*(g·state) = g·π*(state) ∀g∈G
+%   - SO(2)/SE(3) symmetries trong grasp learning, manipulation
+%   - Kết quả: sample-efficient learning
+%   (Wang et al CoRL 2021, ICLR 2022)
+
+\subsection{Giới hạn: Vấn đề Symmetry Breaking}
+\label{subsec:symmetry-breaking}
+% Trình bày:
+%   - Theorem: equivariant architectures không thể break symmetry
+%     Proof: G_x ⊆ G_y (output always more symmetric than input)
+%   - Hệ quả: không thể generate non-symmetric output
+%     từ symmetric input (problem cho generative models)
+%   - Giải pháp: weight perturbation, gradients, sets
+%   (Wang et al ICML 2024)
+
+\subsection{So sánh hai hướng tiếp cận}
+\label{subsec:comparison}
+% Bảng tổng hợp:
+%
+%  | Tiêu chí         | Off-the-shelf       | Constructed        |
+%  |------------------|---------------------|--------------------|
+%  | Flexibility      | Cao (dùng bất kỳ)   | Thấp (thiết kế lại)|
+%  | Symmetry đảm bảo | Approximate (Aug.)  | Exact              |
+%  |                  | Exact (Canon/Avg.)  |                    |
+%  | Expressiveness   | Kế thừa base model  | Phụ thuộc design   |
+%  | Computational    | Có thể đắt (Avg.)   | Efficient          |
+%  | Continuity       | Vấn đề (Canon.)     | Không vấn đề       |
+%
+% Khi nào dùng gì:
+%   - Off-the-shelf: khi có base model tốt, symmetries ít đặc biệt
+%   - Constructed: khi symmetry rõ ràng, data đắt (science/robotics)
+
+\clearpage

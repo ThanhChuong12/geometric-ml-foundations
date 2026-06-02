@@ -1,0 +1,91 @@
+\section{Đánh giá và Kết luận}
+\label{sec:danh-gia-ket-luan}
+
+% ============================================================
+% MỤC TIÊU CHƯƠNG:
+% Phân tích phản biện, tổng kết, và hướng tương lai.
+% Đây là chương để thể hiện hiểu biết sâu và tư duy phản biện.
+% Nguồn: Slides "Encode symmetries or not?" (trang 66–68)
+% ============================================================
+
+\subsection{Thảo luận: Có nên luôn mã hóa tính đối xứng?}
+\label{subsec:thao-luan}
+% Đây là phần quan trọng nhất của chương — điểm phản biện khoa học
+%
+% Slides trình bày 3 góc nhìn (trang 66–68):
+%
+% Góc nhìn 1 — Hiệu suất tính toán:
+%   - Inductive bias giúp với data nhỏ/đắt
+%   - Specialized models có thể không cần thiết ở scale lớn
+%   - NHƯNG: equivariance vẫn cải thiện scaling laws
+%     (Brehmer et al 2025: cùng compute, equivariant model tốt hơn)
+%
+% Góc nhìn 2 — Loại đối xứng:
+%   - Approximate/data-dependent symmetries (eigenvectors, parameter symmetries)
+%     vs exact symmetries (rotation, permutation)
+%   - Relevance: symmetry có thực sự tồn tại trong task không?
+%   - Benchmark issue (Lawrence et al 2025):
+%     MỘT SỐ BENCHMARK ĐÃ ĐƯỢC CANONICALIZED SẴN
+%     → Thêm symmetry vào có thể GIẢM performance!
+%     → Đây là điểm phản biện quan trọng cho nhóm trình bày
+%
+% Góc nhìn 3 — Flexibility vs Specialization:
+%   - Symmetry có thể restrictive cho generative models
+%     → Cần symmetry breaking
+%   - Foundation models cần flexible/adaptive symmetries
+%   - Specialized models vẫn hữu ích như "tools"
+
+\subsection{Ưu điểm và Hạn chế của Geometric Machine Learning}
+\label{subsec:uu-nhuoc-diem}
+% Ưu điểm:
+%   - Data efficiency (chứng minh lý thuyết ở Ch4, thực nghiệm ở Ch5)
+%   - OOD generalization và robustness
+%   - Giảm số lượng tham số cần học
+%   - Universal approximation được bảo toàn (group averaging)
+%
+% Hạn chế:
+%   - Toán học phức tạp, khó thiết kế cho nhóm đối xứng mới
+%   - Chi phí tính toán (full group averaging cho large groups)
+%   - Symmetry breaking: không tạo được output ít symmetric hơn input
+%   - Benchmark có thể đã canonicalized → kết quả misleading
+
+\subsection{Các hướng nghiên cứu tương lai}
+\label{subsec:huong-tuong-lai}
+% Tổng hợp Open Directions từ slides:
+%
+%   1. Flexible & adaptive symmetries (không hardcode)
+%   2. Any-dimensional models cho PDEs, biology, language
+%   3. Topological deep learning (MCN, SMCN)
+%   4. Optimal coverings cho groups (symmetry testing)
+%   5. Weight space learning ở scale (>2M models)
+%   6. Integrate symmetry testing vào architecture design
+%   7. Geometry beyond symmetry (Ricci curvature, topo features)
+
+\subsection{Kết luận}
+\label{subsec:ket-luan}
+% Tóm tắt 3–4 câu:
+% - Geometric ML cung cấp framework thống nhất dựa trên symmetry
+% - Hai hướng (off-the-shelf và constructed) với trade-offs rõ ràng
+% - Lý thuyết đảm bảo lợi ích sample complexity, Expanders giải quyết chi phí
+% - Hướng mới: parameter symmetries, weight space learning, flexible symmetries
+
+\subsection{Phân công nhiệm vụ và Tự đánh giá}
+\label{subsec:phan-cong}
+% Bảng LaTeX 6 cột:
+% Họ tên | MSSV | Nhiệm vụ chính | Chương phụ trách | Mức độ hoàn thành (%) | Điểm tự đánh giá
+%
+% Phân công gợi ý dựa trên cấu trúc mới:
+%   - Chương 1 + 2: 1 người (nền tảng lý thuyết)
+%   - Chương 3 Hướng 1 + Paper 3 (Phúc): Phúc
+%   - Chương 3 Hướng 2 + Paper 2 (Thịnh): Thịnh
+%   - Chương 4: 1 người (lý thuyết nâng cao)
+%   - Chương 5 (code + thực nghiệm): 1 người
+%   - Chương 6 + tổng hợp slide: 1 người
+
+\clearpage
+
+\section*{Phụ lục: Phân công công việc nhóm}
+\addcontentsline{toc}{section}{Phụ lục: Phân công công việc nhóm}
+% Bảng chi tiết: MSSV | Họ và tên | Phần đóng góp cụ thể
+
+\clearpage

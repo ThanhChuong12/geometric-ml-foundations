@@ -1,0 +1,187 @@
+\ProvidesPackage{codespace}
+
+% Options can be used to add more predefined colors (see Section 4)
+% e.g.: dvipsnames, svgnames, x11names
+\RequirePackage{xcolor}
+
+\RequirePackage{tikz}
+\RequirePackage[framemethod=tikz]{mdframed}
+\RequirePackage{listings,lstautogobble}
+\RequirePackage{minted,verbatim}
+
+% Configurations
+\colorlet{codebackground}{magenta!10}
+\definecolor{codebasic}{RGB}{106,106,106}
+\definecolor{codeidentifier}{RGB}{0,0,0}
+\definecolor{codecomment}{RGB}{0,136,0}
+\definecolor{codestring}{RGB}{187,68,68}
+\definecolor{codekeyword}{RGB}{170,34,255}
+
+\lstdefinestyle{codeframe}{
+  float=H,
+  frame=lines,
+  backgroundcolor=\color{codebackground},
+}
+\lstdefinestyle{codestyle}{
+  basicstyle=\color{codebasic}\ttfamily,
+  identifierstyle=\color{codeidentifier},
+  commentstyle=\color{codecomment}\itshape,
+  stringstyle=\color{codestring},
+  keywordstyle=\color{codekeyword},
+  numbers=left,
+  %firstnumber=1,
+  numbersep=2pt,
+  numberstyle=\tiny,
+  autogobble=true,
+  breaklines=true,
+  showstringspaces=false,
+  tabsize=2
+}
+\lstset{
+  style=codeframe,
+  style=codestyle
+}
+
+\mdfsetup{
+  leftline=false,
+  rightline=false,
+  backgroundcolor=codebackground,
+  nobreak=false
+}
+\usemintedstyle{emacs}
+\setminted{
+  linenos=true,
+  numbers=left,
+  %firstnumber=1,
+  autogobble=true,
+  breaklines=true,
+  breaksymbolleft={},
+  tabsize=2
+}
+
+\newenvironment{code}[1]{
+  \VerbatimEnvironment%
+  \begin{mdframed}%
+    \begin{minted}{#1}%
+}{
+    \end{minted}%
+  \end{mdframed}%
+}
+
+\newenvironment{altcode}[1]{
+  \VerbatimEnvironment%
+  \begin{mdframed}[backgroundcolor=gray!10]%
+    \begin{minted}{#1}%
+}{
+    \end{minted}%
+  \end{mdframed}%
+}
+
+\newcommand{\inputcode}[3][]{
+  \begin{mdframed}%
+    \inputminted[#1]{#2}{#3}%
+  \end{mdframed}%
+}
+
+% ============================================================
+% Custom Colored Boxes for Information, Warning, Note, Example
+% ============================================================
+
+\RequirePackage{tcolorbox}
+\tcbuselibrary{skins,breakable}
+
+% Define colors for boxes
+\definecolor{infocolor}{RGB}{70,130,180}      % Steel Blue
+\definecolor{warningcolor}{RGB}{255,165,0}    % Orange
+\definecolor{notecolor}{RGB}{128,128,128}     % Gray
+\definecolor{examplecolor}{RGB}{34,139,34}    % Forest Green
+\definecolor{importantcolor}{RGB}{220,20,60}  % Crimson
+
+% Info Box (Blue) - For general information
+\newtcolorbox{infobox}[1]{
+  colback=infocolor!5,
+  colframe=infocolor,
+  fonttitle=\bfseries,
+  title=#1,
+  breakable,
+  enhanced,
+  attach boxed title to top left={yshift=-2mm, xshift=5mm},
+  boxed title style={
+    colback=infocolor,
+    colframe=infocolor,
+    sharp corners
+  }
+}
+
+% Warning Box (Orange) - For warnings or cautions
+\newtcolorbox{warningbox}[1]{
+  colback=warningcolor!5,
+  colframe=warningcolor,
+  fonttitle=\bfseries,
+  title=#1,
+  breakable,
+  enhanced,
+  attach boxed title to top left={yshift=-2mm, xshift=5mm},
+  boxed title style={
+    colback=warningcolor,
+    colframe=warningcolor,
+    sharp corners
+  }
+}
+
+% Note Box (Gray) - For additional notes
+\newtcolorbox{notebox}[1]{
+  colback=notecolor!5,
+  colframe=notecolor,
+  fonttitle=\bfseries,
+  title=#1,
+  breakable,
+  enhanced,
+  attach boxed title to top left={yshift=-2mm, xshift=5mm},
+  boxed title style={
+    colback=notecolor,
+    colframe=notecolor,
+    sharp corners
+  }
+}
+
+% Example Box (Green) - For examples
+\newtcolorbox{examplebox}[1]{
+  colback=examplecolor!5,
+  colframe=examplecolor,
+  fonttitle=\bfseries,
+  title=#1,
+  breakable,
+  enhanced,
+  attach boxed title to top left={yshift=-2mm, xshift=5mm},
+  boxed title style={
+    colback=examplecolor,
+    colframe=examplecolor,
+    sharp corners
+  }
+}
+
+% Important Box (Red) - For important information
+\newtcolorbox{importantbox}[1]{
+  colback=importantcolor!5,
+  colframe=importantcolor,
+  fonttitle=\bfseries,
+  title=#1,
+  breakable,
+  enhanced,
+  attach boxed title to top left={yshift=-2mm, xshift=5mm},
+  boxed title style={
+    colback=importantcolor,
+    colframe=importantcolor,
+    sharp corners
+  }
+}
+
+% Simple box without title (for quick use)
+\newtcolorbox{simplebox}[1][infocolor]{
+  colback=#1!5,
+  colframe=#1,
+  breakable,
+  enhanced
+}
+

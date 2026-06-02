@@ -1,0 +1,261 @@
+\documentclass[oneside]{hcmus-report}
+\usepackage{codespace}
+
+% Encodings
+\usepackage{gensymb,textcomp}
+
+% Better tables
+\usepackage{array,longtable,multicol,multirow,siunitx,tabularx}
+
+% Better enum
+\usepackage{enumitem}
+
+% Graphics
+\usepackage{caption,float,graphicx,subcaption}
+\usepackage[export]{adjustbox}
+\captionsetup{hypcap=false}
+
+% Math
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{mathtools}
+
+% Theorem environments
+\theoremstyle{plain}
+\newtheorem{theorem}{Định lý}[section]
+\newtheorem{lemma}[theorem]{Bổ đề}
+\newtheorem{corollary}[theorem]{Hệ quả}
+\newtheorem{proposition}[theorem]{Mệnh đề}
+
+\theoremstyle{definition}
+\newtheorem{definition}[theorem]{Định nghĩa}
+\newtheorem{example}[theorem]{Ví dụ}
+\newtheorem{remark}[theorem]{Nhận xét}
+
+\usepackage{caption}
+\usepackage{tikz}
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.18}
+\usetikzlibrary{angles, quotes, arrows.meta, calc, automata, positioning, fit, shapes.geometric}
+\usepackage{xcolor}
+
+\usepackage{pgfplotstable}
+\usetikzlibrary{arrows.meta, positioning, shapes.geometric, shapes.misc, fit, backgrounds, calc,decorations.pathreplacing, matrix, patterns}
+\usepackage{booktabs}
+
+
+% Box cho phần [MỞ RỘNG]
+\usepackage{tcolorbox}
+\tcbuselibrary{breakable,skins}
+\newtcolorbox{morong}[1][]{
+  colback=yellow!8!white,
+  colframe=orange!70!black,
+  fonttitle=\bfseries,
+  title={\textbf{} #1},
+  breakable
+}
+
+
+% Code listing
+\usepackage{listings}
+
+\lstdefinelanguage{Julia}{
+  morekeywords={abstract,break,case,catch,const,continue,do,else,elseif,end,export,false,for,function,if,import,in,let,macro,module,mutable,quote,return,struct,true,try,using,while},
+  sensitive=true,
+  morecomment=[l]{\#},
+  morestring=[b]",
+}
+
+\lstset{
+  language=Python,
+  basicstyle=\ttfamily\small,
+  keywordstyle=\color{blue}\bfseries,
+  commentstyle=\color{gray}\itshape,
+  stringstyle=\color{orange!80!black},
+  numbers=left,
+  numberstyle=\tiny\color{gray},
+  numbersep=8pt,
+  breaklines=true,
+  frame=single,
+  showstringspaces=false,
+  tabsize=4,
+  captionpos=b,
+}
+
+% Algorithm
+\usepackage[ruled,vlined,linesnumbered]{algorithm2e}
+\SetAlgorithmName{Thuật toán}{thuattoan}{Danh sách thuật toán}
+
+% References
+\usepackage[nameinlink]{cleveref}
+\usepackage{xurl}
+\usepackage{hyperref}
+
+% Extra packages
+\usepackage{longtable,ltablex}
+\keepXColumns
+\usepackage{xcolor,colortbl}
+
+% Configurations
+\coursename{Nhập môn học máy}
+\reporttype{BÁO CÁO ĐỒ ÁN 3}
+\title{CÁC BƯỚC TIẾN MỚI TRONG GEOMETRIC MACHINE LEARNING}
+\advisor{& ThS. Lê Nhựt Nam &}
+\stuname{%
+  & 23120195 & Lê Hà Thanh Chương \\
+  & 23120197 & Trà Văn Sỹ \\
+  & 23120199 & Huỳnh Đức Thịnh \\
+  & 23120257 & Bùi Trung Hiếu \\
+  & 23120330 & Lê Công Phúc \\
+}
+
+% Counter settings
+\AtBeginDocument{\counterwithin{lstlisting}{section}}
+\AtBeginDocument{\counterwithin{equation}{section}}
+
+% Vietnamese section names
+\AtBeginDocument{\renewcommand{\contentsname}{Mục lục}}
+\AtBeginDocument{\renewcommand{\listfigurename}{Danh sách các hình}}
+\AtBeginDocument{\renewcommand{\listtablename}{Danh sách các bảng}}
+\AtBeginDocument{\renewcommand{\tablename}{Bảng}}
+\AtBeginDocument{\renewcommand{\figurename}{Hình}}
+\AtBeginDocument{\renewcommand{\refname}{Tài liệu tham khảo}}
+\AtBeginDocument{\renewcommand{\proofname}{Chứng minh}}
+
+% Layout
+\setlength{\headheight}{41pt}
+\setlength{\hfuzz}{100pt}
+\hbadness=10000
+\emergencystretch=2em
+
+% Custom math commands
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\N}{\mathbb{N}}
+\renewcommand{\H}{\mathbb{H}}
+\newcommand{\X}{\mathcal{X}}
+\newcommand{\inner}[2]{\langle #1, #2 \rangle}
+\newcommand{\norm}[1]{\left\| #1 \right\|}
+\newcommand{\Tr}{\operatorname{Tr}}
+
+\newcommand{\RKHS}{\mathcal{H}}
+\newcommand{\featmap}{\Phi}
+\newcommand{\kernel}{k}
+\begin{document}
+\coverpage%
+
+% Đánh số trang La Mã cho phần mở đầu (front matter)
+\pagenumbering{roman}
+
+% Mục lục
+\tableofcontents
+
+\clearpage
+\phantomsection
+\addcontentsline{toc}{section}{Danh sách các hình}
+\listoffigures
+
+\clearpage
+\phantomsection
+\addcontentsline{toc}{section}{Danh sách các bảng}
+\listoftables
+
+% ==============================================================================
+% DANH SÁCH CÁC KÝ HIỆU VÀ CHỮ VIẾT TẮT
+% ==============================================================================
+\clearpage
+\section*{Danh sách các ký hiệu và chữ viết tắt}
+\addcontentsline{toc}{section}{Danh sách các ký hiệu và chữ viết tắt}
+
+\begin{longtable}{p{0.25\textwidth} p{0.70\textwidth}}
+\textbf{Ký hiệu / Viết tắt} & \textbf{Ý nghĩa} \\
+\hline
+\endfirsthead
+
+\textbf{Ký hiệu / Viết tắt} & \textbf{Ý nghĩa} (tiếp theo) \\
+\hline
+\endhead
+
+% ==========================================
+% PHẦN 1: CHỮ VIẾT TẮT (Sắp xếp Alphabet)
+% ==========================================
+\multicolumn{2}{c}{\textbf{Chữ viết tắt}} \\
+\hline
+API & Giao diện lập trình ứng dụng (Application Programming Interface) \\
+AUC & Diện tích dưới đường cong ROC (Area Under the Curve) \\
+
+\hline
+
+% ==========================================
+% PHẦN 2: KÝ HIỆU (Phân nhóm khoa học)
+% ==========================================
+
+% --- Nhóm 1: Không gian và Tập hợp ---
+\multicolumn{2}{c}{\textbf{Không gian và tập hợp}} \\
+\hline
+$\mathbb{R}$ & Tập hợp các số thực \\
+
+\hline
+
+% --- Nhóm 3: Toán tử, Hàm số và Phép toán ---
+\multicolumn{2}{c}{\textbf{Toán tử, hàm số và phép toán}} \\
+\hline
+$K(x, y)$ & Hàm hạt nhân đánh giá giữa hai điểm $x$ và $y$ \\
+
+\hline
+
+% --- Nhóm 4: Biến số, Chỉ số và Ký hiệu Hy Lạp ---
+\multicolumn{2}{c}{\textbf{Biến số, chỉ số và ký hiệu Hy Lạp}} \\
+\hline
+$\alpha$ & Biên an toàn (margin) / Giới hạn độ tin cậy / Ngưỡng kiểm soát tỷ lệ lỗi \\
+
+\hline
+\end{longtable}
+
+\clearpage
+\phantomsection
+
+\section*{Danh mục các thuật ngữ}
+\addcontentsline{toc}{section}{Danh mục các thuật ngữ}
+
+\begin{longtable}{p{0.44\textwidth} p{0.46\textwidth}}
+\textbf{Thuật ngữ tiếng Anh} & \textbf{Thuật ngữ tiếng Việt} \\
+\hline
+\endfirsthead
+\textbf{Thuật ngữ tiếng Anh} & \textbf{Thuật ngữ tiếng Việt} \\
+\hline
+\endhead
+
+Absolute convergence & Hội tụ tuyệt đối \\
+Accepting path & Đường đi chấp nhận \\
+
+
+\end{longtable}
+
+\clearpage
+
+% Reset về số Ả Rập từ trang 1 bắt đầu từ Chương 1
+\pagenumbering{arabic}
+
+\section*{Lời mở đầu}
+\addcontentsline{toc}{section}{Lời mở đầu}
+
+Đồ án của nhóm tập trung vào 
+
+\clearpage
+
+\input{chapters/01_gioi_thieu}
+\input{chapters/02_kien_thuc_chuan_bi}
+\input{chapters/03_mo_hinh_equivariant}
+\input{chapters/04_ly_thuyet_nang_cao}
+\input{chapters/05_thuc_nghiem}
+\input{chapters/06_danh_gia_ket_luan}
+
+\clearpage
+
+\phantomsection
+\addcontentsline{toc}{section}{Tài liệu tham khảo}
+
+\bibliographystyle{IEEEtran}
+\bibliography{refs/references.bib}
+\nocite{*}
+
+\end{document}

@@ -1,0 +1,203 @@
+\section{Lý thuyết nâng cao và các hướng nghiên cứu mới}
+\label{sec:ly-thuyet-nang-cao}
+
+% ============================================================
+% MỤC TIÊU CHƯƠNG:
+% Trình bày lý thuyết đứng sau lợi ích thực nghiệm (Chương 3),
+% các đối xứng bên trong chính mạng nơ-ron, và những hướng
+% nghiên cứu mới nhất từ Part 2 của tutorial NeurIPS 2025.
+% Nguồn: Slides Part 2, Tutorial Part 2
+% ============================================================
+
+% ─────────────────────────────────────────────────────────────
+% PHẦN A: LÝ THUYẾT VỀ LỢI ÍCH CỦA ĐỐI XỨNG
+% ─────────────────────────────────────────────────────────────
+
+\subsection{Lợi ích về độ phức tạp mẫu (Sample Complexity Gains)}
+\label{subsec:sample-complexity}
+
+% Trình bày:
+%   - Setup: data trên compact manifold M, f* bất biến với G,
+%     Sobolev regression, KRR estimator
+%   - Kết quả (Tahmasebi & Jegelka, NeurIPS 2023 spotlight):
+
+Trong thực tiễn, các mô hình học máy tích hợp tính đối xứng thường đạt hiệu suất cao hơn nhờ yêu cầu lượng dữ liệu huấn luyện ít hơn đáng kể. Dưới góc độ lý thuyết, điều này được chứng minh bằng toán học thông qua sự giảm thiểu độ phức tạp mẫu (Sample Complexity).
+
+Cụ thể, giả sử dữ liệu đầu vào nằm trên một đa tạp compact $M$ có số chiều $d$ và hàm mục tiêu cần học có tính bất biến với nhóm $G$. Dựa trên định luật Weyl mở rộng (Extended Weyl's Law) áp dụng cho các phương pháp phổ trên đa tạp, sai số tổng quát hóa được chứng minh:
+\begin{equation}
+    \mathbb{E}[\|\hat{f} - f_{\star}\|_2^2] \lesssim \left( \frac{C_d \,\text{vol}(M/G)}{n} \right)^{\frac{s}{s+d'}}
+\end{equation}
+Trong đó $d' = \dim(M) - \dim(G)$ là số chiều hiệu dụng sau khi loại bỏ bậc tự do nhờ đối xứng, và $s$ là bậc Sobolev. Kết quả này là minimax optimal.
+
+% Tiếp tục trình bày:
+%   - Multiplicative gain: vol(M/G) < vol(M)
+%   - Exponential gain: d' = dim(M) - dim(G) (giảm chiều hiệu dụng)
+%   - Ví dụ trực quan: reflection trên vòng tròn [0,2π]
+%     → chỉ 1/2 Fourier modes tồn tại → sample complexity giảm 1/2
+%   - Chứng minh qua Extended Weyl's Law (Laplace-Beltrami eigenvalues)
+%   - Mở rộng: optimal transport, MMD
+
+\subsection{Giải quyết chi phí tính toán bằng Expanders}
+\label{subsec:expanders}
+
+% Trình bày:
+%   - Vấn đề: |S_50| ≈ 3×10^64 > số atoms trên Trái Đất
+%     → group averaging/augmentation bùng nổ
+%   - Generating sets: S ⊆ G s.t. mọi g = s₁s₂...sₖ
+%     * f*(s·x)=f*(x) ∀s∈S ⟹ f*(g·x)=f*(x) ∀g∈G
+%     * Min size |S| ≤ log₂|G| (exponential saving!)
+%     * Tìm min-size: NP-hard
+%   - Random Cayley graphs (Expanders):
+%     Random subset S size ~2.67×log|G| là generating set w.h.p.
+
+Để giải quyết vấn đề này, lý thuyết đồ thị Cayley ngẫu nhiên (Expanders) đã được áp dụng. Các nghiên cứu chứng minh rằng ta hoàn toàn không cần duyệt qua toàn bộ nhóm $G$. Thay vào đó, chỉ cần lấy mẫu một tập hợp con ngẫu nhiên $\mathcal{S} \subset G$ có kích thước $|\mathcal{S}| = \mathcal{O}(\log |G|)$ là đủ.
+
+% Ba ứng dụng cụ thể:
+%   1. Computational complexity: learning exact invariances
+%      in O_{n,d}((log|G|)³) time (Soleymani et al ICML 2025)
+%   2. Data augmentation: O(log|G|) random elements đủ
+%      full statistical gain (Tahmasebi et al 2025)
+%   3. Approximate group averaging:
+%      sup_f |avg_G f - avg_S f| ≤ O(log|G|/|S|)^{1/2}
+%      (uniform over all f, all epochs)
+%
+% Kết luận quan trọng (phân biệt rõ):
+%   - Exact symmetry via averaging: HARD (cần full group)
+%   - Approximate symmetry via averaging: EASY (O(log|G|))
+%   - Full statistical gain: EASY (O(log|G|))
+%   → Exponential separation!
+
+\subsection{Kiểm định tính đối xứng trong dữ liệu (Symmetry Testing)}
+\label{subsec:symmetry-testing}
+
+% Trình bày:
+%   - Động lực: GeoML giả định data có symmetry, nhưng thực tế?
+%     (MRI images rotationally symmetric không?)
+%   - Formulation:
+%     H₀: μ ≡ g·μ ∀g∈G (invariant)
+%     H₁: sup_g D(g·μ, μ) ≥ ε (exists violating g)
+%   - Hardness: finding arg sup_g NP-hard (reduces from TSP)
+%   - Randomized solution:
+%     E_g[D(g·μ,μ)] ≤ sup_g D(g·μ,μ) ≤ 2·E_g[D(g·μ,μ)]
+%     → Random g ∈ G là sufficient certificate
+%   - Deterministic algorithms: dùng group structure
+%     D(g₁(g₂·μ),μ) ≤ D(g₁·μ,μ) + D(g₂·μ,μ)
+%     → Reduced covering size: O(d²/ε) thay vì O(ε^{-d²})
+%   (Soleymani et al AISTATS 2025 oral)
+
+% ─────────────────────────────────────────────────────────────
+% PHẦN B: ĐỐI XỨNG BÊN TRONG MẠNG NƠ-RON
+% ─────────────────────────────────────────────────────────────
+
+\subsection{Tính đối xứng tham số mạng nơ-ron (Neural Parameter Symmetries)}
+\label{subsec:parameter-symmetries}
+
+% Trình bày:
+%   - Khái niệm: f_θ = f_{g·θ} (same function, different weights)
+%   - Ví dụ 1 — MLPs:
+%     * Scale invariance (ReLU homogeneous):
+%       W₂σ(W₁x) = (1/α)W₂σ(αW₁x)
+%     * Permutation invariance (pointwise activation):
+%       W₂σ(W₁x) = W₂P^T σ(PW₁x)
+%   - Ví dụ 2 — Matrix products (LoRA, Attention):
+%     * UV^T = UR·R^{-1}V^T → GL(r)-invariance
+%   - Ví dụ 3 — Transformers (Theus et al 2025):
+%     * MLP symmetries + Attention head permutation
+%     * RMSNorm: orthogonal group
+%     * LoRA/Attention: GL(r)
+
+Góc nhìn của Geometric Machine Learning không chỉ dừng lại ở dữ liệu đầu vào mà còn được mở rộng vào sâu bên trong không gian tham số của chính mạng nơ-ron. Bản thân cấu trúc trọng số của các mạng học sâu chứa đựng rất nhiều tính đối xứng nội tại:
+
+\begin{itemize}
+    \item \textbf{Bất biến hoán vị (Permutation Invariance):} Hoán đổi hai nơ-ron ẩn (kèm theo trọng số kết nối) không thay đổi hàm tính toán đầu ra.
+    \item \textbf{Bất biến tỷ lệ (Scale Invariance):} Với hàm kích hoạt thuần nhất như ReLU, nhân lớp trước với $\alpha$ và chia lớp sau cho $\alpha$ cho kết quả giống hệt.
+    \item \textbf{Bất biến $GL(r)$ trong Attention và LoRA:} $UV^T = UR \cdot R^{-1}V^T$ cho bất kỳ ma trận khả nghịch $R$.
+\end{itemize}
+
+\subsection{Cảnh quan hàm mất mát và Gộp mô hình}
+\label{subsec:loss-landscape}
+
+% Trình bày:
+%   - Nếu θ là local minimum thì g·θ cũng là local minimum
+%   - Continuous symmetries (Lie groups):
+%     → Mode connectivity: minima nối bởi low-loss curves
+%     → Giải thích empirical observations (Garipov 2018, Draxler 2018)
+%   - Discrete symmetries (permutations):
+%     → Replicas of minima, not connected
+%     → Linear mode connectivity sau khi align
+%     → Model merging: cần align trước khi average
+%   - Ứng dụng: optimization (Path-SGD), Bayesian inference,
+%     model merging/ensembling
+
+Sự tồn tại của các đối xứng tham số dẫn đến một hệ quả quan trọng về cảnh quan hàm mất mát. Rất nhiều điểm cực tiểu cục bộ thực chất chỉ là các phiên bản hoán vị của cùng một trạng thái tối ưu. Điều này mở ra hiện tượng \textbf{Kết nối các điểm cực tiểu} (Mode Connectivity), cho phép các điểm cực tiểu được nối bằng các đường cong có giá trị hàm mất mát thấp liên tục.
+
+\textbf{Gộp mô hình (Model Merging / Git Re-Basin):} Thay vì huấn luyện lại, ta dùng các phép hoán vị để ``căn chỉnh'' (align) các mạng về chung một thung lũng cực tiểu. Sau khi căn chỉnh, lấy trung bình trọng số tạo ra mô hình mới thừa hưởng sức mạnh của tất cả các mô hình gốc.
+
+\subsection{Học trên không gian trọng số (Weight Space Learning)}
+\label{subsec:weight-space-learning}
+
+% Trình bày:
+%   - Động lực: >2M models trên Hugging Face, INRs, NeRFs
+%   - Mục tiêu: analyze, understand, edit model collections
+%   - Ứng dụng:
+%     1. Predict accuracy without evaluating (50,000x faster)
+%     2. Derive model info: training data, IP, bias estimation
+%     3. Edit: domain adaptation, pruning, compression
+%   - Kỹ thuật:
+%     * Deep Weight Space Networks: linear equivariant layers
+%     * Neural Functional Transformers: attention + equivariance
+%     * GNN on parameter graph (Lim et al 2023)
+%   - Thách thức: scale + symmetries (cần alignment trước)
+%   - Case study: LoRA metanetworks → symmetry-aware methods
+%     generally perform more robustly
+
+Xu hướng \textbf{Học trên không gian trọng số (Weight Space Learning)} đang nổi lên như một hướng đi tiên phong trong kỷ nguyên Foundation Models. Thay vì nhận dữ liệu hình ảnh hay văn bản, các ``Siêu mạng'' (Metanetworks) sử dụng chính bộ trọng số của các mạng nơ-ron khác làm dữ liệu đầu vào. Việc thiết kế Metanetworks equivariant cho phép đánh giá tốc độ hội tụ, kiểm tra bản quyền, hoặc tinh chỉnh trực tiếp các mô hình ngôn ngữ lớn (LLMs) nhanh hơn hàng chục nghìn lần so với phương pháp truyền thống.
+
+% ─────────────────────────────────────────────────────────────
+% PHẦN C: HƯỚNG NGHIÊN CỨU MỚI
+% ─────────────────────────────────────────────────────────────
+
+\subsection{Đối xứng linh hoạt và Khám phá đối xứng}
+\label{subsec:flexible-symmetries}
+
+% Trình bày:
+%   - Vấn đề: hard-coding symmetries restrictive cho foundation models
+%   - Hướng Adaptivity:
+%     * Contextual World Models (Gupta et al 2024):
+%       in-context selection of symmetry subset
+%     * Any-subgroup equivariant networks (Goel et al 2025):
+%       f(x) = h(x,v), if g·v=v then f(g·x) = g·f(x)
+%   - Hướng Symmetry Discovery:
+%     * Learn augmentations/transformations từ data
+%     * Learn weight sharing patterns
+%     * Probe trained networks (post-hoc analysis)
+
+\subsection{Mô hình bất kỳ chiều (Any-dimensional Models)}
+\label{subsec:any-dimensional}
+
+% Trình bày:
+%   - Ý tưởng: fixed parameters, varying input sizes
+%   - Nền tảng lý thuyết: Representation Stability (Farb 2014)
+%     * Permutation-invariant linear f → 1 parameter (thay vì d)
+%     * Quadratic perm-inv → 2 parameters
+%     * k-th degree → p(k) ≈ exp(Ck) parameters (dimension-free!)
+%   - Ứng dụng: GNNs train trên small graphs, test trên large graphs
+%   - Câu hỏi mở: universality, evaluation across sizes
+
+\subsection{Hình học vượt đối xứng: Topology và Curvature}
+\label{subsec:beyond-symmetry}
+
+% Trình bày:
+%   - Topological Deep Learning:
+%     * Leverages topological structure (3D shapes, molecules)
+%     * Simplicial/cell/combinatorial complexes
+%     * Higher-order message passing (HOMP)
+%     * Multi-cellular networks (MCN) cho các features
+%       mà HOMP không capture được (diameter, orientability)
+%   - Learning theory và Curvature:
+%     * Manifold hypothesis + curse of dimensionality
+%     * Positive Ricci curvature → efficiently learnable
+%     * Bounded curvature + unbounded volume → provably hard
+%     * Real-world data: heterogeneous regime
+
+\clearpage

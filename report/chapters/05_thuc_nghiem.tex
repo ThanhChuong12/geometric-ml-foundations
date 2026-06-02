@@ -1,0 +1,61 @@
+\section{Thực nghiệm và Demo minh hoạ}
+\label{sec:thuc-nghiem}
+
+% ============================================================
+% MỤC TIÊU CHƯƠNG:
+% Minh chứng thực nghiệm cho lý thuyết ở Chương 3 & 4:
+% equivariant model cần ít data hơn, ít parameters hơn,
+% nhưng cho kết quả tốt hơn.
+% ============================================================
+
+\subsection{Bài toán và Tập dữ liệu}
+\label{subsec:dataset}
+% Trình bày:
+%   - Giới thiệu bài toán được chọn
+%     (gợi ý: QM9 molecular property prediction, N-body simulation,
+%     hoặc Rotated MNIST nếu muốn đơn giản hơn)
+%   - Mô tả dataset: kích thước, đặc điểm, tính đối xứng có trong data
+%   - Lý do chọn: thể hiện rõ lợi ích của equivariance
+
+\subsection{Mô tả mô hình cài đặt}
+\label{subsec:mo-hinh}
+% Trình bày 2 mô hình so sánh:
+%
+%   Mô hình Baseline (không có tính đối xứng):
+%   - Kiến trúc: MLP thông thường / Standard GNN
+%   - Không encode bất kỳ symmetry nào
+%
+%   Mô hình Đề xuất (equivariant):
+%   - Một trong các lựa chọn:
+%     * DeepSets (permutation invariant, đơn giản nhất)
+%     * E(n)-Equivariant GNN / EGNN (Satorras et al ICML 2021)
+%     * Frame Averaging (Puny et al 2022) áp dụng lên MLP bình thường
+%   - Nêu rõ điểm mở rộng so với code gốc
+%
+%   Lưu ý: Liên kết rõ với Chương 3
+%   - Nếu dùng DeepSet → dẫn về mục 3.1.4 (parameter sharing)
+%   - Nếu dùng Frame Averaging → dẫn về mục 3.1.3 (Paper 3 Phúc)
+%   - Nếu dùng EGNN → dẫn về mục 3.2.5 (NequIP, Paper 2 Thịnh)
+
+\subsection{Môi trường thực nghiệm}
+\label{subsec:moi-truong}
+% Trình bày:
+%   - Ngôn ngữ: Python + PyTorch / PyTorch Geometric
+%   - Phần cứng: GPU / Cloud (ghi rõ)
+%   - Cấu trúc thư mục, requirements.txt, README.md
+
+\subsection{Kết quả và Phân tích}
+\label{subsec:ket-qua}
+% Trình bày:
+%   - Bảng/đồ thị so sánh: Loss, Accuracy, MAE
+%   - Chứng minh data efficiency:
+%     Equivariant model đạt cùng accuracy với ÍT data hơn
+%   - So sánh số lượng parameters
+%   - Phân tích kết quả: tại sao equivariant model tốt hơn?
+%     (liên kết về lý thuyết Chương 4.1)
+%
+%   Gợi ý bonus (+2 điểm demo ấn tượng):
+%   Vẽ thêm: OOD generalization curve
+%   (test trên rotated/permuted data mà chưa thấy trong train)
+
+\clearpage
