@@ -4,7 +4,7 @@ This document describes the design, features, and usage of the molecular data pr
 
 ---
 
-## 📂 1. Supported Input Formats
+## 1. Supported Input Formats
 
 The preprocessing pipeline expects a raw molecular trajectory stored in the **NumPy compressed archive (`.npz`)** format. The file must contain:
 - **`z`**: Nuclear charges / atomic numbers of shape `(N_atoms,)` (integer array).
@@ -14,7 +14,7 @@ The preprocessing pipeline expects a raw molecular trajectory stored in the **Nu
 
 ---
 
-## 🔄 2. Preprocessing Workflow
+## 2. Preprocessing Workflow
 
 The pipeline runs through the following sequence:
 ```mermaid
@@ -36,7 +36,7 @@ graph TD
 
 ---
 
-## 🚀 3. Execution Examples
+## 3. Execution Examples
 
 All commands should be run from the repository root:
 
@@ -68,7 +68,7 @@ python scripts/preprocess.py `
 
 ---
 
-## 💾 4. Output Formats
+## 4. Output Formats
 
 ### PyTorch Graphs (`.pt` files)
 Contains serialized PyTorch dictionaries or PyG `Data` objects with:
@@ -86,7 +86,7 @@ Contains serialized PyTorch dictionaries or PyG `Data` objects with:
 
 ---
 
-## ⚙️ 5. Compatibility Notes
+## 5. Compatibility Notes
 
 - **NequIP Key-Mapping**: We export both `atomic_numbers`/`total_energy` (expected by NequIP) and `z`/`y` (expected by standard PyG / custom code) to ensure seamless backward compatibility.
 - **Double Normalization Warning**: When using NequIP, do **not** pass `--normalize` to the preprocessing script. NequIP's built-in `DataStatisticsManager` handles scaling during train startup.
@@ -94,6 +94,6 @@ Contains serialized PyTorch dictionaries or PyG `Data` objects with:
 
 ---
 
-## ⚠️ 6. Current Limitations
+## 6. Current Limitations
 - **Memory Scaling**: The script loads the entire dataset into RAM. For large datasets ($> 500,000$ frames), this may lead to high memory usage.
 - **Single Cutoff Distance**: The radial graph is constructed using a fixed cutoff distance $R_c$. It does not support multi-shell or species-dependent cutoff distances natively.
