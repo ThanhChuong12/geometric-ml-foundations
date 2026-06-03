@@ -40,29 +40,28 @@ Hơn thế nữa, các mô hình học sâu dựa trên nền tảng hình học
 \subsection{Kỷ nguyên của dữ liệu hình học}
 \label{subsec:ky-nguyen-du-lieu-hinh-hoc}
 
-Lĩnh vực học máy đang chứng kiến nỗ lực to lớn nhằm hợp nhất các mô hình phân mảnh thành một hệ thống lý thuyết chặt chẽ thông qua lăng kính hình học. Nỗ lực này được truyền cảm hứng sâu sắc từ Chương trình Erlangen của nhà toán học Felix Klein, trong đó đề xuất rằng hình học nên được nghiên cứu thông qua các thuộc tính được bảo toàn dưới tác động của các nhóm phép biến đổi.
+Lĩnh vực học máy đang chứng kiến nỗ lực to lớn nhằm hợp nhất các mô hình phân mảnh thành một hệ thống lý thuyết chặt chẽ. Đóng góp nền tảng mang tính bước ngoặt cho nỗ lực này là công trình nghiên cứu \textit{Geometric Deep Learning: Grids, Groups, Graphs, Geodesics, and Gauges} của Bronstein và cộng sự (2021) \cite{bronstein2021geometric}. Hệ thống lý thuyết này được truyền cảm hứng sâu sắc từ chương trình Erlangen của nhà toán học Felix Klein, trong đó đề xuất rằng hình học nên được nghiên cứu thông qua các thuộc tính được bảo toàn dưới tác động của các nhóm phép biến đổi.
 
-Geometric Deep Learning kế thừa tư duy này để định hình lại cách hệ thống trí tuệ nhân tạo tiếp nhận dữ liệu. Thay vì xử lý dữ liệu như các vector vô hướng, phương pháp này mô hình hóa dữ liệu dưới dạng các tín hiệu nằm trên năm miền hình học cơ bản, thường được gọi là khung 5G bao gồm Grids, Groups, Graphs, Geodesics và Gauges. Việc gắn kết dữ liệu vào các miền hình học cụ thể cho phép khai thác triệt để các quy luật tự nhiên, chẳng hạn như tính chu kỳ của ảnh trên miền Grids hay liên kết hóa học trên miền Graphs.
+Nghiên cứu của Bronstein và cộng sự đã định hình lại cách các hệ thống trí tuệ nhân tạo tiếp nhận dữ liệu. Thay vì xử lý dữ liệu như các vector vô hướng, phương pháp này mô hình hóa dữ liệu dưới dạng các tín hiệu nằm trên năm miền hình học cơ bản, được hệ thống hóa thành khung 5G bao gồm Grids, Groups, Graphs, Geodesics và Gauges. Việc gắn kết dữ liệu vào các miền hình học cụ thể cho phép khai thác triệt để các quy luật tự nhiên, chẳng hạn như tính chu kỳ của ảnh trên miền Grids hay liên kết hóa học trên miền Graphs.
 
-\begin{figure}[H]
-    \centering
+\begin{center}
     \includegraphics[width=0.85\textwidth, keepaspectratio]{graphics/5g_framework.png}
-    \caption{Phân loại các miền hình học theo khung 5G (Grids, Groups, Graphs, Geodesics, Gauges). Nguồn: \textit{Geometric Deep Learning: Grids, Groups, Graphs, Geodesics, and Gauges} (Bronstein et al., 2021).}
+    
+    \vspace{0.2cm}
+    \captionof{figure}{Phân loại các miền hình học theo khung 5G}
     \label{fig:5g-framework}
-\end{figure}
+\end{center}
+\noindent\textit{Ghi chú: Các miền hình học cơ bản bao gồm Grids, Groups, Graphs, Geodesics và Gauges. Nguồn: \textit{Geometric Deep Learning: Grids, Groups, Graphs, Geodesics, and Gauges} (Bronstein et al., 2021).}
 
 Từ sự phân loại này, một bản thiết kế chung được đề xuất nhằm chuẩn hóa cấu trúc của mạng nơ-ron. Cấu trúc này bao gồm bốn thành phần tính toán cốt lõi: lớp đồng biến tuyến tính, hàm kích hoạt phi tuyến, lớp gộp cục bộ để trích xuất đặc trưng đa tỷ lệ, và lớp gộp bất biến toàn cục ở cuối mạng. Trong đó, hai khái niệm toán học đóng vai trò nền tảng là Invariance và Equivariance. Invariance đảm bảo đầu ra của mô hình không thay đổi khi dữ liệu đầu vào bị biến đổi, trong khi Equivariance yêu cầu đầu ra phải biến thiên một cách tương ứng theo đúng phép biến đổi của đầu vào.
 
-% --- [CHÈN SƠ ĐỒ TIKZ: GIAO HOÁN EQUIVARIANCE VS INVARIANCE] ---
-\begin{figure}[H]
-    \centering
+\begin{center}
     \begin{tikzpicture}[node distance=3.5cm, auto, thick, >=Stealth]
         % Sơ đồ Equivariance (Trái)
         \node (X) at (0, 0) {$\mathcal{X}$};
         \node (Y) at (3, 0) {$\mathcal{Y}$};
         \node (TX) at (0, -2.5) {$\mathcal{X}$};
         \node (TY) at (3, -2.5) {$\mathcal{Y}$};
-
         \draw[->] (X) -- node {$f$} (Y);
         \draw[->] (X) -- node[swap] {$\mathfrak{g}$} (TX);
         \draw[->] (Y) -- node {$\mathfrak{g}'$} (TY);
@@ -74,25 +73,27 @@ Từ sự phân loại này, một bản thiết kế chung được đề xuấ
         \node (X2) at (6, 0) {$\mathcal{X}$};
         \node (Y2) at (9, -1.25) {$\mathcal{Y}$};
         \node (TX2) at (6, -2.5) {$\mathcal{X}$};
-
         \draw[->] (X2) -- node {$f$} (Y2);
         \draw[->] (X2) -- node[swap] {$\mathfrak{g}$} (TX2);
         \draw[->] (TX2) -- node[swap] {$f$} (Y2);
 
         \node[below=0.5cm of TX2, xshift=1.5cm] {\textbf{(b) Invariance}};
     \end{tikzpicture}
-    \caption{Sơ đồ giao hoán toán học. (a) Tính đẳng biến (Equivariance): Biến đổi đầu vào tương đương với việc áp dụng phép biến đổi tương ứng lên đầu ra. (b) Tính bất biến (Invariance): Đầu ra không bị ảnh hưởng bởi phép biến đổi nhóm $\mathfrak{g}$.}
+    
+    \vspace{0.2cm}
+    \captionof{figure}{Sơ đồ giao hoán toán học}
     \label{fig:commutative-diagram}
-\end{figure}
+\end{center}
+\noindent\textit{Ghi chú: (a) Tính đẳng biến (Equivariance): Biến đổi đầu vào tương đương với việc áp dụng phép biến đổi tương ứng lên đầu ra. (b) Tính bất biến (Invariance): Đầu ra không bị ảnh hưởng bởi phép biến đổi nhóm $\mathfrak{g}$.}
 
 Bản thiết kế này cung cấp một khuôn khổ toán học minh bạch, chứng minh rằng các kiến trúc thành công nhất hiện nay như CNN, RNN, GNN và Transformer thực chất chỉ là các biến thể khác nhau của cùng một nguyên lý đối xứng khi áp dụng lên các miền dữ liệu hình học khác nhau.
 
 \subsection{Sự dịch chuyển sang không gian trọng số}
 \label{subsec:su-dich-chuyen-khong-gian-trong-so}
 
-Nếu như giai đoạn đầu của Geometric Deep Learning tập trung giải quyết các bài toán liên quan đến đối xứng trong không gian dữ liệu, thì xu hướng nghiên cứu hiện đại đang chứng kiến một bước chuyển dịch chiến lược sang việc phân tích tính đối xứng ngay bên trong cấu trúc của mạng nơ-ron, được gọi là Parameter space symmetry.
+Nếu như giai đoạn đầu của Geometric Deep Learning tập trung giải quyết các bài toán liên quan đến đối xứng trong không gian dữ liệu, thì xu hướng nghiên cứu hiện đại đang chứng kiến một bước chuyển dịch chiến lược. Sự dịch chuyển này được khảo sát và hệ thống hóa một cách toàn diện trong nghiên cứu \textit{Symmetry in Neural Network Parameter Spaces} do Zhao và cộng sự (2026) thực hiện \cite{zhao2026symmetry}. Nhóm tác giả đã chuyển hướng phân tích trọng tâm từ dữ liệu đầu vào sang việc khám phá tính đối xứng nằm ngay bên trong cấu trúc tham số của mạng nơ-ron (Parameter space symmetry).
 
-Các mô hình học sâu hiện đại thường ở trạng thái siêu tham số hóa, dẫn đến hiện tượng vô số cấu hình trọng số khác nhau nhưng lại sản sinh ra cùng một hàm tính toán ở đầu ra. Sự dư thừa này bắt nguồn từ các phép biến đổi nội tại, chẳng hạn như hoán vị các nơ-ron ẩn hoặc thay đổi tỷ lệ trọng số của hàm kích hoạt ReLU, mà không làm thay đổi giá trị dự đoán cuối cùng. Việc nhận diện Parameter space symmetry giúp giải mã cấu trúc phức tạp của Loss landscape, giải thích nguyên nhân hình thành các vùng bình nguyên và hiện tượng Mode connectivity giữa các điểm cực tiểu cục bộ.
+Theo phân tích của Zhao và cộng sự, các mô hình học sâu hiện đại thường ở trạng thái siêu tham số hóa, dẫn đến hiện tượng vô số cấu hình trọng số khác nhau nhưng lại sản sinh ra cùng một hàm tính toán ở đầu ra. Sự dư thừa này bắt nguồn từ các phép biến đổi nội tại, chẳng hạn như hoán vị các nơ-ron ẩn hoặc thay đổi tỷ lệ trọng số của hàm kích hoạt ReLU, mà không làm thay đổi giá trị dự đoán cuối cùng. Việc nhận diện Parameter space symmetry giúp giải mã cấu trúc phức tạp của Loss landscape, giải thích nguyên nhân hình thành các vùng bình nguyên và hiện tượng Mode connectivity giữa các điểm cực tiểu cục bộ.
 
 \begin{morong}[Kỹ thuật Teleportation và Equivariant Metanetworks]
 Khám phá này mở ra những kỹ thuật tối ưu hóa đột phá, điển hình là phương pháp Teleportation, cho phép thuật toán Gradient Descent chủ động dịch chuyển tham số đến các cấu hình tương đương mang đặc tính hội tụ tốt hơn. Quan trọng hơn, sự hiểu biết về đối xứng tham số là tiền đề cho lĩnh vực Weight space learning. Trong mô hình này, các tập hợp trọng số được xem như dữ liệu đầu vào cho một hệ thống Equivariant Metanetworks. Kiến trúc cấp cao này có khả năng dự đoán khả năng tổng quát hóa, nén mô hình và hợp nhất các điểm cực tiểu một cách hiệu quả mà không cần tiến hành suy luận trực tiếp trên dữ liệu gốc.
@@ -118,11 +119,11 @@ Khám phá này mở ra những kỹ thuật tối ưu hóa đột phá, điển
 Báo cáo tổng hợp các kỹ thuật từ nền tảng toán học cơ bản đến những hướng tiếp cận mới nhất về đối xứng tham số và học không gian trọng số. Nội dung chi tiết được tổ chức thành năm chương tiếp theo:
 
 \begin{itemize}
-    \item \textbf{Chương 2} trình bày kiến thức nền tảng toán học: khái niệm đối xứng, tính bất biến và đẳng biến, lý thuyết nhóm và biểu diễn nhóm.
-    \item \textbf{Chương 3} phân tích hai hướng chính để xây dựng mô hình bảo toàn tính đối xứng: (1) can thiệp dữ liệu với mô hình có sẵn (Data Augmentation, Canonicalization, Frame Averaging); (2) xây dựng kiến trúc equivariant từ đầu (Linear Equivariant Layers, Group Convolution, Invariant Theory, NequIP). Chương cũng trình bày ứng dụng trong Robotics và giới hạn Symmetry Breaking.
-    \item \textbf{Chương 4} trình bày lý thuyết nâng cao và các hướng nghiên cứu mới: lợi ích sample complexity (Extended Weyl's Law), Expanders cho chi phí tính toán, kiểm định tính đối xứng, Neural Parameter Symmetries, Weight Space Learning, và các hướng mới như Flexible Symmetries, Any-dimensional Models, Topological Deep Learning.
-    \item \textbf{Chương 5} mô tả chi tiết thiết lập thực nghiệm và phân tích kết quả so sánh giữa mô hình equivariant và baseline.
-    \item \textbf{Chương 6} thảo luận phản biện về khi nào nên encode symmetry, tổng hợp ưu nhược điểm, hướng nghiên cứu tương lai và đánh giá nhóm.
+    \item \textbf{Chương 2} trình bày kiến thức nền tảng toán học, tập trung vào lý thuyết nhóm, tính bất biến và tính đẳng biến.
+    \item \textbf{Chương 3} phân tích các phương pháp cốt lõi để xây dựng mô hình tương biến, bao gồm các phép tích chập nhóm và cơ chế chia sẻ tham số.
+    \item \textbf{Chương 4} mở rộng sang các kỹ thuật xử lý dữ liệu hiện đại như Frame averaging và các lý thuyết mới về học không gian trọng số.
+    \item \textbf{Chương 5} mô tả chi tiết thiết lập thực nghiệm, cấu hình phần cứng và phân tích kết quả so sánh giữa mô hình đề xuất và các phương pháp cơ sở.
+    \item \textbf{Chương 6} tổng hợp các đánh giá ưu nhược điểm, rút ra kết luận về tính ứng dụng thực tiễn và định hướng các nghiên cứu trong tương lai.
 \end{itemize}
 
 \clearpage
