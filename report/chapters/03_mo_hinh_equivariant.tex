@@ -16,158 +16,1171 @@
 
 \subsection{Hướng 1: Can thiệp dữ liệu trên các mô hình có sẵn}
 \label{subsec:off-the-shelf}
-% Đoạn giới thiệu ngắn: 2 hướng song song, ưu điểm chung
-% của off-the-shelf là kế thừa toàn bộ tính chất của base model,
-% dễ kết hợp nhiều symmetries.
 
-\subsubsection{Tăng cường dữ liệu (Data Augmentation)}
+Trước khi đi vào các phương pháp xây dựng kiến trúc hoàn toàn mới, một hướng tiếp cận tự nhiên hơn là tận dụng lại những mô hình học máy đã được huấn luyện tốt (thứ mà cộng đồng nghiên cứu đã đổ rất nhiều công sức phát triển) rồi can thiệp vào phía dữ liệu để ép mô hình phải tôn trọng tính đối xứng. Hướng này được gọi là hướng can thiệp dữ liệu, hay cách tiếp cận với mô hình hộp đen.
+
+Ưu điểm cốt lõi của hướng này là mô hình cơ sở (Transformer, CNN hay bất kỳ kiến trúc nào khác) được giữ nguyên hoàn toàn, kéo theo toàn bộ sức mạnh biểu diễn, kỹ thuật tối ưu, và quy trình huấn luyện của nó vẫn còn hiệu lực. Điều đó có nghĩa là người dùng không cần thiết kế lại bất cứ điều gì từ đầu. Ngoài ra, nếu mô hình cơ sở đã có sẵn một số tính chất đối xứng nhất định, việc kết hợp thêm các nhóm đối xứng khác thông qua can thiệp dữ liệu là hoàn toàn khả thi mà không gây mâu thuẫn.
+
+Trong hướng này có ba kỹ thuật chính: tăng cường dữ liệu, chuẩn hóa, và lấy trung bình nhóm/khung. Ba kỹ thuật này nằm trên một phổ liên tục: từ một phép biến đổi duy nhất ở một đầu, đến lấy trung bình trên toàn bộ nhóm $G$ ở đầu kia, với lấy trung bình khung nằm ở giữa như một điểm cân bằng giữa chi phí tính toán và chất lượng đảm bảo tính đối xứng.
+
+\subsubsection{Tăng cường dữ liệu}
 \label{subsubsec:data-augmentation}
-% Trình bày:
-%   - Cơ chế: thêm {g·x} vào training set với g ∈ G
-%   - Ưu điểm: đơn giản, áp dụng với supervised & contrastive learning
-%   - Nhược điểm: chỉ approximate symmetry,
-%     "does not guarantee invariance everywhere"
-%   - Mở rộng: Equivariant representation learning
-%     * Muốn f(a(x)) = T_a · f(x) thay vì chỉ invariance
-%     * Loss: ||f(a(x)) - MLP(a, f(x))||
-%     * Phiên bản tuyến tính: bảo toàn inner products
-%       E[f(a(x'))^T f(a(x)) - f(x)^T f(x')]^2 = 0
-%       ⟹ T_a là rotation, là group representation
-%     (Shakerinava et al 2022, Gupta et al 2023)
 
-\subsubsection{Chuẩn hóa (Canonicalization)}
+\begin{infobox}{Ý tưởng cơ bản}
+Tăng cường dữ liệu là kỹ thuật đơn giản và phổ biến nhất để đưa tính đối xứng vào mô hình. Với mỗi điểm dữ liệu $x$ trong tập huấn luyện, ta sinh thêm các biến thể $g \cdot x$ cho nhiều phần tử $g \in G$ khác nhau và đưa chúng vào tập huấn luyện cùng nhãn gốc. Khi tập huấn luyện bao phủ đủ nhiều biến thể của quỹ đạo $\mathrm{Orb}_G(x)$, mô hình sẽ học được rằng phép biến đổi $g$ không làm thay đổi nhãn, tức là dần hình thành tính bất biến.
+\end{infobox}
+
+Kỹ thuật này rất linh hoạt vì có thể áp dụng cho cả học có giám sát lẫn học tự giám sát. Trong học tương phản, người ta thường tạo cặp dữ liệu $(x, g \cdot x)$ và đặt chúng ở vị trí cặp dương, buộc mô hình phải đặt cả hai vào cùng một vùng trong không gian ẩn. Qua đó, toàn bộ quỹ đạo của $x$ dưới tác động của $G$ sẽ được ánh xạ về một biểu diễn duy nhất.
+
+\begin{warningbox}{Chỉ đảm bảo tính đối xứng xấp xỉ}
+Dù đơn giản và hiệu quả trong thực tế, tăng cường dữ liệu mang một hạn chế quan trọng về mặt lý thuyết: nó không đảm bảo tính invariance ở mọi điểm. Sau khi huấn luyện, không có gì chắc chắn rằng với một điểm dữ liệu mới $x'$ chưa từng thấy, mô hình sẽ cho ra cùng một kết quả cho $x'$ và $g \cdot x'$. 
+
+Biểu hiện thực tiễn là mô hình thường hoạt động tốt trên tập test cùng phân phối, nhưng rất dễ bị đánh lừa khi gặp đầu vào bị biến đổi ở góc độ chưa từng xuất hiện. Mô hình chỉ học xấp xỉ tính invariance trong vùng lân cận của dữ liệu đã có, chứ không hình thành một bảo đảm khái quát hóa ra ngoài phân phối.
+\end{warningbox}
+
+\begin{morong}[Học biểu diễn equivariant]
+Một bước phát triển thú vị từ tăng cường dữ liệu là học biểu diễn equivariant thay vì chỉ invariant. Đôi khi ta không muốn hoàn toàn triệt tiêu thông tin về phép biến đổi mà dữ liệu đã trải qua, mà muốn latent space ghi nhớ lại sự biến đổi đó theo một cách có cấu trúc. Cụ thể, nếu $a$ là một phép tăng cường và $f$ là encoder, thì mục tiêu là:
+
+\begin{equation}
+    f(a(x)) = T_a \cdot f(x),
+\end{equation}
+trong đó $T_a$ là một phép biến đổi tác động lên không gian ẩn, tương ứng với phép tăng cường $a$. Sơ đồ Hình~\ref{fig:equivariant-repr} minh họa trực quan cho ý tưởng này.
+\end{morong}
+
+\begin{figure}[H]
+    \centering
+    \begin{tikzpicture}[
+        node distance=3cm and 4cm,
+        every node/.style={font=\normalsize},
+        box/.style={draw, rounded corners=4pt, minimum width=1.5cm, minimum height=0.8cm,
+                    fill=blue!8, thick},
+        arr/.style={->, >=Stealth, thick, blue!60!black}
+    ]
+        \node[box] (x)  {$x$};
+        \node[box] (ax) [right=of x]  {$a(x)$};
+        \node[box] (fx) [below=of x]  {$f(x)$};
+        \node[box] (fax)[below=of ax] {$f(a(x))$};
+
+        \draw[arr] (x)  -- node[above]{augmentation $a$} (ax);
+        \draw[arr] (x)  -- node[left] {encoder $f$}      (fx);
+        \draw[arr] (ax) -- node[right]{encoder $f$}      (fax);
+        \draw[arr] (fx) -- node[below]{transform $T_a$}  (fax);
+
+        \node[font=\footnotesize, align=center] at (2.5,-2)
+            {\textit{both paths}\\[2pt]\textit{yield the same result}};
+    \end{tikzpicture}
+    \caption[Sơ đồ giao hoán của học biểu diễn equivariant]{%
+      Sơ đồ giao hoán của học biểu diễn equivariant.\\
+      \textit{Ghi chú: Áp dụng phép tăng cường $a$ rồi mã hóa, hoặc mã hóa rồi tác động $T_a$ trong không gian ẩn, đều cho cùng kết quả.}%
+    }
+    \label{fig:equivariant-repr}
+\end{figure}
+
+Một cách tiếp cận trực tiếp là dùng một mạng neural nhỏ (gọi là MLP) để cố gắng đoán xem điểm dữ liệu trong không gian ẩn sẽ nằm ở đâu sau khi bị biến đổi. Cụ thể, ta yêu cầu $\mathrm{MLP}(a, f(x))$ phải dự đoán ra đúng giá trị của $f(a(x))$, dẫn đến hàm mất mát:
+
+\begin{equation}
+    \mathcal{L} = \bigl\| f(a(x)) - \mathrm{MLP}(a,\, f(x)) \bigr\|.
+\end{equation}
+Tuy nhiên, cách này gặp phải một nhược điểm rất lớn. Giả sử ta xoay một bức ảnh $90^\circ$ (gọi là phép biến đổi $a_1$), rồi xoay tiếp $90^\circ$ nữa (gọi là $a_2$). Logic thông thường đòi hỏi kết quả trong không gian ẩn phải y hệt như khi bạn xoay một phát $180^\circ$. Nhưng vì mạng MLP chỉ đoán mò dựa trên dữ liệu, nó hoàn toàn có thể cho ra hai kết quả khác nhau (trong toán học gọi là hiện tượng không thỏa mãn \textit{phép kết hợp nhóm}: $T_{a_2 \circ a_1} \neq T_{a_2} \circ T_{a_1}$).
+
+
+\textbf{Phiên bản tuyến tính: ràng buộc bảo toàn tích vô hướng.}
+
+Để ép không gian ẩn phải thực sự hiểu tính logic của các phép biến đổi, các nghiên cứu sau này (tiêu biểu như Shakerinava et al.\ 2022 và Gupta et al.\ 2023) đã sử dụng một thủ thuật hình học thông minh. 
+
+Họ đưa ra giả định rằng phép biến đổi $T_a$ tác động lên không gian ẩn thực chất nên là một \textit{phép quay}. Đặc điểm bất di bất dịch của một phép quay chính là nó \textit{luôn bảo toàn góc và độ dài} của mọi vật thể. Chẳng hạn, nếu ta xoay cả hai vector đi $30^\circ$ cùng lúc, thì khoảng cách và góc nhìn tương đối giữa chúng vẫn y nguyên như lúc chưa xoay. Trong đại số tuyến tính, góc và độ dài được tóm gọn hoàn hảo trong một phép toán duy nhất: \textit{tích vô hướng}.
+
+Do đó thay vì phải dạy mạng MLP cách xoay từng chút một, ta chỉ cần ép mô hình tuân thủ một luật duy nhất: \textit{Tích vô hướng giữa hai điểm dữ liệu bất kì trước khi bị biến đổi ($f(x')^\top f(x)$) phải bằng đúng tích vô hướng của chúng sau khi bị biến đổi ($f(a(x'))^\top f(a(x))$)}. Hàm mất mát lúc này trở thành:
+
+\begin{equation}
+    \mathbb{E}_{a,\, x,\, x'} \left[ f(a(x'))^\top f(a(x)) - f(x')^\top f(x) \right]^2 = 0.
+\end{equation}
+
+Khi hàm mất mát này hội tụ về 0, mỗi $T_a = R_a$ là một phép quay trong không gian ẩn và tự động tương thích với phép kết hợp nhóm, tức là $\{T_a\}_{a \in G}$ tạo thành một biểu diễn nhóm của $G$. Hướng tiếp cận này chứng minh rằng phép tăng cường $a$ tác động lên đầu vào không nhất thiết phải là một phép quay và đã được phát triển bởi Shakerinava et al.\ (2022) và Gupta et al.\ (2023).
+
+\vspace{0.5em}
+\textbf{Từ đối xứng xấp xỉ đến đối xứng tuyệt đối.}
+
+Như đã phân tích ở trên, hạn chế lớn nhất của việc tăng cường dữ liệu truyền thống là mô hình chỉ học được tính bất biến ở mức độ xấp xỉ. Để hình dung, nếu ta muốn mạng neural nhận diện một con mèo dù nó bị xoay ở bất kỳ góc nào, việc chỉ cung cấp cho mô hình vài bức ảnh mèo bị xoay sẽ không đảm bảo rằng mô hình nhận diện đúng con mèo khi nó bị xoay ở một góc hoàn toàn mới chưa từng có trong tập huấn luyện. Nếu muốn mô hình đạt được tính đối xứng tuyệt đối, ta buộc phải sinh thêm dữ liệu cho \textit{toàn bộ} các phép biến đổi trong nhóm $G$, dẫn đến độ phức tạp bùng nổ $\mathcal{O}(n|G|)$. Điều này là hoàn toàn bất khả thi với các nhóm lớn, ví dụ như nhóm hoán vị $d$ phần tử có kích thước lên tới $|G| = d!$.
+
+Để khắc phục hạn chế trên, Soleymani et al.\ (2025) đã giới thiệu một hướng tiếp cận mới trong nghiên cứu \textit{Learning with Exact Invariances in Polynomial Time} \cite{soleymani2025learning}. Thay vì tạo ra tất cả các biến thể của dữ liệu để huấn luyện mô hình, các tác giả đề xuất kỹ thuật \textit{Lấy trung bình phổ (Spectral Averaging)}. Phương pháp này giải quyết bài toán thông qua góc độ hình học bằng cách phân rã không gian dữ liệu thành các thành phần tần số, khá giống với cách biến đổi Fourier phân tích một tín hiệu âm thanh thành các dải tần riêng biệt.
+
+
+\begin{examplebox}{Ví dụ: Khai thác tập sinh của nhóm hoán vị}
+Sự đột phá nằm ở chỗ rằng thay vì phải ép mô hình tuân theo hàng triệu ràng buộc tương ứng với hàng triệu phép biến đổi, ta chỉ cần ép mô hình tuân theo các phép biến đổi gốc (gọi là tập sinh - generators của nhóm). Hãy lấy ví dụ về nhóm hoán vị của 10 phần tử ($10! \approx 3.6$ triệu phép hoán vị). Thay vì phải kiểm tra $3.6$ triệu trường hợp, toán học nhóm chỉ ra rằng mọi hoán vị đều có thể được tạo ra chỉ từ 2 thao tác cơ bản: (1) hoán đổi 2 phần tử đầu tiên, và (2) đẩy tất cả phần tử sang phải một bước. Nghĩa là, nếu một hàm số không thay đổi kết quả khi bị tác động bởi 2 thao tác cơ bản này, nó cũng sẽ tự động không thay đổi với toàn bộ $3.6$ triệu hoán vị còn lại!
+\end{examplebox}
+
+Nhờ nguyên lý này, số lượng phép thử (hay số ràng buộc) được giảm mạnh từ $|G|$ xuống chỉ còn khoảng $\log(|G|)$ (rất nhỏ). Nhờ đó, phương pháp Spectral Averaging có thể tạo ra một bộ ước lượng có tính đối xứng tuyệt đối chỉ trong thời gian đa thức, đồng thời vẫn giữ được khả năng dự đoán chính xác hệt như khi không có ràng buộc đối xứng. Kết quả này chứng minh về mặt lý thuyết rằng ta hoàn toàn có thể đạt được tính đối xứng tuyệt đối đi kèm với hiệu suất tính toán cao, qua đó khắc phục được rào cản lớn nhất của kỹ thuật tăng cường dữ liệu.
+
+
+\subsubsection{Chuẩn hóa}
 \label{subsubsec:canonicalization}
-% Trình bày:
-%   - Cơ chế: đưa data về canonical form → feed vào model
-%     Ví dụ: sort sequence → permutation invariant
-%     Để equivariant: sort → feed → invert sort
-%   - Có thể học được (Kaba et al 2022, Zhang et al 2019)
-%   - Thách thức 1: không phải lúc nào cũng dễ
-%     (đồ thị → graph isomorphism problem)
-%   - Thách thức 2: Continuity issue (Dym et al 2024)
-%     * Ví dụ cụ thể từ slides: vectors [5,3.01,3] → sorted
-%       output far from [5,3,3] sorted output
-%     * Theorem: không có continuous canonicalization
-%       cho permutations trong d>1 và SO(2)
 
-\subsubsection{Lấy trung bình Nhóm và Khung (Group/Frame Averaging)}
+\begin{infobox}{Ý tưởng cơ bản}
+Kỹ thuật chuẩn hóa theo đuổi một chiến lược khác biệt: thay vì làm phong phú tập dữ liệu bằng nhiều biến thể, ta chuyển mỗi điểm dữ liệu $x$ về một dạng chuẩn duy nhất trước khi đưa vào mô hình. Miễn là hàm chuẩn hóa $c(\cdot)$ ánh xạ mọi phần tử trong cùng một quỹ đạo về cùng một điểm duy nhất, thì mô hình sẽ tự động đạt được tính invariance:
+\begin{equation}
+    c(g \cdot x) = c(x) \quad \forall\, g \in G.
+\end{equation}
+\end{infobox}
+
+Ví dụ điển hình nhất là phép sắp xếp cho bài toán invariant với hoán vị: với bất kỳ chuỗi nào, ta sắp xếp nó theo thứ tự tăng dần trước khi đưa vào mô hình. Vì mọi hoán vị của cùng một chuỗi đều cho ra cùng một dạng đã sắp xếp, mô hình luôn nhận cùng một đầu vào và cho ra cùng một kết quả. 
+
+Để đạt equivariance thay vì chỉ invariance, ta thực hiện thêm một bước ở cuối: sau khi mô hình xử lý dạng chuẩn, ta áp dụng phép biến đổi ngược để khôi phục thứ tự ban đầu. Hình~\ref{fig:canon-pipeline} minh họa toàn bộ quy trình này.
+
+\begin{figure}[H]
+    \centering
+    \begin{tikzpicture}[
+        node distance=0.5cm and 0.5cm,
+        every node/.style={font=\small},
+        box/.style={draw, rounded corners=4pt, minimum width=1.5cm, minimum height=0.7cm,
+                    fill=orange!10, thick, align=center},
+        op/.style={draw, circle, minimum size=0.6cm, fill=green!15, thick, font=\footnotesize},
+        arr/.style={->, >=Stealth, thick}
+    ]
+        \node[box] (x)   {$x$ \\ \scriptsize (input)};
+        \node[op]  (c)   [right=of x]   {$c$};
+        \node[box] (cx)  [right=of c]   {$c(x)$ \\ \scriptsize (canonical)};
+
+        \node[op]  (f)   [right=of cx]  {$f$};
+        \node[box] (fcx) [right=of f]   {$f(c(x))$ \\ \scriptsize (output)};
+        \node[op]  (inv) [right=of fcx] {$c^{-1}$};
+        \node[box] (out) [right=of inv] {equivariant \\ \scriptsize output};
+
+        \draw[arr] (x)   -- (c);
+        \draw[arr] (c)   -- (cx);
+        \draw[arr] (cx)  -- (f);
+        \draw[arr] (f)   -- (fcx);
+        \draw[arr] (fcx) -- (inv);
+        \draw[arr] (inv) -- (out);
+
+        % Invariant shortcut
+         \draw[arr, dashed, gray] (fcx.south) -- ++(0,-0.6) -| (out.south)
+            node[pos=0.25, below, align=center, font=\footnotesize, gray]
+            {stop here if only invariance needed};
+    \end{tikzpicture}
+    \caption[Pipeline chuẩn hóa]{%
+      Pipeline chuẩn hóa.\\
+      \textit{Ghi chú: Đầu vào $x$ được ánh xạ về dạng chuẩn $c(x)$, xử lý bằng mô hình $f$, sau đó áp dụng phép biến đổi ngược $c^{-1}$ để đạt equivariance. Nếu chỉ cần invariance thì có thể bỏ qua bước cuối.}%
+    }
+    \label{fig:canon-pipeline}
+\end{figure}
+
+Trong ví dụ sắp xếp, nếu dãy $[5,\, 3,\, 4]$ được chuẩn hóa thành $[3,\, 4,\, 5]$, mô hình sẽ xử lý và cho ra kết quả dựa trên dạng chuẩn đó. Cuối cùng, ta hoán vị ngược lại để đầu ra khớp với thứ tự ban đầu của đầu vào. Hàm chuẩn hóa $c(\cdot)$ không nhất thiết phải được thiết kế thủ công, mà có thể được học từ dữ liệu thông qua một mạng neural phụ trợ \cite{kaba2022equivariance}.
+
+\begin{importantbox}{Các thách thức của phương pháp chuẩn hóa}
+\textbf{1. Khó khăn trong việc xác định dạng chuẩn:} Đối với chuỗi số, sắp xếp là một lựa chọn tự nhiên và đơn giản. Nhưng không phải mọi loại dữ liệu đều có một dạng chuẩn rõ ràng. Ta lấy ví dụ với đồ thị: một đồ thị $n$ nút có thể được mô tả bởi $n!$ ma trận kề khác nhau, tương ứng với $n!$ cách đánh số các nút. Tìm một biểu diễn chuẩn chung cho tất cả các cách đánh số đó về cơ bản tương đương với việc giải bài toán graph isomorphism, một bài toán đã được nghiên cứu trong nhiều thập kỷ nhưng vẫn chưa có thuật toán đa thức được chứng minh. Tương tự với đám mây điểm trong không gian 3D kết hợp đối xứng quay và hoán vị, việc chuẩn hóa trở nên rất phức tạp.
+
+\textbf{2. Vấn đề tính liên tục:} Đây là hạn chế lý thuyết nghiêm trọng nhất của kỹ thuật chuẩn hóa. Tính liên tục yêu cầu nếu hai đầu vào gần nhau thì dạng chuẩn của chúng cũng phải gần nhau. Định lý của Dym et al. (2024) (\ref{thm:no-continuous-canon}) chứng minh rằng không tồn tại hàm chuẩn hóa liên tục cho nhóm hoán vị $S_n$ hoặc các nhóm liên tục như $SO(2)$ trong trường hợp tổng quát.
+\end{importantbox}
+
+Hãy xem xét một ví dụ minh họa cực kì trực quan để thấy tại sao tính liên tục lại bị phá vỡ. Đầu tiên, nếu ta chỉ có một mảng 1 chiều (1D array), việc chuẩn hóa bằng cách sắp xếp là hoàn toàn liên tục. Ví dụ, mảng $A = [5,\, 3,\, 3]$ sau khi sắp xếp sẽ thành $[3,\, 3,\, 5]$. Nếu ta nhiễu loạn nhẹ mảng $A$ thành $A' = [5,\, 3.01,\, 3]$, mảng này sau khi sắp xếp sẽ thành $[3,\, 3.01,\, 5]$. Hai kết quả này vẫn rất gần nhau, tính liên tục được bảo toàn (xem Hình~\ref{fig:canon-1d}).
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.7\textwidth, keepaspectratio]{graphics/canon_1d.png}
+    \caption[Chuẩn hóa mảng 1 chiều]{%
+      Chuẩn hóa mảng 1 chiều bảo toàn tính liên tục.\\
+      \textit{Ghi chú: Hai mảng đầu vào gần nhau sau khi sắp xếp (chuẩn hóa) vẫn cho ra hai kết quả gần nhau. Nguồn: \cite{jegelka2025tutorial}, trang 20.}%
+    }
+    \label{fig:canon-1d}
+\end{figure}
+
+Tuy nhiên, câu chuyện hoàn toàn thay đổi đối với dữ liệu nhiều chiều (chẳng hạn ma trận $2 \times 3$). Giả sử ta có hai ma trận $M$ và $M'$ cực kỳ gần nhau, trong đó hàng thứ nhất là ví dụ mảng 1 chiều ở trên, và hàng thứ hai là $[1,\, 7,\, 8]$. Khi tiến hành chuẩn hóa ma trận bằng cách sắp xếp các cột theo thứ tự tăng dần dựa trên giá trị của hàng đầu tiên, ta sẽ gặp rắc rối lớn.
+
+Đối với ma trận $M$, vì hai phần tử ở hàng đầu là $3$ và $3$ (bằng nhau), thứ tự của hai cột cuối cùng được giữ nguyên (hoặc quyết định bởi hàng thứ hai), kéo theo phần tử $7$ đi kèm với số $3$ đầu tiên, và $8$ đi kèm với số $3$ thứ hai. Tuy nhiên, ở ma trận $M'$, giá trị $3.01$ lớn hơn $3$, khiến cột chứa $3.01$ buộc phải nhảy ra phía sau cột chứa $3$. Sự hoán đổi vị trí của hàng trên kéo theo toàn bộ các phần tử ở hàng dưới ($7$ và $8$) cũng bị hoán đổi theo!
+
+Kết quả là, ma trận $M$ và $M'$ ban đầu cực kì gần nhau (chỉ lệch $0.01$ ở một vị trí), nhưng sau khi chuẩn hóa lại bị biến thành hai dạng chuẩn \textit{cách rất xa nhau} (vì số $7$ và $8$ bị tráo đổi hoàn toàn). Đây chính là định nghĩa toán học của sự gián đoạn (xem Hình~\ref{fig:canon-2d}).
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.9\textwidth, keepaspectratio]{graphics/canon_2d.png}
+    \caption[Minh họa sự phá vỡ tính liên tục trong chuẩn hóa nhiều chiều]{%
+      Minh họa sự phá vỡ tính liên tục trong chuẩn hóa nhiều chiều.\\
+      \textit{Ghi chú: Ma trận thứ hai chỉ thay đổi rất nhỏ ($3.01$ thay vì $3$), nhưng khiến thứ tự các cột bị đảo lộn hoàn toàn khi sắp xếp, làm cho hai dạng chuẩn đầu ra cách xa nhau. Nguồn: \cite{jegelka2025tutorial}, trang 21.}%
+    }
+    \label{fig:canon-2d}
+\end{figure}
+
+Kết quả lý thuyết của Dym et al.\ (2024) và Zhang et al.\ (2020) chỉ ra rằng đây không phải vấn đề của riêng một cách sắp xếp cụ thể nào, mà là một giới hạn căn bản không thể tránh được đối với dữ liệu phức tạp.
+
+\textbf{Sự bất khả thi của chuẩn hóa liên tục.}
+
+Công trình \textit{Equivariant frames and the impossibility of continuous canonicalization} của Dym et al.\ (2024) \cite{dym2024equivariant} đã phân tích chặt chẽ nền tảng toán học của kỹ thuật chuẩn hóa, từ đó chứng minh giới hạn: Việc xây dựng một hàm chuẩn hóa liên tục là điều không thể thực hiện được đối với phần lớn các nhóm đối xứng thông dụng.
+
+\begin{theorem}[Sự bất khả thi của chuẩn hóa liên tục, Dym et al.\ 2024]
+\label{thm:no-continuous-canon}
+Không tồn tại hàm chuẩn hóa liên tục nào cho nhóm hoán vị $S_n$ tác động lên $\mathbb{R}^{d \times n}$ với $n, d > 1$. Tương tự, không tồn tại chuẩn hóa liên tục cho nhóm quay $SO(d)$ khi $n \geq d \geq 2$, và nhóm trực giao $O(d)$ khi $n > d \geq 1$.
+\end{theorem}
+
+\begin{examplebox}{Ví dụ: Chuẩn hóa hướng của hình elip}
+Để thực sự hiểu tại sao tính liên tục lại bị phá vỡ, hãy cùng xem xét một ví dụ rất trực quan. Hãy tưởng tượng bạn có nhiệm vụ phải chuẩn hóa hướng của một hình elip bằng cách luôn xoay nó sao cho trục dài nhất nằm ngang. Nếu hình elip rất dài và dẹt, nhiệm vụ này rất dễ dàng vì trục dài nhất hiện ra cực kì rõ ràng. 
+
+Tuy nhiên, điều gì sẽ xảy ra nếu hình elip đó ngày càng tròn hơn, cho đến khi nó trở thành một hình tròn hoàn hảo? Một hình tròn hoàn hảo tự mang tính đối xứng ở mọi góc độ (trong toán học gọi là có \textit{nhóm ổn định không tầm thường - non-trivial stabilizers}). Lúc này, mọi trục đều dài bằng nhau, và hàm chuẩn hóa sẽ bị bối rối và sẽ buộc phải chọn đại một hướng ngẫu nhiên làm chuẩn. 
+Hậu quả nghiêm trọng xảy ra khi hình tròn này bị nhiễu động một chút xíu (ví dụ bị bóp méo nhẹ $0.001$ cm ở một góc $45^\circ$). Ngay lập tức, hàm chuẩn hóa sẽ phát hiện ra trục dài mới này và đột ngột xoay toàn bộ hình đi $45^\circ$. Một sự thay đổi cực nhỏ ở đầu vào lại dẫn đến một cú nhảy vọt khổng lồ ở đầu ra, chính là định nghĩa của \textit{sự gián đoạn}.
+\end{examplebox}
+
+\textbf{Giải pháp: Weighted Frames và Robust Frames.}
+
+Để cứu vãn tính liên tục mà không làm mất đi sự gọn nhẹ của phương pháp chuẩn hóa, Dym et al.\ (2024) đề xuất việc nâng cấp chuẩn hóa thành các \textit{weighted frames}. Nếu chuẩn hóa truyền thống là hành động cực đoan: gán $100\%$ niềm tin vào một góc xoay duy nhất, thì khung có trọng số cho phép phân bổ niềm tin (trọng số xác suất) cho nhiều góc xoay khác nhau. 
+
+Dựa trên ý tưởng đó, bài báo giới thiệu \textit{Robust Frames} - những khung được thiết kế đặc biệt để triệt tiêu sự gián đoạn. Quay lại ví dụ hình elip biến thành hình tròn: Khi hình elip ngày càng tròn, độ dài hai trục dần bằng nhau. Thay vì cứ cố chấp chọn một trục duy nhất một cách cực đoan, một khung bền vững sẽ bắt đầu chia sẻ trọng số dần dần cho cả hai trục. Khi nó biến thành một hình tròn hoàn hảo, trọng số sẽ được chia đều $50/50$ cho cả hai hướng không thể phân biệt. Khi hình tròn bị bóp méo nhẹ trở lại thành elip, trọng số sẽ thay đổi rất mượt mà (ví dụ thành $51/49$), hoàn toàn không xảy ra bất kỳ cú nhảy vọt nào.
+
+Sự chuyển đổi mượt mà này chính là chìa khóa đảm bảo tính liên tục cho mô hình học máy. Kết quả thực nghiệm của bài báo đã chứng minh sức mạnh của ý tưởng này: việc sử dụng các khung bền vững cho bài toán phân loại điểm đám mây 2D giúp tăng độ chính xác đáng kể (từ $85.6\%$ lên đến $88.7\%$), đồng thời khắc phục triệt để sự thiếu ổn định mà các mạng neural gặp phải khi cố gắng học các hàm chuẩn hóa gián đoạn thông qua các thuật toán như trực giao hóa Gram-Schmidt.
+
+\textbf{Tổng kết:}
+
+Nhìn chung thì chuẩn hóa là kỹ thuật vô cùng hiệu quả và cực kì rẻ về tính toán, đặc biệt là so với việc phải tăng cường dữ liệu hay lấy trung bình nhóm trên các nhóm $G$ khổng lồ. Tuy nhiên, qua sự phân tích của Dym et al., kĩ thuật này vấp phải một rào cản chí mạng về tính liên tục, làm giảm sự ổn định của mô hình. Đây cũng chính là động lực lớn nhất để các nhà nghiên cứu chuyển hướng sang các kĩ thuật dung hòa hơn nhưng vẫn mạnh mẽ về lý thuyết, tiêu biểu là phương pháp lấy trung bình nhóm và lấy trung bình khung, sẽ được trình bày chi tiết ở mục tiếp theo.
+
+
+\subsubsection{Lấy trung bình nhóm}
+\label{subsubsec:group-averaging}
+
+\begin{infobox}{Lấy trung bình nhóm}
+Một trong những phương pháp nền tảng và có cơ sở toán học vững chắc nhất để xây dựng mô hình invariant hoặc equivariant là sử dụng toán tử Reynolds, hay còn gọi là lấy trung bình nhóm. Cụ thể, cho mạng neural cơ sở $\phi$ và $\Phi$, ta định nghĩa các hàm invariant $\langle \phi \rangle_G$ và equivariant $\langle \Phi \rangle_G$ bằng cách tính trung bình đầu ra trên toàn bộ các phép biến đổi $g$ thuộc nhóm đối xứng $G$:
+\begin{align}
+    \langle \phi \rangle_G(X) &= \frac{1}{|G|} \sum_{g \in G} \phi(\rho_1(g)^{-1}X) \label{eq:group-avg-inv} \\
+    \langle \Phi \rangle_G(X) &= \frac{1}{|G|} \sum_{g \in G} \rho_2(g)\Phi(\rho_1(g)^{-1}X) \label{eq:group-avg-eqv}
+\end{align}
+trong đó $\rho_1$ và $\rho_2$ là các biểu diễn nhóm tác động lên không gian đầu vào $V$ và không gian đầu ra $W$.
+\end{infobox}
+
+Ưu điểm lớn nhất của phương pháp này là nó đảm bảo tính đối xứng một cách chính xác và bảo toàn hoàn toàn khả năng biểu diễn của mô hình cơ sở. Nếu mô hình cơ sở có khả năng xấp xỉ phổ quát, thì mô hình sau khi lấy trung bình cũng sẽ là một hàm phổ quát trên không gian các hàm đối xứng.
+
+Dù vậy thì khi áp dụng vào thực tế phương pháp này vấp phải một rào cản cực lớn về độ phức tạp tính toán. Khi nhóm $G$ quá lớn (ví dụ nhóm hoán vị $S_n$ với kích thước $n!$) hoặc liên tục vô hạn (như nhóm quay $SO(3)$), việc tính toán chính xác tổng hoặc tích phân trên toàn bộ nhóm là bất khả thi. Việc tính xấp xỉ bằng Monte Carlo thường được sử dụng để giảm tải, nhưng điều này lại làm mất đi sự đảm bảo chắc chắn về mặt toán học của tính đối xứng.
+
+\vspace{0.5em}
+\textbf{Ứng dụng và xấp xỉ cho nhóm hoán vị: Janossy Pooling.}
+
+Một minh chứng tiêu biểu cho phương pháp lấy trung bình nhóm khi áp dụng cho nhóm hoán vị $S_n$ chính là \textit{Janossy Pooling}, được giới thiệu bởi Murphy et al.\ (2019) trong bài báo \textit{Janossy Pooling: Learning Deep Permutation-Invariant Functions for Variable-Size Inputs} \cite{murphy2019janossy}. Ý tưởng cơ bản rất đơn giản: nếu bạn có một chuỗi dữ liệu (ví dụ 10 từ) và muốn mô hình xử lý nó mà không quan tâm đến thứ tự từ, bạn cứ hoán vị chuỗi đó thành tất cả các cách có thể ($10! \approx 3.6$ triệu cách), đưa tất cả qua một hàm học (như mạng LSTM), rồi lấy trung bình cộng tất cả các kết quả lại. Về mặt toán học, đây chính là việc áp dụng toán tử Reynolds hoàn hảo cho nhóm $S_n$.
+
+Tất nhiên, do kích thước nhóm $|S_n| = n!$ tăng lên theo hàm giai thừa, việc tính toán chính xác biểu thức Janossy Pooling là bất khả thi với các đầu vào lớn (ví dụ như số lượng nốt trong một đồ thị). Do đó, để đưa phương pháp này vào ứng dụng thực tiễn, bài báo đã đề xuất ba chiến lược xấp xỉ nhằm đạt được sự khả thi về mặt tính toán (tractability):
+\begin{itemize}
+    \item \textbf{Xếp thứ tự theo chuẩn (Canonical orderings):} Thay vì thử mọi hoán vị, ta sắp xếp dữ liệu theo một luật cố định (ví dụ: sắp xếp giảm dần) rồi mới đưa vào mô hình. Cách này loại bỏ hoàn toàn việc phải tính tổng khổng lồ kia, biến độ phức tạp về $1$.
+    \item \textbf{Phụ thuộc bậc $k$ (k-ary dependencies):} Thay vì hàm cơ sở phụ thuộc vào toàn bộ $n$ phần tử, ta giả định nó chỉ xem xét $k$ phần tử đầu tiên. Điều này giúp giảm số lượng hoán vị cần đánh giá từ $n!$ xuống chỉ còn $\frac{n!}{(n-k)!}$, rất hiệu quả khi $k$ nhỏ. Kiến trúc nổi tiếng DeepSets \cite{zaheer2017deep} thực chất chính là một trường hợp đặc biệt của Janossy pooling với $k=1$.
+    \item \textbf{Lấy mẫu hoán vị ngẫu nhiên ($\pi$-SGD):} Trong quá trình huấn luyện, thay vì tính tổng trên toàn bộ hoán vị, ta chỉ lấy mẫu một hoặc vài hoán vị ngẫu nhiên của chuỗi và sử dụng Stochastic Gradient Descent (được gọi là $\pi$-SGD) để tối ưu hóa. Bằng cách kết hợp với các mô hình biểu diễn chuỗi mạnh mẽ như LSTM hay GRU, thuật toán này giúp mô hình bắt được các tương quan phức tạp trong chuỗi mà vẫn duy trì được hiệu suất tính toán cực cao.
+\end{itemize}
+
+Thông qua các chiến lược xấp xỉ này, Janossy Pooling không chỉ cung cấp một khuôn khổ lý thuyết thống nhất bao trùm nhiều kiến trúc bất biến hoán vị, mà còn chỉ ra một hướng đi thực tiễn để cân bằng giữa sức mạnh biểu diễn và chi phí tính toán khi làm việc với phương pháp lấy trung bình nhóm khổng lồ.
+
+\subsubsection{Lấy trung bình khung}
 \label{subsubsec:frame-averaging}
-% ĐÂY LÀ PHẦN CỦA PHÚC — Paper 3: Frame Averaging (Puny et al 2022)
 
-% Group Averaging (Reynolds operator):
-%   - Invariant: f̄(x) = (1/|G|) Σ_{g∈G} f(g^{-1}·x)
-%   - Equivariant: f̄(x) = (1/|G|) Σ_{g∈G} g·f(g^{-1}·x)
-%   - Universal approximation (Yarotsky 2021)
-%   - Ví dụ: Janossy pooling (Murphy et al 2019),
-%     SignNet cho sign flips của eigenvectors (Lim et al 2023)
-%   - Nhược điểm: expensive khi |G| lớn → cần approximation
+\textbf{Từ lấy trung bình nhóm đến lấy trung bình khung.}
 
-% Frame Averaging (Puny et al 2022):
-%   - Thay vì average trên toàn bộ G, chỉ average trên F(X) ⊂ G
-%   - F(X) được trích xuất từ data, phải thỏa F(g·X) = g·F(X)
-%   - Công thức: ⟨Φ⟩_F(X) = (1/|F(X)|) Σ_{g∈F(X)} ρ₂(g)Φ(ρ₁(g)^{-1}X)
-%   - Ví dụ PCA Frame cho point clouds/proteins:
-%     F(X) = {(α₁v₁,...,αdvd, t) | αᵢ ∈ {-1,+1}} (sign flips của eigenvectors)
-%     Đạt E(3)/SE(3) equivariance với chi phí thấp
+Để giải quyết triệt để rào cản tính toán của phương pháp lấy trung bình nhóm mà không phải đánh đổi tính liên tục hay làm mất đi sự đảm bảo đối xứng tuyệt đối (như khi xấp xỉ bằng Monte Carlo hay lấy mẫu), Puny et al.\ (2022) đã đề xuất lý thuyết \textit{Frame Averaging} trong bài báo \textit{Frame Averaging for Invariant and Equivariant Network Design} \cite{puny2022frame}. Nhận định cốt lõi của công trình này là: thay vì tính trung bình trên toàn bộ nhóm $G$, ta hoàn toàn có thể chỉ thực hiện lấy trung bình trên một tập hợp con rất nhỏ $\mathcal{F}(X) \subset G$ được gọi là \textit{khung (frame)}. 
 
-% Bảng so sánh 3 phương pháp:
-%   Canonicalization:  cheap, NOT continuous
-%   Frame Averaging:   cheaper than full, continuous
-%   Group Averaging:   most expensive, continuous, universal
+\begin{examplebox}{Ví dụ cho khái niệm về khung}
+Để dễ hình dung, giả sử ta muốn đo nhiệt độ trung bình của một hành tinh hình cầu hoàn hảo. Việc lấy trung bình nhóm tương đương với việc ta phải đi đo nhiệt độ ở vô hạn điểm trên bề mặt hành tinh. Tuy nhiên, vì hành tinh có tính đối xứng tuyệt đối, bạn thực ra chỉ cần chọn một khung gồm đúng 6 điểm đại diện (ví dụ: 2 điểm ở cực và 4 điểm quanh xích đạo). Miễn là cái khung 6 điểm này luôn xoay theo đúng cách mà hành tinh xoay, thì giá trị trung bình của 6 điểm này sẽ chính xác tuyệt đối bằng trung bình của toàn bộ vô hạn điểm trên hành tinh. 
+\end{examplebox}
 
-% Nội dung đã có trong file gốc (công thức LaTeX của Văn Sỹ)
-% — giữ nguyên và mở rộng phần này.
+Trong toán học, việc khung phải xoay theo dữ liệu được gọi là điều kiện \textit{tương biến tập hợp}:
 
-Một trong những phương pháp mạnh mẽ nhất để trang bị tính bất biến (invariance) hoặc tương biến (equivariance) cho một mô hình học máy thông thường là sử dụng toán tử Reynolds, hay còn gọi là kỹ thuật lấy trung bình nhóm (Group Averaging). Cụ thể, cho một mạng nơ-ron cơ sở $\Phi$, ta có thể tạo ra một hàm tương biến $\langle \Phi \rangle_G$ bằng cách tính trung bình đầu ra của $\Phi$ trên toàn bộ các phép biến đổi $g$ thuộc nhóm đối xứng $G$:
 \begin{equation}
-    \langle \Phi \rangle_G(X) = \frac{1}{|G|} \sum_{g \in G} \rho_2(g)\Phi(\rho_1(g)^{-1}X)
+    \mathcal{F}(\rho_1(g)X) = g\mathcal{F}(X) \quad \forall X \in V, g \in G.
 \end{equation}
-Mặc dù phương pháp này đảm bảo tính đối xứng tuyệt đối và bảo toàn khả năng biểu diễn của mô hình cơ sở, nó vấp phải trở ngại cực lớn về độ phức tạp tính toán khi nhóm $G$ quá lớn hoặc có số phần tử vô hạn (ví dụ: nhóm hoán vị $S_n$ hoặc nhóm phép quay $SO(3)$).
+Nói cách khác, khi điểm dữ liệu đầu vào $X$ bị biến đổi bởi phần tử $g$, thì toàn bộ tập hợp các phép biến đổi trong khung cũng bị dịch chuyển một lượng tương ứng bởi $g$. Khi điều kiện nghiêm ngặt này được thỏa mãn, toán tử lấy trung bình nhóm ở các công thức \eqref{eq:group-avg-inv} và \eqref{eq:group-avg-eqv} có thể được thay thế hoàn toàn bằng việc lấy trung bình trên khung $\mathcal{F}(X)$:
 
-Để giải quyết bài toán tính toán này, kỹ thuật \textbf{Frame Averaging (Trung bình hóa Khung)} đã được đề xuất \cite{puny2022frame}. Thay vì tính trung bình trên toàn bộ nhóm $G$, phương pháp này chỉ thực hiện lấy trung bình trên một tập hợp con nhỏ $\mathcal{F}(X) \subset G$ được gọi là ``khung'' (frame). Tập hợp $\mathcal{F}(X)$ này được trích xuất dựa trên chính đặc trưng của dữ liệu đầu vào $X$. Để đảm bảo tính tương biến, khung $\mathcal{F}$ phải thỏa mãn điều kiện $\mathcal{F}(\rho_1(g)X) = g\mathcal{F}(X)$. Khi đó, công thức xấp xỉ trở thành:
-\begin{equation}
-    \langle \Phi \rangle_{\mathcal{F}}(X) = \frac{1}{|\mathcal{F}(X)|} \sum_{g \in \mathcal{F}(X)} \rho_2(g)\Phi(\rho_1(g)^{-1}X)
-\end{equation}
+\begin{align}
+    \langle \phi \rangle_\mathcal{F}(X) &= \frac{1}{|\mathcal{F}(X)|} \sum_{g \in \mathcal{F}(X)} \phi(\rho_1(g)^{-1}X) \\
+    \langle \Phi \rangle_\mathcal{F}(X) &= \frac{1}{|\mathcal{F}(X)|} \sum_{g \in \mathcal{F}(X)} \rho_2(g)\Phi(\rho_1(g)^{-1}X).
+\end{align}
 
-\textbf{Ứng dụng PCA Frame cho Đám mây điểm (Point Clouds):}
-Trong thực tiễn, đối với dữ liệu không gian 3 chiều như đồ thị phân tử hoặc đám mây điểm, Phân tích thành phần chính (PCA) thường được sử dụng để xây dựng khung. Thuật toán tính tâm của đám mây điểm và trích xuất các vector riêng (eigenvectors) từ ma trận hiệp phương sai. Khi dữ liệu đầu vào bị xoay hoặc tịnh tiến, PCA Frame tự động tính phép xoay ngược để chiếu dữ liệu về canonical frame trước khi đưa qua mạng. Phương pháp này đạt tính bất biến với $E(3)$ với chi phí tính toán cực kỳ thấp.
+Puny et al.\ (2022) đã chứng minh mạnh mẽ rằng kỹ thuật lấy trung bình khung cung cấp sự đảm bảo tính bất biến và tương biến hoàn hảo y hệt như lấy trung bình toàn nhóm, đồng thời bảo toàn sức mạnh biểu diễn tối đa của mạng neural cơ sở \cite{puny2022frame}. Khung có thể được xem như một giải pháp dung hòa tuyệt vời giữa chuẩn hóa (chỉ chọn 1 phần tử) và lấy trung bình nhóm (chọn tất cả phần tử), tận dụng được ưu điểm của cả hai. Hình~\ref{fig:frame-equivariance} minh họa một cách trực quan cơ chế hoạt động của một hàm khung.
 
-% ─────────────────────────────────────────────────────────────
-% HƯỚNG 2: XÂY DỰNG KIẾN TRÚC TỪ ĐẦU (CONSTRUCTED MODELS)
-% Thiết kế lớp mạng có tính equivariant "hard-coded" vào kiến trúc.
-% ─────────────────────────────────────────────────────────────
+\begin{figure}[H]
+    \centering
+    \begin{tikzpicture}[>=Stealth, thick]
+        % Sphere for group G
+        \draw[fill=orange!20, draw=orange!60!black] (0,0) circle (1.5);
+        \draw[orange!60!black] (-1.5,0) arc (180:360:1.5 and 0.4);
+        \draw[dashed, orange!60!black] (1.5,0) arc (0:180:1.5 and 0.4);
+        \node[above left] at (-1.2, 1.2) {$G$};
 
-\subsection{Hướng 2: Xây dựng kiến trúc equivariant từ đầu}
+        % Square for Vector space V
+        \draw[fill=cyan!10, draw=cyan!60!black] (4,-1.2) rectangle (6.5,1.2);
+        \node[above left] at (6.4, 0.8) {$V$};
+
+        % Elements in V
+        \node[circle, fill=black, inner sep=1pt] (X) at (4.5, 0.5) {};
+        \node[circle, fill=black, inner sep=1pt] (gX) at (6, 0.2) {};
+        \node[below] at (X) {$X$};
+        \node[below] at (gX) {$\rho_1(g)X$};
+        
+        % Arrow in V
+        \draw[->, blue!70!black] (X) to[bend right=20] (gX);
+
+        % Elements in G
+        \node[circle, fill=black, inner sep=1pt] (fX1) at (-0.5, 0.5) {};
+        \node[circle, fill=black, inner sep=1pt] (fX2) at (-0.3, 0.8) {};
+        \node[circle, fill=black, inner sep=1pt] (fX3) at (-0.8, 0.7) {};
+
+        \node[circle, fill=black, inner sep=1pt] (gfX1) at (0.5, -0.5) {};
+        \node[circle, fill=black, inner sep=1pt] (gfX2) at (0.7, -0.2) {};
+        \node[circle, fill=black, inner sep=1pt] (gfX3) at (0.2, -0.3) {};
+
+        % Bounding ellipses for frames
+        \draw[blue!70!black, dotted] (-0.53, 0.66) ellipse (0.4 and 0.25);
+        \draw[blue!70!black, dotted] (0.46, -0.33) ellipse (0.4 and 0.25);
+
+        % Arrow in G
+        \draw[->, blue!70!black] (-0.3, 0.4) to[bend right=20] node[left] {$g$} (0.2, -0.1);
+
+        % Maps F from V to G
+        \draw[->, purple!70!black] (X) to[bend right=15] node[above] {$\mathcal{F}$} (-0.1, 0.8);
+        \draw[->, purple!70!black] (gX) to[bend left=15] node[above] {$\mathcal{F}$} (0.9, -0.5);
+
+    \end{tikzpicture}
+    \caption[Minh họa tính chất equivariance của hàm khung]{%
+      Minh họa tính chất equivariance của hàm khung.\\
+      \textit{Ghi chú: Khối cầu bên trái là không gian nhóm $G$, hình chữ nhật bên phải là không gian dữ liệu $V$. Ánh xạ khung $\mathcal{F}$ gán một tập con các phép biến đổi trong $G$ cho mỗi điểm dữ liệu trong $V$. Khi điểm $X$ bị biến đổi thành $\rho_1(g)X$, tập hợp khung cũng bị dịch chuyển một lượng $g$ tương ứng. Vẽ lại dựa trên biểu đồ từ bài báo \cite{puny2022frame}, trang 3.}%
+    }
+    \label{fig:frame-equivariance}
+\end{figure}
+
+\textbf{Ứng dụng thực tiễn cho Point Clouds.}
+
+\begin{examplebox}{Ví dụ: Trích xuất khung cho point clouds}
+Một ví dụ cho phương pháp này là việc tạo ra các mạng bất biến xoay 3D ($E(3)$). Tưởng tượng bạn có một point cloud biểu diễn một chiếc máy bay. Thay vì phải lấy trung bình qua mọi góc xoay $360^\circ$ có thể có trong không gian 3 chiều (điều này đòi hỏi tính toán trên vô hạn góc), ta dùng thuật toán \textit{Phân tích thành phần chính (PCA)} để tìm ra 3 trục đối xứng chính của chiếc máy bay (trục dọc thân, trục dọc cánh, và trục thẳng đứng). 
+
+Vì mỗi trục có hai hướng (chiều dương và chiều âm), ta có chính xác $2 \times 2 \times 2 = 8$ hệ trục tọa độ khác nhau. Tập hợp 8 hệ trục tọa độ này chính là khung của chiếc máy bay. Lúc này, mô hình chỉ cần tính toán và lấy trung bình trên đúng $8$ hệ trục này, thay vì vô hạn góc xoay. Sự sụt giảm khối lượng tính toán từ $\infty$ xuống còn $8$ là một bước nhảy vọt khổng lồ, mà lại mang đến cho ta mô hình có tính equivariance tuyệt đối một cách hoàn hảo.
+\end{examplebox}
+
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{p{0.24\textwidth}p{0.28\textwidth}p{0.18\textwidth}p{0.18\textwidth}}
+\toprule
+\textbf{Phương pháp} & \textbf{Chi phí tính toán} & \textbf{Tính liên tục} & \textbf{Tính phổ quát} \\
+\midrule
+Canonicalization & Rất thấp & Không & Không \\
+Frame averaging & Thấp & Có & Có \\
+Group averaging & Cực cao / Không khả thi & Có & Có \\
+\bottomrule
+\end{tabular}
+\caption{So sánh ba phương pháp can thiệp dữ liệu để đưa tính đối xứng vào mạng neural. Lấy trung bình khung nổi lên như một điểm cân bằng hoàn hảo giữa chi phí triển khai thực tế và sức mạnh lý thuyết toán học.}
+\label{tab:symmetrization-compare}
+\end{table}
+
+Qua bảng phân tích, frame averaging vượt trội vì khắc phục được nhược điểm thiếu liên tục của chuẩn hóa, đồng thời giải quyết bài toán độ phức tạp của lấy trung bình nhóm, biến nó thành công cụ mạnh mẽ hàng đầu cho các tác vụ như phân tích đồ thị cấu trúc nguyên tử hay mô phỏng vật lý đa hạt.
+
+
+\subsection{Hướng 2: Xây dựng kiến trúc tương biến từ đầu}
 \label{subsec:constructed}
-% Đoạn giới thiệu: Cấu trúc tổng quát: equivariant layers + invariant pooling.
-% Ví dụ tiêu biểu: CNNs, GNNs, DeepSet.
 
-\subsubsection{Lớp tuyến tính đẳng biến và Chia sẻ tham số}
+Nếu Hướng 1 xem mô hình học máy như một hộp đen và truyền đạt tính đối xứng từ bên ngoài thông qua thao tác dữ liệu, thì Hướng 2 lựa chọn con đường triệt để hơn: mã hóa cứng tính đối xứng vào chính kiến trúc của mạng. Mô hình tương biến được xây dựng theo cấu trúc tổng quát sau.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[>=Stealth, thick]
+    % Khai báo các node với khoảng cách mép cố định (sử dụng thư viện positioning)
+    \node[draw, rounded corners, fill=blue!10, minimum width=1.2cm, minimum height=0.8cm] (x) {$x$};
+    \node[draw, rounded corners, fill=orange!20, minimum height=0.8cm, right=0.6cm of x] (L1) {Lớp tương biến $L_1$};
+    \node[draw, rounded corners, fill=gray!15, minimum width=1.5cm, minimum height=0.8cm, right=0.6cm of L1] (sig) {$\sigma(\cdot)$};
+    \node[draw, rounded corners, fill=orange!20, minimum height=0.8cm, right=0.6cm of sig] (L2) {Lớp tương biến $L_2$};
+    \node[draw, rounded corners, fill=green!20, minimum height=0.8cm, right=0.6cm of L2] (pool) {Gộp bất biến};
+    \node[draw, rounded corners, fill=red!10, minimum width=1.2cm, minimum height=0.8cm, right=0.6cm of pool] (y) {$y$};
+
+    % Vẽ mũi tên
+    \draw[->] (x) -- (L1);
+    \draw[->] (L1) -- (sig);
+    \draw[->] (sig) -- (L2);
+    \draw[->] (L2) -- (pool);
+    \draw[->] (pool) -- (y);
+
+    % Ghi chú bên dưới các khối
+    \node[below=0.2cm of L1, font=\small, text=orange!70!black] {tương biến};
+    \node[below=0.2cm of L2, font=\small, text=orange!70!black] {tương biến};
+    \node[below=0.2cm of pool, font=\small, text=green!60!black] {bất biến};
+\end{tikzpicture}
+\caption{Cấu trúc tổng quát của mô hình tương biến: xen kẽ các lớp tuyến tính tương biến với hàm kích hoạt phi tuyến $\sigma$, kết thúc bằng một lớp gộp bất biến toàn cục.}
+\label{fig:equivariant-pipeline}
+\end{figure}
+
+\textbf{Ưu điểm cốt lõi của hướng này:}
+\begin{itemize}
+    \item Tính đối xứng được đảm bảo tuyệt đối tại mọi điểm dữ liệu, kể cả những điểm chưa thấy trong quá trình huấn luyện.
+    \item Số tham số giảm mạnh do cơ chế chia sẻ, dẫn đến hiệu quả dữ liệu cao hơn.
+    \item Đặc biệt phù hợp khi tính đối xứng là điều chắc chắn về mặt vật lý hoặc toán học (phân tử, robot, đồ thị).
+\end{itemize}
+
+% ──────────────────────────────────────────────────────────────
+
+\subsubsection{Lớp tuyến tính tương biến và cơ chế chia sẻ tham số}
 \label{subsubsec:linear-equivariant}
-% Trình bày:
-%   - Equivariance constraint: WP_gx = P_gWx ∀g ∈ G
-%     ⟹ cấu trúc trong W: parameter sharing
-%   - Quy tắc: W_ij = W_kl nếu ∃τ∈G: (τ(i),τ(j))=(k,l)
-%   - Ví dụ 1 — Shift/Cyclic group C_n:
-%     n parameters → convolution matrix
-%     (CNN được derive từ đây)
-%   - Ví dụ 2 — All permutations S_n:
-%     chỉ 2 parameters (identity + sum) → DeepSet, PointNet
-%     [F(X)]_i = α₁xᵢ + α₂ Σⱼ xⱼ
-%   - Mở rộng: tensors → higher-order GNNs,
-%     invariant graph networks (basis size = 15)
-%   (Ravanbakhsh 2017, Maron 2019, 2020)
 
-\subsubsection{Tích chập nhóm (Group Convolution)}
+\textbf{Nguyên lý xây dựng.} Một lớp tuyến tính $\mathbf{W} \in \mathbb{R}^{n \times n}$ đảm bảo tính tương biến với nhóm $G$ khi và chỉ khi nó thỏa mãn ràng buộc sau với mọi phần tử $\tau \in G$:
+
+\begin{equation}
+    P_\tau \mathbf{W} P_\tau^\top = \mathbf{W}
+    \label{eq:equivariance-constraint}
+\end{equation}
+
+Ràng buộc này kéo theo một hệ quả quan trọng: nếu tồn tại phép biến đổi $\tau \in G$ ánh xạ cặp chỉ số $(i,j)$ thành $(k,l)$, thì bắt buộc $W_{ij} = W_{kl}$. Đây là cơ chế \textbf{chia sẻ tham số}: các vị trí cùng quỹ đạo trong $G$ phải mang cùng giá trị, và mỗi quỹ đạo chỉ tương ứng với một tham số tự do duy nhất.
+
+\vspace{0.5em}
+\textbf{Ví dụ 1: Nhóm dịch chuyển tuần hoàn dẫn đến phép tích chập.}
+
+Xét tín hiệu một chiều với nhóm dịch chuyển $G = C_n = \{t_0, t_1, \ldots, t_{n-1}\}$, trong đó $t_i(j) = i + j \pmod{n}$.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[scale=0.75]
+    % Ma trận W dạng circulant
+    \def\n{5}
+    \foreach \i in {0,...,4} {
+        \foreach \j in {0,...,4} {
+            \pgfmathtruncatemacro{\val}{mod(\i-\j+5,5)}
+            \pgfmathsetmacro{\clr}{
+                ifthenelse(\val==0,"blue!30",
+                ifthenelse(\val==1,"red!30",
+                ifthenelse(\val==2,"green!30",
+                ifthenelse(\val==3,"orange!30","purple!30"))))
+            }
+            \fill[\clr] (\j*0.7, -\i*0.7) rectangle (\j*0.7+0.65, -\i*0.7+0.65);
+            \draw (\j*0.7, -\i*0.7) rectangle (\j*0.7+0.65, -\i*0.7+0.65);
+        }
+    }
+    % Nhãn các màu
+    \node[right=0.5cm] at (5*0.7, -0.5*0.7) {\small $w_0$ \textcolor{blue!70!black}{$\blacksquare$}};
+    \node[right=0.5cm] at (5*0.7, -1.5*0.7) {\small $w_1$ \textcolor{red!70!black}{$\blacksquare$}};
+    \node[right=0.5cm] at (5*0.7, -2.5*0.7) {\small $w_2$ \textcolor{green!70!black}{$\blacksquare$}};
+    \node[right=0.5cm] at (5*0.7, -3.5*0.7) {\small $w_3$ \textcolor{orange!70!black}{$\blacksquare$}};
+    \node[right=0.5cm] at (5*0.7, -4.5*0.7) {\small $w_4$ \textcolor{purple!70!black}{$\blacksquare$}};
+    \node[below=0.3cm] at (2*0.7, -5*0.7) {\small Ma trận $\mathbf{W}$ sau khi áp ràng buộc: chỉ $n=5$ tham số};
+\end{tikzpicture}
+\caption{Ma trận trọng số $\mathbf{W}$ sau khi áp ràng buộc tương biến với nhóm dịch chuyển tuần hoàn $C_5$. Các ô cùng màu chia sẻ cùng một giá trị tham số. Cấu trúc này chính xác là ma trận circulant của phép tích chập.}
+\label{fig:circulant-matrix}
+\end{figure}
+
+\begin{itemize}
+    \item Số tham số giảm từ $n^2$ xuống còn $n$, tiết kiệm $n$ lần.
+    \item Cấu trúc lặp lại theo đường chéo này chính là định nghĩa của phép \textbf{tích chập} (convolution).
+    \item \textit{Kết luận:} mạng tích chập không phải là thiết kế tùy hứng mà là hệ quả tất yếu của việc áp đặt tính tương biến với nhóm dịch chuyển.
+\end{itemize}
+
+\vspace{0.5em}
+\textbf{Ví dụ 2: Nhóm hoán vị toàn phần dẫn đến kiến trúc DeepSets.}
+
+Xét đầu vào là tập hợp $n$ vector $\{x_1, \ldots, x_n\} \subset \mathbb{R}^d$ và ta muốn mô hình bất biến với mọi phép hoán vị phần tử, tức $G = S_n$.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[scale=0.75]
+    \def\n{5}
+    \foreach \i in {0,...,4} {
+        \foreach \j in {0,...,4} {
+            \pgfmathtruncatemacro{\same}{ifthenelse(\i==\j,1,0)}
+            \ifnum\same=1
+                \fill[blue!40] (\j*0.7, -\i*0.7) rectangle (\j*0.7+0.65, -\i*0.7+0.65);
+            \else
+                \fill[orange!30] (\j*0.7, -\i*0.7) rectangle (\j*0.7+0.65, -\i*0.7+0.65);
+            \fi
+            \draw (\j*0.7, -\i*0.7) rectangle (\j*0.7+0.65, -\i*0.7+0.65);
+        }
+    }
+    \node[right=0.4cm] at (5*0.7, -0.5*0.7) {\small $\alpha_1$ \textcolor{blue!70!black}{$\blacksquare$} (đường chéo)};
+    \node[right=0.4cm] at (5*0.7, -1.5*0.7) {\small $\alpha_2$ \textcolor{orange!70!black}{$\blacksquare$} (ngoài đường chéo)};
+    \node[below=0.3cm] at (2*0.7, -5*0.7) {\small Ma trận $\mathbf{W}$ với $G = S_5$: chỉ \textbf{2 tham số}};
+\end{tikzpicture}
+\caption{Ma trận trọng số $\mathbf{W}$ sau khi áp ràng buộc tương biến với nhóm hoán vị $S_n$. Toàn bộ ma trận $n \times n$ chỉ còn 2 giá trị: $\alpha_1$ trên đường chéo và $\alpha_2$ ở tất cả vị trí còn lại.}
+\label{fig:permutation-matrix}
+\end{figure}
+
+Kết quả là lớp tuyến tính tương biến có dạng cực kỳ đơn giản:
+
+\begin{equation}
+    [\mathbf{F}(\mathbf{X})]_i = \alpha_1 x_i + \alpha_2 \sum_{j \neq i} x_j
+    \label{eq:deepset-layer}
+\end{equation}
+
+\begin{itemize}
+    \item Số tham số giảm từ $n^2$ xuống còn $\mathbf{2}$, bất kể kích thước $n$.
+    \item Mỗi điểm được biến đổi kết hợp giữa chính nó và tổng tất cả điểm còn lại.
+    \item Đây chính xác là kiến trúc \textbf{DeepSets} và \textbf{PointNet}.
+    \item Mở rộng: với tensor bậc cao hơn hoặc các nhóm phức tạp hơn (ví dụ hoán vị ma trận kề của đồ thị), số phần tử cơ sở tăng lên nhưng vẫn ít hơn rất nhiều so với $n^2$. Với hoán vị đồng thời hàng và cột của ma trận kề, số cơ sở chỉ là 15.
+\end{itemize}
+
+% ──────────────────────────────────────────────────────────────
+
+\subsubsection{Tích chập nhóm}
 \label{subsubsec:group-convolution}
-% Trình bày:
-%   - Regular convolution là trường hợp đặc biệt:
-%     f ⋆ ψ(x) = Σ_{y∈ℤ²} f(y)ψ(y−x)
-%   - Group convolution: thay translations bằng group bất kỳ:
-%     f ⋆ ψ(g) = Σ_{h∈G} f(h)ψ(g⁻¹h)
-%   - Group equivariant CNNs (Cohen & Welling, ICML 2016)
 
-\subsubsection{Lý thuyết bất biến và đa thức bất biến}
+\textbf{Từ tích chập thông thường đến tích chập nhóm.}
+
+Tích chập thông thường trên lưới $\mathbb{Z}^2$ thực hiện phép trượt bộ lọc $\psi$ qua toàn bộ các phép tịnh tiến:
+\begin{equation}
+    (f \star \psi)(x) := \sum_{y \in \mathbb{Z}^2} f(y)\, \psi(y - x)
+    \label{eq:regular-conv}
+\end{equation}
+
+Quan sát rằng phép trừ $y - x$ chính là tác động của phép tịnh tiến ngược. Điều này gợi ý cách tổng quát hóa tự nhiên: thay toàn bộ phép tịnh tiến bằng một nhóm đối xứng bất kỳ $G$.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[>=Stealth, thick]
+    % Khối 1: CNN thông thường (Gộp toàn bộ text vào 1 node)
+    \node[draw, rounded corners, fill=blue!10, align=center, minimum width=3.5cm, minimum height=1.5cm, inner sep=0.2cm] (cnn) {
+        Bộ lọc trượt theo\\
+        phép \textbf{tịnh tiến}\\[1ex]
+        \textcolor{blue!70!black}{\footnotesize Tương biến tịnh tiến}
+    };
+    \node[above=0.2cm of cnn, font=\small\bfseries] {CNN thông thường};
+
+    % Khối Mũi tên ở giữa
+    \node[right=1.2cm of cnn, align=center] (arrow) {\Large $\Rightarrow$\\[0.5ex] \footnotesize tổng quát hóa};
+
+    % Khối 2: Group CNN (Gộp toàn bộ text vào 1 node)
+    \node[draw, rounded corners, fill=orange!10, align=center, minimum width=3.5cm, minimum height=1.5cm, inner sep=0.2cm, right=1.2cm of arrow] (gcnn) {
+        Bộ lọc trượt theo\\
+        \textbf{mọi phần tử} của $G$\\[1ex]
+        \textcolor{orange!70!black}{\footnotesize Tương biến với $G$}
+    };
+    \node[above=0.2cm of gcnn, font=\small\bfseries] {Tích chập nhóm};
+
+\end{tikzpicture}
+\caption{So sánh tích chập thông thường và tích chập nhóm. Tích chập nhóm là sự tổng quát hóa trực tiếp: thay vì chỉ trượt theo phép tịnh tiến, bộ lọc được trượt qua toàn bộ các phần tử của nhóm $G$.}
+\label{fig:group-conv-compare}
+\end{figure}
+
+\begin{itemize}
+    \item Nếu $G$ là nhóm tịnh tiến trên $\mathbb{Z}^2$, tích chập nhóm hoàn toàn trùng với CNN thông thường.
+    \item Nếu $G$ bổ sung thêm các phép xoay $90°$ và phản chiếu, bộ lọc sẽ tự động bất biến với 8 phép đối xứng của hình vuông (nhóm dihedral $D_4$).
+    \item Tích chập nhóm là nền tảng của \textbf{mạng tích chập tương biến nhóm}, mở rộng CNN sang các nhóm đối xứng tùy ý.
+\end{itemize}
+
+% ──────────────────────────────────────────────────────────────
+
+\subsubsection{Lý thuyết bất biến và tham số hóa qua đại lượng bất biến}
 \label{subsubsec:invariant-theory}
-% Trình bày:
-%   - Ý tưởng: xấp xỉ invariant functions qua invariant polynomials
-%   - First fundamental theorem (O(d)):
-%     Mọi O(d)-invariant function f(v₁,...,vₙ) = h((vᵢᵀvⱼ)ᵢⱼ)
-%     (inner products là đủ)
-%   - O(d)-equivariant:
-%     f(v₁,...,vₙ) = h((vᵢᵀvⱼ)ᵢⱼ) · Σvₜ
-%   - Translation-invariant:
-%     f(v₁,...,vₙ) = h(v₂−v₁, v₃−v₁, ..., vₙ−v₁)
-%   - Áp dụng: point clouds, Lorentz group, O(d)+permutations
-%   (Villar et al 2021)
 
-\subsubsection{Phương pháp tensor (Tensor Methods)}
+\textbf{Ý tưởng cốt lõi.} Thay vì thiết kế lại toàn bộ kiến trúc, ta có thể tham số hóa trực tiếp các hàm bất biến thông qua một tập hợp nhỏ các đại lượng vô hướng bất biến đơn giản.
+
+\begin{theorem}[Định lý cơ bản cho nhóm $O(d)$]
+Mọi hàm $f: (\mathbb{R}^d)^n \to \mathbb{R}$ bất biến với nhóm xoay và phản chiếu $O(d)$ đều có thể biểu diễn dưới dạng:
+\begin{equation}
+    f(v_1, \ldots, v_n) = h\!\left(\left\{v_i^\top v_j\right\}_{i,j=1}^{n}\right)
+    \label{eq:first-fundamental-Od}
+\end{equation}
+trong đó $h$ là một hàm bất kỳ tác động lên ma trận Gram của các tích vô hướng.
+\end{theorem}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[>=Stealth, thick]
+    % Điểm gốc cho các vector
+    \node at (0,0) [circle, fill=black, inner sep=2pt] (origin) {};
+
+    % Vẽ các vector đầu vào
+    \foreach \i/\ang/\lbl in {1/30/$v_1$, 2/100/$v_2$, 3/200/$v_3$} {
+        \draw[->, blue!70!black, very thick] (origin) -- ({1.5*cos(\ang)},{1.5*sin(\ang)});
+        \node[blue!70!black] at ({1.8*cos(\ang)},{1.8*sin(\ang)}) {\small \lbl};
+    }
+
+    % Dấu mũi tên chuyển đổi 1
+    \node[right=1.5cm of origin] (arrow1) {\Large $\xrightarrow{\text{trích xuất}}$};
+
+    % Khối Ma trận Gram (Gộp ma trận và chú thích vào chung 1 node để tự căn giữa)
+    \node[right=0.5cm of arrow1, align=center] (gram) {
+        $\begin{pmatrix} 
+        v_1^\top v_1 & v_1^\top v_2 & v_1^\top v_3 \\ 
+        v_2^\top v_1 & v_2^\top v_2 & v_2^\top v_3 \\ 
+        v_3^\top v_1 & v_3^\top v_2 & v_3^\top v_3 
+        \end{pmatrix}$\\[1.5ex]
+        \textcolor{gray}{\footnotesize Ma trận Gram bất biến với $O(d)$}
+    };
+
+    % Dấu mũi tên chuyển đổi 2
+    \node[right=0.5cm of gram] (arrow2) {\Large $\xrightarrow{h(\cdot)}$};
+
+    % Đầu ra
+    \node[draw, rounded corners, fill=green!20, right=0.5cm of arrow2] (output) {$f(v_1,v_2,v_3)$};
+
+\end{tikzpicture}
+\caption{Minh họa định lý cơ bản: mọi hàm bất biến với $O(d)$ đều có thể được tính từ ma trận Gram của các tích vô hướng, bất kể số chiều $d$ hay số điểm $n$.}
+\label{fig:gram-matrix}
+\end{figure}
+
+\begin{itemize}
+    \item \textbf{Tại sao đúng:} phép xoay và phản chiếu bảo toàn góc và khoảng cách, tức là bảo toàn chính xác các tích vô hướng $v_i^\top v_j$.
+    \item \textbf{Tại sao mạnh:} định lý đảm bảo tính phổ quát, không có thông tin bất biến nào bị bỏ sót.
+    \item \textbf{Với hàm tương biến $O(d)$:} mở rộng thêm tổng tuyến tính của các vector: $f(v_1,\ldots,v_n) = h(\{v_i^\top v_j\}) \cdot \sum_t v_t$.
+    \item \textbf{Với tính bất biến tịnh tiến:} chỉ cần chuyển sang hệ tọa độ tương đối: $f(v_1,\ldots,v_n) = h(v_2{-}v_1, v_3{-}v_1, \ldots, v_n{-}v_1)$.
+    \item \textbf{Thực tiễn:} hàm $h$ được tham số hóa bởi một mạng nơ-ron thông thường đặt trên đầu các đặc trưng bất biến đã tính sẵn.
+\end{itemize}
+
+% ──────────────────────────────────────────────────────────────
+
+\subsubsection{Phương pháp tensor và giới hạn của bổ đề Schur}
 \label{subsubsec:tensor-methods}
-% Trình bày:
-%   - Vấn đề: equivariant MLP bị hạn chế bởi Schur's Lemma
-%     (linear equivariant maps quá restrictive,
-%     ví dụ: rotation trên ℝ² → chỉ có identity)
-%   - Giải pháp: dùng tensor power x⊗k ∈ (ℝᵈ)^k
-%     equivariant MLP trên x⊗k → universality (k đủ lớn)
-%   - Thách thức: decompose group representation trên (ℝᵈ)^k
-%     * Dễ cho rotations/reflections
-%     * Khó cho finite groups → Clebsch–Gordan problem
 
-\subsubsection{Ứng dụng: NequIP và Mạng E(3)-equivariant}
-\label{subsubsec:nequip}
-% ĐÂY LÀ PHẦN CỦA THỊNH — Paper 2: NequIP (Batzner et al 2022)
+\textbf{Vấn đề: tại sao lớp tuyến tính tương biến đơn thuần không đủ?}
 
-% Trình bày:
-%   - Bài toán atomistic systems:
-%     * Graph of atoms: 3 symmetries (translation, rotation, permutation)
-%     * Mục tiêu: predict energy, forces
-%   - NequIP (Neural Equivariant Interatomic Potentials):
-%     * E(3)-equivariant message-passing GNN
-%     * Equivariant update: xᵢ^{ℓ+1} = xᵢ^ℓ + C Σⱼ (xᵢ−xⱼ) φ(hᵢ,hⱼ,||xᵢ−xⱼ||²,aᵢⱼ)
-%     * Force = ∂energy/∂position → free via autograd
-%   - Kết quả: "up to 3 orders of magnitude fewer training data"
-%   - Mở rộng: Equiformer (equivariant graph transformer, ICLR 2023)
-%   - Protein generation: Chroma, RFDiffusion dùng equivariant GNNs
+\begin{itemize}
+    \item Mạng nhiều lớp tuyến tính tương biến xen kẽ hàm kích hoạt đặt ra câu hỏi: liệu có đủ sức biểu diễn để xấp xỉ mọi hàm tương biến liên tục không?
+    \item \textbf{Bổ đề Schur} từ lý thuyết biểu diễn nhóm chỉ ra: với một số nhóm liên tục, các ánh xạ tuyến tính tương biến bị hạn chế nghiêm trọng.
+\end{itemize}
+
+\begin{example}
+Với nhóm xoay $SO(2)$ tác động trên $\mathbb{R}^2$, ánh xạ tuyến tính tương biến duy nhất là bội của ma trận đơn vị: $L(x) = \lambda x$, $\lambda \in \mathbb{R}$. Lớp tuyến tính tương biến không thể tạo ra bất kỳ biểu diễn phong phú nào.
+\end{example}
+
+\textbf{Giải pháp: nâng đầu vào lên không gian tensor.}
+
+Thay vì làm việc trực tiếp với $x \in \mathbb{R}^d$, ta dùng lũy thừa tensor bậc $k$:
+
+\begin{equation}
+    x^{\otimes k} = \underbrace{x \otimes x \otimes \cdots \otimes x}_{k \text{ lần}} \in (\mathbb{R}^d)^{\otimes k}
+    \label{eq:tensor-power}
+\end{equation}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[>=Stealth, thick]
+    % Khai báo các khối chính với khoảng cách mép cố định (right=1cm of...)
+    \node[draw, fill=blue!10, rounded corners, minimum height=0.7cm] (x) {$x \in \mathbb{R}^d$};
+    
+    \node[draw, fill=purple!15, rounded corners, minimum height=0.7cm, right=1cm of x] (xk) {$x^{\otimes k} \in (\mathbb{R}^d)^{\otimes k}$};
+    
+    \node[draw, fill=orange!20, rounded corners, minimum height=0.7cm, right=1cm of xk] (mlp) {MLP tương biến};
+    
+    \node[draw, fill=green!20, rounded corners, minimum height=0.7cm, right=1cm of mlp] (out) {Đầu ra tương biến};
+
+    % Vẽ các mũi tên
+    \draw[->] (x) -- node[above, font=\scriptsize] {$\otimes k$} (xk);
+    \draw[->] (xk) -- (mlp);
+    \draw[->] (mlp) -- (out);
+
+    % Ghi chú bên dưới (Dùng align=center và \\ để ngắt dòng cho gọn)
+    \node[below=0.2cm of xk, font=\scriptsize, text=purple!70!black, align=center] {không gian biểu diễn\\phong phú};
+    
+    \node[below=0.2cm of mlp, font=\scriptsize, text=orange!70!black, align=center] {universality với\\$k$ đủ lớn};
+\end{tikzpicture}
+\caption{Phương pháp tensor: nâng đầu vào lên không gian tensor bậc $k$ để vượt qua giới hạn của bổ đề Schur và đạt được tính phổ quát.}
+\label{fig:tensor-method}
+\end{figure}
+
+\begin{itemize}
+    \item Không gian tensor $(\mathbb{R}^d)^{\otimes k}$ có cấu trúc biểu diễn nhóm vô cùng phong phú, vượt qua giới hạn của bổ đề Schur.
+    \item Xây dựng MLP tương biến trên $x^{\otimes k}$ đạt được tính phổ quát khi $k$ đủ lớn.
+    \item \textbf{Thách thức kỹ thuật:} phân rã biểu diễn nhóm trên $(\mathbb{R}^d)^{\otimes k}$ đòi hỏi tính toán \textbf{hệ số Clebsch-Gordan}.
+        \begin{itemize}
+            \item Với nhóm xoay $SO(d)$ và phản chiếu $O(d)$: giải được hiệu quả.
+            \item Với các nhóm hữu hạn tổng quát: là bài toán khó nổi tiếng trong lý thuyết biểu diễn.
+        \end{itemize}
+\end{itemize}
+
+% ──────────────────────────────────────────────────────────────
+
+\subsubsection{Ứng dụng: mạng đồ thị tương biến và bài toán hệ nguyên tử}
+\label{subsubsec:equivariant-gnn}
+
+\textbf{Bài toán và cấu trúc dữ liệu.}
+
+\begin{itemize}
+    \item Một hệ nguyên tử gồm $N$ nguyên tử được biểu diễn dưới dạng một đồ thị có định hướng.
+    \item Mỗi nút $i$ mang: đặc trưng loại nguyên tử $h_i \in \mathbb{R}^c$ (vô hướng) và tọa độ không gian $\mathbf{r}_i \in \mathbb{R}^3$ (vector).
+    \item Bài toán yêu cầu dự đoán năng lượng toàn phần $E$ của hệ, vốn là một hàm bất biến với nhóm Euclide $E(3)$ gồm phép xoay, phản chiếu và tịnh tiến, đồng thời bất biến với mọi phép hoán vị nguyên tử cùng loại.
+\end{itemize}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[>=Stealth, thick]
+    % Phân tử H2O minh họa
+    \node[circle, draw, fill=red!30, minimum size=0.9cm, font=\small\bfseries] (O) at (0,0) {O};
+    \node[circle, draw, fill=blue!20, minimum size=0.7cm, font=\small\bfseries] (H1) at (-1.4, -1.0) {H};
+    \node[circle, draw, fill=blue!20, minimum size=0.7cm, font=\small\bfseries] (H2) at (1.4, -1.0) {H};
+    \draw[-, very thick] (O) -- (H1);
+    \draw[-, very thick] (O) -- (H2);
+
+    % Nhãn đặc trưng
+    \node[font=\scriptsize, text=gray, right=0.1cm of O] {$h_O,\, \mathbf{r}_O$};
+    \node[font=\scriptsize, text=gray, below=0.05cm of H1] {$h_H,\, \mathbf{r}_{H_1}$};
+    \node[font=\scriptsize, text=gray, below=0.05cm of H2] {$h_H,\, \mathbf{r}_{H_2}$};
+
+    % Mũi tên ra
+    \node at (3.5, -0.5) {\Large $\xrightarrow{\text{GNN tương biến}}$};
+
+    % Đầu ra
+    \node[draw, rounded corners, fill=green!20, minimum width=2.2cm, minimum height=0.9cm, font=\small] at (7, -0.5) {$E$ (năng lượng)};
+    \node[font=\scriptsize, text=gray] at (7, -1.2) {bất biến với $E(3)$};
+\end{tikzpicture}
+\caption{Minh họa bài toán hệ nguyên tử: phân tử $\text{H}_2\text{O}$ được biểu diễn dưới dạng đồ thị. Mỗi nút mang đặc trưng vô hướng $h_i$ (loại nguyên tử) và tọa độ vector $\mathbf{r}_i$. Mô hình cần dự đoán năng lượng $E$ bất biến với mọi phép biến đổi $E(3)$.}
+\label{fig:molecule-graph}
+\end{figure}
+
+\textbf{Cơ chế truyền thông tin tương biến.}
+
+Mạng nơ-ron tương biến cập nhật lặp lại cả đặc trưng ẩn $h_i^{(\ell)}$ lẫn tọa độ $\mathbf{x}_i^{(\ell)}$ tại mỗi lớp $\ell$, đảm bảo toàn bộ quá trình tương biến với $E(3)$:
+
+\begin{equation}
+    \mathbf{x}_i^{(\ell+1)} = \mathbf{x}_i^{(\ell)}
+    + C \sum_{j \neq i}
+    \left(\mathbf{x}_i^{(\ell)} - \mathbf{x}_j^{(\ell)}\right)
+    \cdot \varphi\!\left(h_i^{(\ell)},\; h_j^{(\ell)},\;
+    \left\|\mathbf{x}_i^{(\ell)} - \mathbf{x}_j^{(\ell)}\right\|^2,\;
+    a_{ij}\right)
+    \label{eq:egnn-update}
+\end{equation}
+
+trong đó $\varphi$ là một mạng nơ-ron nhỏ và $a_{ij}$ là đặc trưng cạnh bổ sung.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[>=Stealth, thick, node distance=2cm]
+    % Lớp đầu vào
+    \node[circle, draw, fill=blue!20, minimum size=0.8cm, font=\scriptsize] (i_in) at (0, 1.2) {$i$};
+    \node[circle, draw, fill=blue!20, minimum size=0.8cm, font=\scriptsize] (j_in) at (0, -0.8) {$j$};
+    \node[font=\scriptsize, left=0.1cm of i_in] {$h_i^{(\ell)},\, \mathbf{x}_i^{(\ell)}$};
+    \node[font=\scriptsize, left=0.1cm of j_in] {$h_j^{(\ell)},\, \mathbf{x}_j^{(\ell)}$};
+
+    % Hộp message
+    \node[draw, rounded corners, fill=orange!15, minimum width=2.5cm, minimum height=1.2cm,
+          font=\scriptsize, align=center] (msg) at (3.5, 0.2)
+          {Tính message \\ $\varphi(h_i, h_j, \|\mathbf{x}_i{-}\mathbf{x}_j\|^2, a_{ij})$};
+
+    % Lớp đầu ra
+    \node[circle, draw, fill=green!30, minimum size=0.8cm, font=\scriptsize] (i_out) at (7, 0.2) {$i$};
+    \node[font=\scriptsize, right=0.1cm of i_out] {$h_i^{(\ell+1)},\, \mathbf{x}_i^{(\ell+1)}$};
+
+    % Mũi tên
+    \draw[->] (i_in) -- (msg);
+    \draw[->] (j_in) -- (msg);
+    \draw[->] (msg) -- (i_out) node[midway, above, font=\scriptsize] {cập nhật};
+
+    % Nhãn đặc tính
+    \node[font=\scriptsize, text=orange!70!black, below=0.1cm of msg]
+        {chỉ dùng $\|{\cdot}\|^2$ $\Rightarrow$ bất biến với xoay};
+\end{tikzpicture}
+\caption{Cơ chế cập nhật tương biến: hàm message $\varphi$ chỉ nhận khoảng cách bình phương $\|\mathbf{x}_i - \mathbf{x}_j\|^2$ (một đại lượng bất biến) thay vì tọa độ tuyệt đối, đảm bảo kết quả tương biến với nhóm $E(3)$.}
+\label{fig:egnn-message}
+\end{figure}
+
+\begin{itemize}
+    \item Hàm $\varphi$ chỉ nhận \textbf{khoảng cách bình phương} $\|\mathbf{x}_i - \mathbf{x}_j\|^2$, một đại lượng bất biến với $E(3)$, thay vì tọa độ tuyệt đối.
+    \item Cập nhật tọa độ theo hướng $(\mathbf{x}_i - \mathbf{x}_j)$ đảm bảo đầu ra tương biến: xoay đầu vào thì đầu ra cũng xoay theo đúng cách đó.
+    \item Đặc trưng vô hướng $h_i$ và tọa độ vector $\mathbf{x}_i$ được cập nhật đồng thời qua nhiều lớp, làm giàu dần biểu diễn.
+\end{itemize}
+
+\textbf{Lợi ích đặc biệt: tính toán lực miễn phí qua vi phân tự động.}
+
+Sau khi mô hình dự đoán được năng lượng $E$, lực tác dụng lên từng nguyên tử thu được hoàn toàn miễn phí:
+
+\begin{equation}
+    \mathbf{F}_i = -\frac{\partial E}{\partial \mathbf{r}_i}
+    \label{eq:force-autograd}
+\end{equation}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[>=Stealth, thick]
+    % Khối GNN gốc
+    \node[draw, rounded corners, fill=blue!10, minimum height=0.8cm, font=\small] 
+        (model) {GNN tương biến};
+
+    % Khối Năng lượng (đặt thẳng sang bên phải khối GNN)
+    \node[draw, rounded corners, fill=green!20, minimum height=0.7cm, font=\small, right=2.5cm of model] 
+        (E) {$E$ (năng lượng)};
+
+    % Khối Lực (đặt thẳng ngay bên dưới khối Năng lượng)
+    \node[draw, rounded corners, fill=orange!20, minimum height=0.7cm, font=\small, below=1cm of E] 
+        (F) {$\mathbf{F}_i = -\frac{\partial E}{\partial \mathbf{r}_i}$};
+
+    % Các đường mũi tên liên kết
+    \draw[->] (model) -- node[midway, above, font=\scriptsize] {dự đoán trực tiếp} (E);
+    \draw[->, dashed] (E) -- node[midway, right, font=\scriptsize] {autograd} (F);
+    \draw[->, dashed] (model) -- node[midway, below, sloped, font=\scriptsize, text=gray] {(miễn phí)} (F);
+\end{tikzpicture}
+\caption{Sơ đồ tính lực qua vi phân tự động: mô hình chỉ được huấn luyện dự đoán năng lượng $E$ (vô hướng), nhưng đồng thời cung cấp $3N$ thành phần lực vector nhất quán và đảm bảo tính đối xứng.}
+\label{fig:force-autograd}
+\end{figure}
+
+\begin{itemize}
+    \item Mô hình chỉ cần học dự đoán một đại lượng vô hướng (năng lượng), nhưng đồng thời cung cấp dự đoán cho $3N$ thành phần lực vector.
+    \item Các lực này \textbf{nhất quán} với nhau và với năng lượng theo định luật bảo toàn, vì chúng đến từ cùng một hàm thế năng.
+    \item Đây là lợi thế quyết định so với các mô hình dự đoán lực trực tiếp, vốn không đảm bảo tính nhất quán.
+\end{itemize}
+
+\textbf{Ứng dụng mở rộng.} Nguyên lý tương biến $E(3)$ trong mạng đồ thị không chỉ giới hạn ở hệ nguyên tử, mà còn được áp dụng rộng rãi trong:
+
+\begin{itemize}
+    \item \textbf{Sinh protein:} các mô hình Chroma và RFDiffusion dùng GNN tương biến kết hợp với hệ tọa độ địa phương để tạo sinh cấu trúc protein.
+    \item \textbf{Dự đoán liên kết phân tử:} tương biến $SE(3)$ cho phép mô hình nắm bắt hướng và hình dạng của túi liên kết kháng nguyên-kháng thể.
+    \item \textbf{Điều khiển robot:} tương biến $SO(2)$/$SE(3)$ trong học tăng cường cho phép chính sách tối ưu tự động điều chỉnh khi robot bị xoay hoặc dịch chuyển trong không gian (được trình bày chi tiết ở Mục~\ref{subsec:robotics}).
+\end{itemize}
+
+% ============================================================
+\subsection{NequIP: Mạng nơ-ron đồ thị tương biến cho thế năng nguyên tử}
+\label{subsec:nequip-paper}
+% ============================================================
+
+\begin{itemize}
+    \item \textbf{Bài báo:} E(3)-equivariant graph neural networks for data-efficient and accurate interatomic potentials
+    \item \textbf{Tác giả:} Simon Batzner, Albert Musaelian, Lixin Sun, Mario Geiger, Jonathan P. Mailoa, Mordechai Kornbluth, Nicola Molinari, Tess E. Smidt, Boris Kozinsky
+    \item \textbf{Nơi xuất bản:} Nature Communications, 2022
+    \item \textbf{Liên kết bài báo:} \url{https://doi.org/10.1038/s41467-022-29939-5}
+    \item \textbf{Liên kết mã nguồn:} \url{https://github.com/mir-group/nequip}
+\end{itemize}
+
+% ============================================================
+\subsubsection{Bài toán và động lực nghiên cứu}
+% ============================================================
+
+Nghiên cứu này xuất phát từ một nút thắt cổ chai trong hóa học tính toán và khoa học vật liệu.
+
+\textbf{Xung đột giữa độ chính xác và chi phí tính toán:}
+\begin{itemize}
+    \item Các phương pháp tính toán lượng tử từ đầu như lý thuyết phiếm hàm mật độ (DFT) cho độ chính xác rất cao, nhưng chi phí tính toán tăng theo cấp số nhân với kích thước hệ thống, khiến các mô phỏng quy mô lớn trở nên bất khả thi.
+    \item Các mạng nơ-ron thế hệ trước học lại các quy luật đó nhanh hơn, nhưng đòi hỏi hàng nghìn đến hàng triệu cấu trúc để huấn luyện, trong khi việc thu thập dữ liệu bằng cơ học lượng tử tốn chi phí cao.
+\end{itemize}
+
+\textbf{Hạn chế của các mô hình bất biến cũ:}
+\begin{itemize}
+    \item Các mô hình bất biến truyền thống chỉ nhìn cấu trúc nguyên tử qua khoảng cách, một đại lượng vô hướng, làm mất toàn bộ thông tin về phương hướng trong không gian ba chiều.
+    \item Đường cong học tập của chúng tuân theo $\epsilon \propto aN^b$, trong đó các cải tiến thường chỉ làm giảm hệ số $a$ (dịch đồ thị xuống) nhưng không thay đổi độ dốc $b$.
+\end{itemize}
+
+\textbf{Mục tiêu của NequIP:}
+\begin{itemize}
+    \item Phá vỡ định kiến học sâu phải cần dữ liệu lớn bằng cách nhúng trực tiếp các quy luật hình học không gian vào kiến trúc mạng.
+    \item Cho phép huấn luyện trên các tập dữ liệu tham chiếu rất nhỏ nhưng có độ chính xác cao nhất, ví dụ phương pháp coupled cluster CCSD(T), vốn quá đắt để thu thập số lượng lớn.
+\end{itemize}
+
+% ============================================================
+\subsubsection{Kiến trúc NequIP và cơ chế tương biến}
+% ============================================================
+
+\textbf{Tổng quan kiến trúc ba khối.}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[>=Stealth, thick]
+    % Định nghĩa style chung cho các khối để tạo sự cân đối tuyệt đối
+    \tikzstyle{block} = [draw, rounded corners, minimum width=2.6cm, minimum height=0.9cm, font=\small\bfseries, align=center]
+
+    % 1. Các khối chính (Tên ngắn gọn, in đậm)
+    \node[block, fill=blue!10] (emb) {Khối Nhúng};
+    \node[block, fill=orange!15, right=2.2cm of emb] (inter) {Khối Tương tác};
+    \node[block, fill=green!15, right=2.2cm of inter] (out) {Khối Đầu ra};
+    
+    % Khối kết quả năng lượng
+    \node[draw, rounded corners, fill=red!10, minimum width=1.2cm, minimum height=0.9cm, font=\small\bfseries, right=1.5cm of out] (E) {$E_{pot}$};
+
+    % 2. Mũi tên liên kết (Ghi chú trên mũi tên)
+    \draw[->] (emb) -- node[midway, above, font=\scriptsize] {Tensor $l \ge 0$} (inter);
+    \draw[->] (inter) -- node[midway, above, font=\scriptsize] {Đặc trưng mới} (out);
+    \draw[->] (out) -- node[midway, above, font=\scriptsize] {Tổng hợp} (E);
+
+    % 3. Ghi chú kỹ thuật bên dưới các khối
+    \node[below=0.3cm of emb, font=\scriptsize, text=blue!70!black, align=center]
+        {Số hiệu nguyên tử \\ $\rightarrow$ Đặc trưng ban đầu};
+        
+    \node[below=0.3cm of inter, font=\scriptsize, text=orange!70!black, align=center]
+        {Cập nhật tương biến \\ $E(3)$ kiểu ResNet};
+        
+    \node[below=0.3cm of out, font=\scriptsize, text=green!60!black, align=center]
+        {Tự tương tác \\ Giữ đại lượng vô hướng ($l=0$)};
+\end{tikzpicture}
+\caption{Luồng dữ liệu qua ba khối chính của mô hình NequIP.}
+\label{fig:nequip-pipeline}
+\end{figure}
+
+\begin{itemize}
+    \item \textbf{Khối nhúng:} Khởi tạo đặc trưng ban đầu của mỗi nguyên tử chỉ từ số hiệu nguyên tử. Ở bước này, tất cả đặc trưng còn là đại lượng vô hướng bậc $l=0$.
+    \item \textbf{Khối tương tác:} Đây là nơi phép tương biến được thực hiện. Mỗi lớp cập nhật đồng thời các tensor hình học ở nhiều bậc $l$ khác nhau, sử dụng cấu trúc dạng ResNet (cộng dồn đầu vào để ổn định huấn luyện) và hàm kích hoạt tương biến SiLU.
+    \item \textbf{Khối đầu ra:} Loại bỏ toàn bộ các tensor có hướng ($l > 0$), chỉ giữ lại thành phần vô hướng $l=0$, đưa qua các lớp tự tương tác để tổng hợp thành một con số duy nhất là thế năng $E_{pot}$.
+\end{itemize}
+
+\vspace{0.5em}
+\textbf{Biểu diễn bằng tensor hình học đa bậc.}
+
+\begin{itemize}
+    \item Các mô hình bất biến cũ chỉ dùng khoảng cách $r_{ij}$ (vô hướng), làm mất thông tin hướng.
+    \item NequIP gắn cho mỗi nguyên tử các tensor hình học ở nhiều bậc: vô hướng $l=0$, vector $l=1$, tensor bậc hai $l=2$, v.v. Môi trường xung quanh nguyên tử được biểu diễn đầy đủ trong không gian ba chiều thực thụ.
+\end{itemize}
+
+\vspace{0.5em}
+\textbf{Tích chập tương biến $E(3)$ bằng hàm điều hòa cầu.}
+
+\begin{itemize}
+    \item Thay vì dùng bộ lọc tích chập thông thường, NequIP dùng tích của hàm xuyên tâm $R(r_{ij})$ và hàm điều hòa cầu $Y_m^{(l)}(\hat{r}_{ij})$:
+\end{itemize}
+
+\begin{equation}
+    W_{ij}^{(l,m)} = R\!\left(r_{ij}\right) \cdot Y_m^{(l)}\!\left(\hat{r}_{ij}\right)
+    \label{eq:nequip-filter}
+\end{equation}
+
+\begin{itemize}
+    \item $R(r_{ij})$ là mạng nơ-ron học tham số từ khoảng cách vô hướng, đảm bảo bất biến với tịnh tiến và phản xạ.
+    \item $Y_m^{(l)}(\hat{r}_{ij})$ là hàm điều hòa cầu bậc $l$, mã hóa hướng của vectơ liên nguyên tử, đảm bảo tương biến với phép xoay.
+    \item Sự kết hợp này đảm bảo toàn bộ quá trình truyền thông điệp tương biến tuyệt đối với $E(3)$.
+\end{itemize}
+
+\vspace{0.5em}
+\textbf{Kết hợp đặc trưng bằng hệ số Clebsch-Gordan.}
+
+Khi kết hợp đặc trưng nguyên tử và bộ lọc trong quá trình truyền thông điệp, phép nhân ma trận thông thường sẽ phá vỡ tính đối xứng. NequIP sử dụng tích tensor hình học thông qua hệ số Clebsch-Gordan $C_{m_1 m_2}^{(l_1 l_2) lm}$:
+
+\begin{equation}
+    \left(f^{(l_1)} \otimes_{\text{CG}} W^{(l_2)}\right)_m^{(l)}
+    = \sum_{m_1, m_2} C_{m_1 m_2}^{(l_1 l_2) lm}\; f_{m_1}^{(l_1)}\; W_{m_2}^{(l_2)}
+    \label{eq:clebsch-gordan}
+\end{equation}
+
+\begin{itemize}
+    \item Hệ số Clebsch-Gordan vay mượn từ vật lý lượng tử, đảm bảo các quy tắc chọn lọc về phép xoay và chẵn lẻ luôn được tuân thủ sau mỗi phép kết hợp đặc trưng.
+    \item Phép tích tensor này đưa kết quả vào đúng không gian biểu diễn của bậc $l$ mới.
+\end{itemize}
+
+\vspace{0.5em}
+\textbf{Tính toán lực miễn phí qua vi phân tự động.}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[>=Stealth, thick]
+    % Các khối chính được tự động giãn cách bằng positioning
+    \node[draw, rounded corners, fill=blue!10, minimum height=0.8cm, font=\small] 
+        (pos) {Vị trí nguyên tử $\{\mathbf{r}_i\}$};
+
+    \node[draw, rounded corners, fill=orange!15, minimum height=0.8cm, font=\small, right=1.5cm of pos] 
+        (net) {NequIP};
+
+    \node[draw, rounded corners, fill=green!20, minimum height=0.8cm, font=\small, right=1.5cm of net] 
+        (Epot) {$E_{pot}$ (vô hướng)};
+
+    % Khối Lực nằm thẳng hàng ngay bên dưới khối Năng lượng
+    \node[draw, rounded corners, fill=red!15, minimum height=0.8cm, font=\small, below=1cm of Epot] 
+        (F) {$\mathbf{F}_i = -\nabla_{\mathbf{r}_i} E_{pot}$};
+
+    % Các mũi tên truyền thẳng (Forward pass)
+    \draw[->] (pos) -- (net);
+    \draw[->] (net) -- (Epot);
+
+    % Mũi tên đạo hàm đi thẳng hàng dọc từ trên xuống
+    \draw[->, dashed] (Epot) -- node[right, font=\scriptsize] {autograd} (F);
+
+    % Đường nối từ Vị trí đến Lực (Vẽ theo đường vuông góc |- cực kỳ sắc nét)
+    % Đi xuống từ pos, sau đó rẽ ngang sang F
+    \draw[->, dashed] (pos.south) |- node[near end, below, font=\scriptsize] {tự động, miễn phí} (F.west);
+\end{tikzpicture}
+\caption{Quy trình tính lực qua vi phân tự động trong NequIP.}
+\label{fig:nequip-autograd}
+\end{figure}
+
+\begin{itemize}
+    \item Mạng chỉ xuất ra một đại lượng vô hướng duy nhất là thế năng toàn hệ $E_{pot}$.
+    \item Lực tác dụng lên từng nguyên tử được suy ra hoàn toàn tự động: $\mathbf{F}_i = -\nabla_{\mathbf{r}_i} E_{pot}$.
+    \item Cách tiếp cận này đảm bảo định luật bảo toàn năng lượng, yếu tố sống còn để các mô phỏng động lực học phân tử chạy ổn định trong thời gian dài mà không tích lũy sai số.
+    \item Với $N$ nguyên tử, mô hình cung cấp đồng thời $3N$ thành phần lực vector mà không cần huấn luyện thêm bất kỳ tham số nào.
+\end{itemize}
+
+% ============================================================
+\subsubsection{Kết quả thực nghiệm và hiệu quả dữ liệu}
+% ============================================================
+
+\textbf{Kết quả nổi bật trên nhiều hệ vật lý.}
+
+\begin{itemize}
+    \item \textbf{Phân tử hữu cơ nhỏ (MD-17 và rMD-17):} NequIP đánh bại toàn bộ các mô hình mạng nơ-ron và cả các phương pháp kernel tốt nhất hiện có trên bộ dữ liệu chuẩn này về cả sai số năng lượng lẫn lực.
+    \item \textbf{Xúc tác dị thể (formate trên bề mặt đồng Cu\{110\}):} Đây là hệ thống phức tạp kết hợp liên kết kim loại, liên kết cộng hóa trị và sự chuyển điện tích tại giao diện rắn/khí. NequIP mô hình hóa chính xác các lực tại giao diện này.
+    \item \textbf{Sự hình thành thủy tinh (liti phosphate $\text{Li}_4\text{P}_2\text{O}_7$):} Mô hình huấn luyện trên dữ liệu trạng thái nóng chảy ở 3000 K nhưng tổng quát hóa hoàn hảo sang trạng thái thủy tinh làm lạnh ở 600 K, tái tạo chính xác hàm phân bố xuyên tâm (RDF) và hàm phân bố góc (ADF).
+    \item \textbf{Vận chuyển ion (LiPS cho pin liti):} NequIP dự đoán hệ số khuếch tán ion liti với sai số chỉ 9\% so với tính toán lượng tử gốc, trong khi các mô hình trước cần tập dữ liệu khổng lồ để đạt kết quả tương đương.
+\end{itemize}
+
+\textbf{Hiệu quả dữ liệu vượt trội.}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}
+\begin{axis}[
+    width=10.5cm, height=7cm,
+    xlabel={Số cấu trúc huấn luyện $N$ (Log)},
+    ylabel={Sai số lực (meV/Å) (Log)},
+    xmode=log, ymode=log,
+    xmin=100, xmax=300000,
+    ymin=1.5, ymax=100,
+    grid=both, grid style={line width=0.2pt, draw=gray!30},
+    legend pos=north east, % Neo sát góc trên cùng bên phải
+    legend style={font=\small, fill=white, fill opacity=0.9, draw=gray!40},
+    tick label style={font=\small},
+    label style={font=\small},
+]
+    % Đường 1: NequIP
+    \addplot[blue!80!black, very thick, mark=square*, mark size=2.5]
+        coordinates {(133,8) (533,5) (1000,3.5) (4000,2)};
+    \addlegendentry{NequIP}
+
+    % Đường 2: DeepMD
+    \addplot[red!80!black, thick, dashed, mark=triangle*, mark size=3]
+        coordinates {(533,40) (1000,30) (4000,18) (10000,12) (133500,8)};
+    \addlegendentry{DeepMD}
+
+    % Đường 3: Kernel
+    \addplot[gray, thick, dotted, mark=o, mark size=2]
+        coordinates {(1000,60) (4000,40) (10000,28) (50000,18) (133500,12)};
+    \addlegendentry{Kernel}
+
+    % Mũi tên so sánh
+    \draw[<->, green!60!black, very thick]
+        (axis cs:133,8) -- (axis cs:133500,8);
+        
+    % Nút chữ được đặt chính xác tại trung bình nhân logarit (x ~ 4213)
+    \node[fill=white, inner sep=2pt, rounded corners=2pt, font=\scriptsize, text=green!60!black]
+        at (axis cs:4213, 8) {$\times$1000 ít dữ liệu hơn};
+        
+\end{axis}
+\end{tikzpicture}
+\caption{Minh họa đường cong học tập của NequIP so với các mô hình tiêu biểu trên bài toán mô phỏng nước.}
+\label{fig:nequip-learning-curve}
+\end{figure}
+
+\begin{itemize}
+    \item NequIP chỉ cần 133 cấu trúc huấn luyện để vượt qua DeepMD được huấn luyện trên 133.500 cấu trúc trong bài toán mô phỏng nước lỏng và băng.
+    \item Mức cải thiện hiệu quả dữ liệu đạt tới ba bậc độ lớn (giảm 1000 lần lượng dữ liệu cần thiết).
+\end{itemize}
+
+\textbf{Động lực học tập.}
+
+\begin{itemize}
+    \item Đây là đóng góp lý thuyết quan trọng được chứng minh ở cuối bài báo. Với các mô hình bất biến, cải tiến kiến trúc thường chỉ làm giảm hệ số $a$ trong $\epsilon \propto aN^b$, tức là đường cong dịch xuống nhưng độ dốc $b$ không đổi.
+    \item NequIP thay đổi về chất: việc đưa tensor bậc cao $l > 0$ vào mạng thực sự làm tăng độ dốc $b$ trong không gian log-log. Điều này có nghĩa là mỗi điểm dữ liệu mới được thêm vào sẽ mang lại nhiều thông tin hơn, tốc độ vỡ lẽ về quy luật vật lý tăng nhanh hơn.
+    \item NequIP không chỉ học tốt hơn từ dữ liệu hiện có, mà còn học hiệu quả hơn ở mỗi bước bổ sung dữ liệu mới.
+\end{itemize}
+
+\textbf{Chi phí tính toán từ hệ số Clebsch-Gordan:}
+\begin{itemize}
+    \item Việc tính toán tích tensor hình học qua hệ số Clebsch-Gordan ở mỗi lớp tương tác có chi phí tính toán đáng kể, đặc biệt khi dùng tensor bậc cao $l_{\max} \geq 2$.
+    \item Thời gian huấn luyện và suy luận của NequIP chậm hơn so với các mô hình bất biến đơn giản hơn khi xử lý các hệ thống cực lớn với hàng nghìn nguyên tử.
+\end{itemize}
+
+\textbf{Giới hạn khi mở rộng quy mô:}
+\begin{itemize}
+    \item Hiệu quả dữ liệu phát huy mạnh nhất ở chế độ dữ liệu ít. Khi lượng dữ liệu đủ lớn, khoảng cách giữa NequIP và các mô hình bất biến thu hẹp lại.
+    \item Mô hình được xây dựng giả định tính đối xứng $E(3)$ tuyệt đối. Với các hệ thống có tính đối xứng gần đúng hoặc bị phá vỡ đối xứng, thiết kế cứng này có thể trở thành ràng buộc không cần thiết.
+\end{itemize}
+
+\textbf{Phụ thuộc vào bán kính ngắt:} Giống như mọi mô hình thế năng nguyên tử, NequIP chỉ xét các tương tác trong một bán kính ngắt cố định. Các tương tác tầm xa (van der Waals, tĩnh điện) cần xử lý riêng biệt và không được mã hóa tự nhiên trong kiến trúc.
+
+\subsection{PointNet: Học sâu trên tập hợp điểm cho bài toán ba chiều}
+\label{sec:pointnet-paper}
+
+\begin{itemize}
+    \item \textbf{Bài báo:} PointNet: Deep Learning on Point Sets for 3D Classification and Segmentation.
+    \item \textbf{Tác giả:} Charles R. Qi, Hao Su, Kaichun Mo, Leonidas J. Guibas thuộc Đại học Stanford.
+    \item \textbf{Nơi xuất bản:} Hội nghị CVPR, 2017.
+    \item \textbf{Liên kết bài báo:} \url{https://arxiv.org/abs/1612.00593}
+    \item \textbf{Liên kết mã nguồn:} \url{https://github.com/charlesq34/pointnet}
+\end{itemize}
+
+\subsubsection{Bài toán và động lực nghiên cứu}
+
+Dữ liệu hình học ba chiều, cụ thể là đám mây điểm mang cấu trúc bất quy tắc. Để đưa vào mạng nơ-ron học sâu, các nghiên cứu trước đó thường phải biến đổi chúng theo các cách như sau:
+
+\begin{itemize}
+    \item \textbf{Mạng voxel:} Chuyển đám mây điểm thành các lưới thể tích ba chiều, tương tự như điểm ảnh nhưng trong không gian ba chiều. Cách này làm dữ liệu trở nên cồng kềnh không cần thiết và gây mất mát chi tiết do hiệu ứng lượng tử hóa.
+    \item \textbf{Mạng đa góc nhìn:} Chiếu không gian ba chiều thành nhiều ảnh hai chiều rồi dùng mạng chập xử lý. Tuy nhiên, phương pháp này gặp khó khăn trong các bài toán cần phân tích từng điểm cụ thể như bài toán phân đoạn điểm.
+\end{itemize}
+
+\textbf{Động lực thiết kế:} PointNet ra đời với mục tiêu lấy trực tiếp đám mây điểm thô làm đầu vào. Quá trình này không cần qua bất kỳ phép biến đổi nào như voxel hóa hay kết xuất hình ảnh.
+ Giải pháp này giúp tiết kiệm bộ nhớ và giữ nguyên bản chất hình học của vật thể.
+
+\subsubsection{Ba đặc tính cốt lõi của dữ liệu đám mây điểm}
+
+Một đám mây điểm được biểu diễn là tập hợp $\{P_i | i=1,...,n\}$, với mỗi điểm có tọa độ $(x, y, z)$. Để xử lý dữ liệu này, mô hình phải giải quyết ba tính chất:
+
+\begin{itemize}
+    \item Đám mây điểm chỉ là một tập hợp. Khi thay đổi thứ tự đọc các điểm, hình dáng vật thể không thay đổi. Do đó, mạng phải duy trì tính bất biến với $N!$ phép hoán vị của tập hợp điểm đầu vào.
+    \item Các điểm nằm trong một không gian có thang đo khoảng cách nhất định, từ đó tạo thành các cấu trúc cục bộ có ý nghĩa.
+    \item Việc xoay hoặc tịnh tiến đám mây điểm không được làm thay đổi nhãn phân loại hay kết quả phân đoạn của toàn bộ vật thể.
+\end{itemize}
+
+\subsubsection{Kiến trúc PointNet và cơ chế hoạt động}
+
+Để giải quyết các đặc tính trên, PointNet sử dụng ba khối kỹ thuật mới:
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[>=Stealth, thick]
+    \tikzstyle{block} = [draw, rounded corners, fill=blue!10, minimum height=1cm, font=\small, align=center]
+    \tikzstyle{tnet} = [draw, rounded corners, fill=orange!15, minimum height=0.8cm, font=\scriptsize, align=center]
+    
+    \node[block] (input) {Đầu vào\\ $n \times 3$};
+    \node[tnet, right=0.8cm of input] (tnet1) {Mạng T-Net\\ (Căn chỉnh)};
+    \node[block, right=0.8cm of tnet1] (mlp1) {Mạng MLP\\ chia sẻ trọng số};
+    \node[block, fill=green!15, right=1.2cm of mlp1] (maxpool) {Gộp cực đại\\ (Hàm đối xứng)};
+    \node[block, fill=red!15, right=1.2cm of maxpool] (global) {Đặc trưng toàn cục\\ $1 \times 1024$};
+
+    \draw[->] (input) -- (tnet1);
+    \draw[->] (tnet1) -- node[midway, above, font=\scriptsize] {$n \times 3$} (mlp1);
+    \draw[->] (mlp1) -- node[midway, above, font=\scriptsize] {$n \times 1024$} (maxpool);
+    \draw[->] (maxpool) -- (global);
+    
+    \node[below=0.3cm of maxpool, font=\scriptsize, text=green!60!black, align=center] {Đảm bảo tính bất biến \\với phép hoán vị};
+
+\end{tikzpicture}
+\caption{Luồng trích xuất đặc trưng toàn cục của PointNet.}
+\label{fig:pointnet-arch}
+\end{figure}
+
+\textbf{Hàm đối xứng:} Thay vì sắp xếp dữ liệu hay dùng mạng tuần tự, PointNet xấp xỉ một hàm chung cho tập hợp thông qua phương trình xấp xỉ. Phương trình được thể hiện qua công thức: $f(\{x_1,...,x_n\}) \approx g(h(x_1),...,h(x_n))$. Trong đó, hàm $h$ là mạng perceptron đa tầng giúp trích xuất đặc trưng độc lập cho từng điểm. Hàm $g$ là hàm gộp cực đại đóng vai trò là một hàm đối xứng. Kết quả trả về là một vector duy nhất không phụ thuộc vào thứ tự điểm đầu vào.
+
+
+\textbf{Mạng căn chỉnh tự động:}
+\begin{itemize}
+    \item PointNet tích hợp một mạng con gọi là mạng T-Net để dự đoán ma trận biến đổi afin. Ma trận này được nhân trực tiếp vào tọa độ điểm đầu vào nhằm căn chỉnh chúng về một không gian chuẩn.
+    \item Khi áp dụng trên không gian đặc trưng, mạng thêm một hàm mất mát chính quy hóa để ép ma trận căn chỉnh gần với ma trận trực giao. Công thức tính hàm mất mát được định nghĩa là: $L_{reg} = ||I - AA^T||_F^2$.
+\end{itemize}
+
+\textbf{Kết hợp đặc trưng cục bộ và toàn cục:}
+\begin{itemize}
+    \item Đối với bài toán phân đoạn điểm, mô hình sẽ ghép nối vector đặc trưng toàn cục của vật thể với vector đặc trưng của từng điểm.
+    \item Kỹ thuật này giúp mỗi điểm vừa có thông tin hình học của riêng nó, vừa nhận thức được bức tranh tổng thể của toàn bộ vật thể.
+\end{itemize}
+
+\subsubsection{Khung xương vật thể và tính bền vững}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[>=Stealth, thick]
+    \node[circle, fill=blue!60, minimum size=0.15cm, inner sep=0pt] at (0,0) {};
+    \node[circle, fill=blue!60, minimum size=0.15cm, inner sep=0pt] at (0.5,0.2) {};
+    \node[circle, fill=blue!60, minimum size=0.15cm, inner sep=0pt] at (1,0) {};
+    \node[circle, fill=blue!60, minimum size=0.15cm, inner sep=0pt] at (0.5,1) {};
+    \node[circle, fill=blue!60, minimum size=0.15cm, inner sep=0pt] at (0.2,0.6) {};
+    \node[circle, fill=blue!60, minimum size=0.15cm, inner sep=0pt] at (0.8,0.4) {};
+    \draw[dashed, gray] (0,0) -- (0.5,0.2) -- (1,0) -- (0.5,1) -- cycle;
+    
+    \node[font=\scriptsize, align=center, below=0.5cm] at (0.5,0) {Tập điểm gốc $S$};
+    
+    \node at (2.5, 0.5) {\Large $\xrightarrow{\text{Gộp cực đại}}$};
+    
+    \node[circle, fill=red!80, minimum size=0.2cm, inner sep=0pt] at (4.5,0.1) {};
+    \node[circle, fill=red!80, minimum size=0.2cm, inner sep=0pt] at (5,0.8) {};
+    \node[circle, fill=red!80, minimum size=0.2cm, inner sep=0pt] at (4,0.6) {};
+    \draw[thick, red, opacity=0.5] (4.5,0.1) -- (5,0.8) -- (4,0.6) -- cycle;
+    
+    \node[font=\scriptsize, align=center, below=0.5cm] at (4.5,0) {Tập điểm tới hạn $\mathcal{C}_S$};
+\end{tikzpicture}
+\caption{Mô phỏng nguyên lý của mạng lưới.}
+\label{fig:pointnet-critical}
+\end{figure}
+
+\textbf{Nguyên lý của hàm gộp cực đại:}
+\begin{itemize}
+    \item PointNet học cách tóm tắt hình dạng bằng một tập hợp thưa thớt các điểm quan trọng, được gọi chung là điểm tới hạn. Nhờ nguyên lý này, mạng lưới trở nên cực kỳ bền vững trước các dữ liệu nhiễu.
+    \item Khi bị xóa ngẫu nhiên đến $50\%$ số điểm của vật thể, độ chính xác của mạng chỉ sụt giảm rất nhẹ từ $2.4\%$ đến $3.8\%$. Mạng vẫn hoạt động ổn định với độ chính xác trên $80\%$ ngay cả khi đầu vào bị trộn lẫn $20\%$ các điểm nhiễu ngoại lai.
+\end{itemize}
+
+\subsubsection{Đánh giá hiệu năng và độ phức tạp tính toán}
+
+\begin{itemize}
+    \item Việc từ bỏ biểu diễn bằng điểm ảnh thể tích hay hình ảnh đã mang lại cho PointNet lợi thế về mặt thuật toán hệ thống.
+    \item \textbf{Thời gian và không gian:} Độ phức tạp về không gian và thời gian của mô hình chỉ là $O(N)$, nghĩa là tăng tuyến tính theo số lượng điểm đầu vào $N$.
+    \item \textbf{Hiệu suất cao:} PointNet tốn ít chi phí tính toán hơn 141 lần so với mạng đa góc nhìn, nhưng vẫn giữ được hiệu năng dẫn đầu trên các bài toán phân đoạn và phân loại.
+    \item \textbf{Dung lượng nhẹ:} Mạng lưới chỉ có khoảng $3.5$ triệu tham số, ít hơn 17 lần so với các kiến trúc mạng đa góc nhìn thông thường.
+    \item \textbf{Tính ứng dụng:} Nhờ vào dung lượng nhẹ và tốc độ xử lý nhanh, mô hình này rất phù hợp cho các ứng dụng thực tế đòi hỏi phản hồi theo thời gian thực.
+\end{itemize}
+
 
 % ─────────────────────────────────────────────────────────────
 % ỨNG DỤNG & GIỚI HẠN
@@ -182,6 +1195,17 @@ Trong thực tiễn, đối với dữ liệu không gian 3 chiều như đồ t
 %   - SO(2)/SE(3) symmetries trong grasp learning, manipulation
 %   - Kết quả: sample-efficient learning
 %   (Wang et al CoRL 2021, ICLR 2022)
+
+% trình bày hệ thống theo 3 ý chính sau, vốn là trọng tâm của tutorial:
+% Định lý cốt lõi về MDPs: Cần nêu bật chứng minh rằng trong Quá trình ra quyết định Markov (MDPs), các chính sách tối ưu (optimal policies) mang tính đẳng biến
+% . Về mặt toán học: π 
+% %  (g⋅state)=g⋅π 
+% %  (state) với mọi g∈G
+% . Nghĩa là, nếu bạn xoay (rotate) trạng thái hoặc vật thể đầu vào, hành động (action) tương ứng của robot cũng phải được xoay theo đúng một góc như vậy
+% Khai thác các nhóm đối xứng không gian: Các công trình này ứng dụng mạng nơ-ron đẳng biến với nhóm xoay SO(2) hoặc nhóm Euclid SE(3) (bao gồm cả xoay và tịnh tiến) vào bài toán điều khiển thao tác (manipulation) và nhận diện điểm gắp (grasp learning)
+% Hiệu quả dữ liệu (Sample-Efficiency): Nhờ mã hóa trực tiếp tính đẳng biến vào mô hình thay vì bắt robot phải tự học lại các góc độ xoay từ số 0, các công trình này cho phép robot học cách gắp thả vật thể cực kỳ nhanh và tiết kiệm dữ liệu (sample-efficient learning)
+
+
 
 \subsection{Giới hạn: Vấn đề Symmetry Breaking}
 \label{subsec:symmetry-breaking}
