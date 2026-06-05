@@ -1,0 +1,101 @@
+Chào bạn, với tư cách là một Senior ML Engineer, mình đã tổng hợp, tinh chỉnh và "đóng gói" lại toàn bộ kịch bản báo cáo cho **Hướng 2: Xây dựng các mô hình tương biến (Constructing Equivariant Models)**. Kịch bản này được thiết kế để bao phủ 100% tinh hoa từ Tutorial NeurIPS 2025 và "vũ khí hạng nặng" là bài báo NequIP.
+
+Dưới đây là phiên bản hoàn thiện nhất mà bạn có thể dùng trực tiếp cho buổi thuyết trình:
+
+### KỊCH BẢN BÁO CÁO: HƯỚNG 2 - XÂY DỰNG TÍNH ĐỐI XỨNG TỪ LÕI KIẾN TRÚC
+
+**Mở đầu:** Nếu Hướng 1 xem mô hình AI như một "hộp đen" và cố gắng dạy tính đối xứng thông qua việc thao tác dữ liệu, thì Hướng 2 lại chọn con đường khó hơn nhưng triệt để hơn: Thiết kế lại toàn bộ kiến trúc của mạng nơ-ron để nó tự động tuân thủ các quy luật hình học và vật lý ngay từ trong lõi.
+
+#### PHẦN 1: CÁC LỚP TUYẾN TÍNH TƯƠNG BIẾN & CHIA SẺ TRỌNG SỐ (Linear Equivariant Layers)
+
+* 
+**Nguyên lý cơ bản:** Để xây dựng kiến trúc tương biến, cách cơ bản nhất là kết hợp một phép toán tuyến tính với một hàm kích hoạt phi tuyến tính. Ma trận trọng số $W$ phải tuân theo một phương trình ràng buộc nghiêm ngặt để duy trì tính đối xứng: $PWP^{-1} = W$.
+
+
+* 
+**Cơ chế Chia sẻ tham số (Parameter Sharing):** Phương trình trên ép mạng lưới phải "chia sẻ trọng số". Nghĩa là, các phần tử trong ma trận $W$ ở những vị trí có cùng tính đối xứng buộc phải có giá trị giống hệt nhau.
+
+
+* **Ví dụ minh họa:**
+* 
+*Phép dịch chuyển 1D (Shift in 1D):* Dẫn đến ma trận có cấu trúc lặp lại theo đường chéo, tạo ra nguyên lý của Mạng tích chập (Convolution) từ toán học cơ bản.
+
+
+* 
+*Phép hoán vị tập hợp (Permutations):* Làm cho ma trận tiêu giảm cực độ, tạo ra nền tảng cho các kiến trúc lừng danh xử lý tập hợp như DeepSets và PointNet.
+
+
+
+
+* 
+**Nhược điểm:** Các lớp này đôi khi quá hạn chế (too restrictive) và thiếu khả năng biểu diễn cho các bài toán phức tạp.
+
+
+
+#### PHẦN 2: TÍCH CHẬP NHÓM (Group Convolution)
+
+* Để giải quyết giới hạn tuyến tính, khái niệm này được nâng cấp thành Tích chập Nhóm. Thay vì chỉ trượt (slide) một bộ lọc trên không gian phẳng như CNN truyền thống, tích chập nhóm cho phép bộ lọc trượt qua toàn bộ các phép biến đổi của một nhóm (ví dụ: dịch chuyển, xoay, lật).
+
+
+* Về mặt toán học, mô hình tính tổng qua toàn bộ nhóm biến đổi, tạo ra các mạng nơ-ron tích chập tương biến nhóm cực kỳ mạnh mẽ.
+
+
+
+#### PHẦN 3: VƯỢT QUA GIỚI HẠN BẰNG TENSOR VÀ LÝ THUYẾT BIỂU DIỄN
+
+* 
+**Nút thắt của Bổ đề Schur (Schur's lemma):** Lý thuyết biểu diễn chứng minh rằng với một số nhóm liên tục, các ánh xạ tuyến tính tương biến bị giới hạn nghiêm trọng. Nếu chỉ dùng MLP thông thường, AI sẽ mất đi khả năng xấp xỉ vạn năng (universal approximation).
+
+
+* 
+**Giải pháp Tensor Hình học:** Các mô hình tiên tiến dùng tích tensor (tensor products) của các vector để tạo ra một không gian biểu diễn hình học vô cùng phong phú.
+
+
+* 
+**Lý thuyết Bất biến (Invariant Theory):** Định lý cơ bản thứ nhất cho nhóm $O(d)$ chỉ ra rằng mọi hàm số bất biến đều có thể được tham số hóa dễ dàng thông qua các tích vô hướng ($v_i^T v_j$) của các vector đầu vào.
+
+
+
+#### PHẦN 4: MẠNG ĐỒ THỊ TƯƠNG BIẾN & "VŨ KHÍ" NEQUIP (Paper 2)
+
+*(Đây là cú chuyển pass hoàn hảo để Thịnh lên trình bày cụ thể về Paper NequIP)*
+
+* 
+**Cơ chế Mạng Đồ thị:** Trong hệ thống nguyên tử/phân tử, dữ liệu là đồ thị mang tính đối xứng $E(3)$. Khác với GNN truyền thống, GNN tương biến (Equivariant Message Passing) cập nhật liên tục cả tọa độ không gian và đặc trưng nút.
+
+
+* **Sự đột phá của kiến trúc NequIP:**
+* Thay vì chỉ hoạt động trên các đại lượng vô hướng bất biến, NequIP sử dụng tích chập tương biến $E(3)$ cho sự tương tác của các tensor hình học (scalar, vector, tensor bậc cao).
+
+
+* Các bộ lọc tích chập được thiết kế cực kỳ tinh vi dưới dạng tích của các hàm xuyên tâm $R(r_{ij})$ và các hàm điều hòa cầu $Y_m^{(l)}(\hat{r}_{ij})$.
+
+
+* Phép tích tensor được tính toán chặt chẽ bằng cách co rút với các hệ số Clebsch-Gordan.
+
+
+
+
+* 
+**Kết quả ấn tượng:** NequIP đạt độ chính xác hóa lượng tử hàng đầu thế giới dù sử dụng dữ liệu huấn luyện ít hơn tới 3 bậc độ lớn (giảm 1000 lần) so với các mô hình trước đó.
+
+
+
+#### PHẦN 5: XU HƯỚNG TƯƠNG LAI - HỌC TRÊN KHÔNG GIAN TRỌNG SỐ (Weight Space Learning)
+
+* 
+**Mạng nơ-ron cũng là Dữ liệu:** Hướng đi mới nhất hiện nay là coi chính các mô hình AI là một dạng dữ liệu.
+
+
+* 
+**Tính đối xứng tham số (Neural Parameter Symmetries):** Các biến đổi bên trong mạng (như hoán vị vị trí các nơ-ron ẩn hay sự bất biến về quy mô) hoàn toàn không làm thay đổi chức năng của toàn bộ mạng.
+
+
+* 
+**Ứng dụng vĩ mô:** Sự nhận thức về nhóm đối xứng này mở ra khả năng căn chỉnh (align) và lai ghép (merge) hàng loạt mô hình AI lớn lại với nhau. Chúng ta có thể tận dụng hàng triệu mô hình mã nguồn mở hiện có để tạo ra siêu mô hình mới mà không cần tốn chi phí huấn luyện lại từ đầu.
+
+
+
+---
+
+**Nhận xét cá nhân:** Cấu trúc này không chỉ đảm bảo sự logic, đi từ nền tảng dễ hiểu đến các phương trình cốt lõi phức tạp, mà còn kết hợp nhịp nhàng giữa lý thuyết chung của hội nghị NeurIPS 2025 và tính ứng dụng cụ thể của bài báo NequIP. Chúc nhóm bạn có một buổi thuyết trình xuất sắc!

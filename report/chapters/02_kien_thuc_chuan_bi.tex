@@ -1,51 +1,654 @@
 \section{Kiến thức nền tảng}
 \label{sec:kien-thuc-nen}
+ 
+Chương này thiết lập ngôn ngữ toán học dùng xuyên suốt báo cáo. Kim chỉ nam xuyên suốt của Geometric Machine Learning là khái niệm đối xứng: những thuộc tính của dữ liệu được bảo toàn dưới tác động của một họ phép biến đổi~\cite{bronstein2021geometric}. Để mô hình hoá ý tưởng này một cách chặt
+chẽ, chúng tôi trình bày theo trình tự từ trực giác đến hình thức: trước hết là
+hai khái niệm cốt lõi bất biến và đẳng biến; tiếp đó là công cụ đại số dùng để định
+nghĩa chính xác họ phép biến đổi hay còn gọi là lý thuyết nhóm, bao gồm tác động nhóm, biểu diễn nhóm và quỹ đạo; cuối cùng quay lại phát biểu hình thức của bất biến và đẳng biến dưới ngôn ngữ nhóm.
 
-% ============================================================
-% MỤC TIÊU CHƯƠNG:
-% Cung cấp nền tảng toán học tối thiểu cần thiết để hiểu
-% toàn bộ các phương pháp ở Chương 3 và 4.
-% Nguồn: Slides Part 1 (Groups, Group Actions, Representations)
-% ============================================================
+\subsection{Khái niệm về đối xứng, bất biến và tương biến}
+\label{subsec:doi-xung-bat-bien}
+ 
+Một cách trực quan, đối xứng của một đối tượng là phép biến đổi tác động
+lên đối tượng đó nhưng giữ nguyên những thuộc tính mà ta quan tâm. Chẳng hạn,
+nếu $x$ là một bức ảnh chứa con mèo và $T$ là phép tịnh tiến con mèo sang vị trí khác trong khung hình, thì bản chất đây là con mèo
+hoàn toàn độc lập với vị trí của nó. Khi xây dựng một mô hình $f$ (ví dụ bộ phân
+loại, bộ phân đoạn ảnh, hay mạng nơ-ron đồ thị), ta mong muốn $f$ tôn
+trọng các đối xứng này. Có hai cách tôn trọng cơ bản, tương ứng với hai loại
+bài toán: bất biến và tương biến / đẳng biến.
+ 
+\begin{definition}[Phép đối xứng]
+\label{def:doi-xung}
+Cho đối tượng $x$ thuộc không gian dữ liệu $\mathcal{X}$ và một phép biến đổi
+$T:\mathcal{X}\to\mathcal{X}$. Ta nói $T$ là một phép đối xứng đối với
+một thuộc tính $P$ nếu $P\bigl(T(x)\bigr)=P(x)$ với mọi $x$. Tập hợp tất cả các
+phép đối xứng đối với một họ thuộc tính cho trước tạo thành một nhóm, cấu trúc sẽ được định nghĩa ở mục~\ref{subsec:group-theory}.
+\end{definition}
+ 
+\subsubsection{Tính bất biến}
+\label{ssub:invariance}
+ 
+\begin{definition}[Bất biến]
+\label{def:bat-bien}
+Hàm $f:\mathcal{X}\to\mathcal{Y}$ được gọi là bất biến đối với phép biến
+đổi $T$ nếu
+\begin{equation}
+\label{eq:invariance}
+f\bigl(T(x)\bigr) = f(x), \qquad \forall x\in\mathcal{X}.
+\end{equation}
+Nói cách khác, đầu ra của mô hình không thay đổi khi đầu vào bị biến đổi
+bởi $T$.
+\end{definition}
+ 
+\begin{example}[Phân loại ảnh: bất biến với phép tịnh tiến]
+\label{vd:cho}
+Gọi $x$ là ảnh đầu vào và $T=\tau_v$ là phép tịnh tiến nội dung ảnh theo vector
+$v$. Bộ phân loại $f$ cần thoả $f(\tau_v(x))=f(x)$: dù con chó nằm ở góc nào
+trong khung hình, nhãn dự đoán vẫn là chó.
+\end{example}
 
-\subsection{Đối xứng và vai trò trong học máy}
-\label{subsec:doi-xung}
-% Trình bày: Symmetry là gì? Ví dụ trực quan trong thực tế
-% (ảnh phân loại, đám mây điểm, đồ thị, neural networks).
-% Tại sao encoding symmetry giúp: fewer degrees of freedom,
-% data efficiency, OOD generalization.
-% Dẫn nguồn: NequIP (3 bậc ít data hơn), scaling laws.
+\begin{figure}[!htbp]
+\centering
+\begin{tikzpicture}[font=\small,
+   frame/.style={draw=black!45, rounded corners=2pt,
+                 minimum width=1.6cm, minimum height=1.6cm},
+   fbox/.style={draw=gmlblue, fill=gmlblue, text=white, rounded corners=3pt,
+                minimum width=0.9cm, minimum height=0.9cm, font=\bfseries\large},
+   outlbl/.style={draw=green!55!black, fill=green!12, rounded corners=2pt,
+                  inner sep=4pt, font=\bfseries}]
+  % khung x: con chó ở góc dưới-trái
+  \node[frame] (f1) at (0,2.05) {};
+  \dogface{-0.32}{1.78}{0.56}
+  \node[anchor=south] at (f1.north) {$x$};
+  % khung tau_v(x): con chó ở góc trên-phải
+  \node[frame] (f2) at (0,-0.05) {};
+  \dogface{0.32}{0.22}{0.56}
+  \node[anchor=north] at (f2.south) {$\tau_v(x)$};
+  % mũi tên tịnh tiến
+  \draw[-{Latex[length=2mm]}, gmlorange, very thick] (f1.south) -- (f2.north);
+  \node[gmlorange, anchor=west, font=\itshape] at (0.18,1.0) {$\tau_v$ (tịnh tiến)};
+  % bộ phân loại f
+  \node[fbox] (f) at (3.4,1.0) {$f$};
+  \draw[-{Latex[length=1.8mm]}, thick] (f1.east) .. controls (1.9,2.05) and (2.4,1.4) .. (f.north west);
+  \draw[-{Latex[length=1.8mm]}, thick] (f2.east) .. controls (1.9,-0.05) and (2.4,0.6) .. (f.south west);
+  % đầu ra
+  \node[outlbl] (o) at (5.5,1.0) {Chó};
+  \draw[-{Latex[length=1.8mm]}, thick] (f.east) -- (o.west);
+\end{tikzpicture}
+\caption[Bất biến với phép tịnh tiến]{Bất biến với phép tịnh tiến.\protect\\[2pt]
+\textit{Ghi chú: Dù con chó nằm ở vị trí nào trong khung hình ($x$ hay bản tịnh tiến $\tau_v(x)$), bộ phân loại $f$ vẫn cho cùng một nhãn, tức $f(\tau_v(x))=f(x)$.}}
+\label{fig:bat-bien-anh}
+\end{figure}
 
-\subsection{Tính Bất biến và Tính Đẳng biến}
-\label{subsec:invariance-equivariance}
-% Trình bày:
-%   - Invariance: f(T(x)) = f(x)
-%   - Equivariance: f(T(x)) = T(f(x))
-%   - Sơ đồ giao hoán (commutative diagram)
-%   - Invariance là trường hợp đặc biệt của Equivariance
-%     (scalar output, transformation = identity)
-% Ví dụ: shift/rotation invariance trong image classification,
-%   permutation equivariance trong node embedding.
+\FloatBarrier
 
-\subsection{Lý thuyết Nhóm cơ bản}
+\begin{example}[Phân loại đồ thị: bất biến với phép hoán vị]
+\label{vd:graph-inv}
+Một đồ thị $n$ đỉnh thường được biểu diễn bằng ma trận kề $A\in\mathbb{R}^{n\times
+n}$, trong đó cách đánh số đỉnh là hoàn toàn tuỳ ý. Nếu ta đánh số lại các đỉnh
+bằng một hoán vị, biểu diễn chuyển thành $PAP^{\!\top}$ với $P$ là ma trận hoán
+vị, nhưng vẫn là cùng một đồ thị. Do đó một mô hình dự đoán thuộc tính ở
+mức đồ thị, ví dụ phân tử có độc hay không, cần bất biến hoán vị:
+\begin{equation}
+\label{eq:graph-inv}
+f\bigl(PAP^{\!\top}\bigr) = f(A), \qquad \forall P\in\mathcal{P}_n .
+\end{equation}
+
+\begin{figure}[!htbp]
+\centering
+\begin{tikzpicture}[font=\small,
+   nd/.style={circle, draw=gmlblue, fill=gmlblue!12, minimum size=6.5mm,
+              inner sep=0pt, font=\small},
+   fbox/.style={draw=gmlblue, fill=gmlblue, text=white, rounded corners=3pt,
+                minimum width=0.9cm, minimum height=0.9cm, font=\bfseries\large},
+   outlbl/.style={draw=green!55!black, fill=green!12, rounded corners=2pt,
+                  inner sep=4pt, font=\bfseries}]
+  % Đồ thị A (đánh số 1,2,3,4)
+  \begin{scope}
+    \node[nd] (a1) at (0,1) {1}; \node[nd] (b1) at (1,1) {2};
+    \node[nd] (c1) at (1,0) {3}; \node[nd] (d1) at (0,0) {4};
+    \draw[gmlblue!70] (a1)--(b1) (b1)--(c1) (c1)--(d1) (d1)--(a1) (a1)--(c1);
+    \node[anchor=east] at (-0.35,0.5) {$A$};
+  \end{scope}
+  % Đồ thị PAP^T (cùng cấu trúc, đánh số lại 3,4,1,2)
+  \begin{scope}[shift={(0,-2.4)}]
+    \node[nd] (a2) at (0,1) {3}; \node[nd] (b2) at (1,1) {4};
+    \node[nd] (c2) at (1,0) {1}; \node[nd] (d2) at (0,0) {2};
+    \draw[gmlblue!70] (a2)--(b2) (b2)--(c2) (c2)--(d2) (d2)--(a2) (a2)--(c2);
+    \node[anchor=east] at (-0.35,0.5) {$PAP^{\!\top}$};
+  \end{scope}
+  % mũi tên hoán vị
+  \draw[-{Latex[length=2mm]}, gmlorange, thick]
+        (1.35,0.5) .. controls (1.9,0.0) and (1.9,-1.4) .. (1.35,-1.9);
+  \node[gmlorange, font=\itshape\footnotesize, anchor=west] at (2.15,-0.7) {$P$ (đánh số lại)};
+  % bộ phân loại f
+  \node[fbox] (f) at (5.5,-0.7) {$f$};
+  \draw[-{Latex[length=1.8mm]}, thick] (1.05,0.5)  -- (4.0,0.5)  .. controls (4.7,0.4)  .. (f.north west);
+  \draw[-{Latex[length=1.8mm]}, thick] (1.05,-1.9) -- (4.0,-1.9) .. controls (4.7,-1.8) .. (f.south west);
+  % đầu ra
+  \node[outlbl] (o) at (7.4,-0.7) {``Độc''};
+  \draw[-{Latex[length=1.8mm]}, thick] (f.east) -- (o.west);
+\end{tikzpicture}
+\caption[Bất biến với phép hoán vị]{Bất biến với phép hoán vị.\protect\\[2pt]
+\textit{Ghi chú: Đồ thị $A$ và bản đánh số lại $PAP^{\top}$ thực chất là cùng một đồ thị, nên mô hình dự đoán ở mức đồ thị phải cho cùng kết quả, tức $f(PAP^{\top})=f(A)$.}}
+\label{fig:bat-bien-do-thi}
+\end{figure}
+Lập luận tương tự áp dụng cho point cloud: một vật thể được mô tả bởi một tập vector toạ độ, và thứ tự liệt kê các vector này không mang ý nghĩa hình học nên mô hình cần bất biến với hoán vị các điểm.
+\end{example}
+ 
+\subsubsection{Tính đẳng biến / tương biến}
+\label{ssub:equivariance}
+ 
+Bất biến phù hợp khi đầu ra là một đại lượng toàn cục. Tuy nhiên nhiều bài toán có đầu ra mang cấu trúc như toạ độ, lực, mặt nạ
+phân đoạn. Khi đó ta không muốn đầu ra bất biến, mà muốn nó biến thiên một cách tương ứng với đầu vào.
+ 
+\begin{definition}[Đẳng biến]
+\label{def:dang-bien}
+Hàm $f:\mathcal{X}\to\mathcal{Y}$ được gọi là đẳng biến đối với phép biến đổi $T$ nếu tồn tại phép biến đổi tương ứng $T'$ trên không
+gian đầu ra sao cho
+\begin{equation}
+\label{eq:equivariance}
+f\bigl(T(x)\bigr) = T'\bigl(f(x)\bigr), \qquad \forall x\in\mathcal{X}.
+\end{equation}
+Trong trường hợp đặc biệt thường gặp khi $\mathcal{X}$ và $\mathcal{Y}$ chịu
+cùng một phép biến đổi $T'=T$, điều kiện trở thành
+$f\bigl(T(x)\bigr)=T\bigl(f(x)\bigr)$: biến đổi đầu vào rồi đưa qua mô hình cho cùng kết quả với đưa qua mô hình rồi biến đổi đầu ra.
+\end{definition}
+ 
+\begin{example}[Nhúng nút trên đồ thị: đẳng biến hoán vị]
+\label{vd:node-equiv}
+Xét bài toán học nhúng cho từng nút bằng mạng nơ-ron đồ thị hoặc Transformer: đầu vào là tập đặc trưng nút, đầu ra là tập biểu diễn
+tương ứng theo cùng thứ tự. Vì thứ tự liệt kê nút là tuỳ ý nhưng đồ thị không đổi, nếu ta hoán vị đầu vào thì đầu ra phải bị hoán vị y hệt:
+\begin{equation}
+f(PX) = P f(X), \qquad \forall P\in\mathcal{P}_n .
+\end{equation}
+\end{example}
+
+\begin{figure}[H]\centering
+\begin{tikzpicture}[font=\small,
+  gnn/.style={draw=gmlblue,fill=gmlblue,text=white,rounded corners=2pt,
+              minimum width=1.1cm,minimum height=0.65cm,font=\bfseries\footnotesize},
+  parr/.style={-{Latex[length=2.2mm]},gmlorange,very thick}]
+ 
+% LEFT graph: node1=xanh(top), 2=cam(botL), 3=lục(botR)
+\draw[black!30,line width=0.7pt](.5,.95)--(0,0)--(1,0)--cycle;
+\filldraw[c1!20,draw=c1,line width=0.8pt](.5,.95)circle(.22);
+\filldraw[c2!20,draw=c2,line width=0.8pt](0,0)circle(.22);
+\filldraw[c3!20,draw=c3,line width=0.8pt](1,0)circle(.22);
+\node[c1!70!black,font=\footnotesize\bfseries]at(.5,.95){1};
+\node[c2!70!black,font=\footnotesize\bfseries]at(0,0){2};
+\node[c3!70!black,font=\footnotesize\bfseries]at(1,0){3};
+\node[font=\footnotesize]at(.5,-.40){$X$};
+ 
+\draw[parr](1.55,.45)--(2.65,.45)node[midway,above,font=\footnotesize]{$P$};
+ 
+% RIGHT graph: P=(12) hoán vị → node1 mang đặc trưng cam, node2 mang xanh
+\begin{scope}[shift={(3.2,0)}]
+\draw[black!30,line width=0.7pt](.5,.95)--(0,0)--(1,0)--cycle;
+\filldraw[c2!20,draw=c2,line width=0.8pt](.5,.95)circle(.22);
+\filldraw[c1!20,draw=c1,line width=0.8pt](0,0)circle(.22);
+\filldraw[c3!20,draw=c3,line width=0.8pt](1,0)circle(.22);
+\node[c2!70!black,font=\footnotesize\bfseries]at(.5,.95){1};
+\node[c1!70!black,font=\footnotesize\bfseries]at(0,0){2};
+\node[c3!70!black,font=\footnotesize\bfseries]at(1,0){3};
+\node[font=\footnotesize]at(.5,-.40){$PX$};
+\end{scope}
+ 
+\node[gnn](fL)at(.5,-1.2){GNN};
+\node[gnn](fR)at(3.7,-1.2){GNN};
+\draw[-{Latex[length=1.6mm]}](.5,-.48)--(fL.north);
+\draw[-{Latex[length=1.6mm]}](3.7,-.48)--(fR.north);
+ 
+% Embedding bars LEFT: h1(xanh) h2(cam) h3(lục)
+\foreach \i/\col/\lab in {0/c1/$h_1$,1/c2/$h_2$,2/c3/$h_3$}{
+  \filldraw[\col!22,draw=\col,line width=0.6pt,rounded corners=1pt]
+    (-.18+\i*.40,-2.18)rectangle(.22+\i*.40,-1.82);
+  \node[\col!70!black,font=\tiny]at(.02+\i*.40,-2.00){\lab};}
+\draw[-{Latex[length=1.6mm]}](fL.south)--(.5,-1.82);
+\node[font=\tiny]at(.5,-2.38){$H=f(X)$};
+ 
+% Embedding bars RIGHT: h2(cam) h1(xanh) h3(lục) [hoán vị]
+\foreach \i/\col/\lab in {0/c2/$h_2$,1/c1/$h_1$,2/c3/$h_3$}{
+  \filldraw[\col!22,draw=\col,line width=0.6pt,rounded corners=1pt]
+    (3.02+\i*.40,-2.18)rectangle(3.42+\i*.40,-1.82);
+  \node[\col!70!black,font=\tiny]at(3.22+\i*.40,-2.00){\lab};}
+\draw[-{Latex[length=1.6mm]}](fR.south)--(3.7,-1.82);
+\node[font=\tiny]at(3.7,-2.38){$PH=f(PX)$};
+ 
+\draw[parr](1.45,-2.00)--(2.65,-2.00)node[midway,above,font=\footnotesize]{$P$};
+\end{tikzpicture}
+\caption[Đẳng biến hoán vị của GNN]{Đẳng biến hoán vị của GNN.\protect\\[2pt]
+\textit{Ghi chú: Khi hoán vị thứ tự nút ở đầu vào ($PX$), nhúng đầu ra bị hoán vị theo đúng thứ tự đó ($PH$), tức $f(PX)=P f(X)$. Màu sắc theo dõi danh tính nút xuyên suốt.}}
+\label{fig:equiv-node}
+\end{figure}
+ 
+\begin{example}[Dự đoán lực tác dụng lên phân tử: tính đẳng biến]
+\label{vd:molecule-equivariance}
+Xét bài toán dự đoán các vector lực tác dụng lên từng nguyên tử của một phân tử hóa học. Nếu ta xoay toàn bộ cấu trúc phân tử này một góc $-90^\circ$ trong không gian, thì các vector lực tương ứng được biểu diễn bằng các mũi tên màu đỏ cũng phải xoay theo đúng một góc $-90^\circ$ tương ứng. Tính chất này tuân theo hệ thức đẳng biến chuẩn xác: $f(T(x)) = T(f(x))$, giúp mô hình giữ được sự nhất quán vật lý bất kể định hướng của phân tử trong không gian.
+\end{example}
+
+
+
+\begin{figure}[H]\centering
+\begin{tikzpicture}[font=\small,
+  farr/.style={-{Latex[length=2.2mm]},red!65!black,line width=1.1pt},
+  garr/.style={-{Latex[length=2.4mm]},gmlorange,very thick}]
+ 
+% === Macro vẽ phân tử H2O sử dụng đặt tên Node để không bị đè chữ ===
+\newcommand{\water}{%
+  \draw[gmlblue!40,line width=1.1pt](0,0)--(-.72,-.72);
+  \draw[gmlblue!40,line width=1.1pt](0,0)--(.72,-.72);
+  
+  % Biến đường tròn thành Node có kích thước cố định để mũi tên xuất phát từ rìa
+  \node[circle, fill=gmlblue!20, draw=gmlblue, line width=0.9pt, minimum size=0.52cm, inner sep=0pt, gmlblue!80!black, font=\tiny\bfseries] (O) at (0,0) {O};
+  \node[circle, fill=gmlblue!8, draw=gmlblue!60, line width=0.7pt, minimum size=0.36cm, inner sep=0pt, gmlblue!65!black, font=\tiny] (H1) at (-.72,-.72) {H};
+  \node[circle, fill=gmlblue!8, draw=gmlblue!60, line width=0.7pt, minimum size=0.36cm, inner sep=0pt, gmlblue!65!black, font=\tiny] (H2) at (.72,-.72) {H};
+  
+  % Vẽ lực xuất phát từ cạnh của các nguyên tử thay vì từ tâm cụm
+  \draw[farr](O)--(.44,.60);        % lực trên O
+  \draw[farr](H1)--(-1.26,-.98); % lực trên H1
+  \draw[farr](H2)--(1.24,-.44);  % lực trên H2
+}
+ 
+% ---- TRÁI: phân tử gốc x (Nâng trục y lên 1.65 để tạo khoảng cách an toàn với chữ) ----
+\begin{scope}[shift={(1.2,1.65)}]
+  \water
+\end{scope}
+\node[font=\footnotesize]at(1.2,.35){$x$};
+\node[red!62!black,font=\scriptsize]at(1.2,.08){lực $= f(x)$};
+ 
+% ---- Mũi tên tác vụ T ----
+\draw[garr](2.55,1.1)--(3.85,1.1)node[midway,above,font=\footnotesize]{$T$};
+\node[gmlorange,font=\scriptsize]at(3.20,.77){quay $-90^{\circ}$};
+ 
+% ---- PHẢI: T(x) (Toàn bộ được xoay chuẩn toán học -90 độ) ----
+\begin{scope}[shift={(5.6,1.65)},rotate=-90]
+  \water
+\end{scope}
+\node[font=\footnotesize]at(5.6,.35){$T(x)$};
+\node[red!62!black,font=\scriptsize,align=center]at(5.6,.08){lực $=T(f(x))=f(T(x))$};
+ 
+% ---- Công thức tổng quát hàng dưới ----
+\node[gmlblue!70!black,font=\scriptsize]at(3.4,-.45)
+  {$f(T(x))=T(f(x))$};
+\end{tikzpicture}
+\caption{Đẳng biến $SE(3)$ trong dự đoán lực phân tử.}
+\vspace{2pt}
+\begin{center}
+\small\textit{Ghi chú: Khi quay toàn bộ phân tử bằng phép biến đổi $T$, các vector lực dự đoán (mũi tên đỏ) cũng quay theo đúng phép biến đổi đó, tức $f(T(x))=T(f(x))$.}
+\end{center}
+\label{fig:equiv-se3}
+\end{figure}
+
+\begin{infobox}{Bất biến là trường hợp đặc biệt của đẳng biến}
+Cho hàm đẳng biến thỏa mãn phương trình tổng quát:
+\begin{equation}
+\label{eq:equivariance-special}
+f(T(x)) = T'(f(x)) \quad \forall x \in \mathcal{X}
+\end{equation}
+Trong đó $T'$ là phép biến đổi tương ứng tác động lên không gian đầu ra.
+
+Nếu ta xét trường hợp đặc biệt khi $T' = \mathrm{Id}$ tức phép đồng nhất, nghĩa là phép biến đổi ở đầu ra là tầm thường và không làm thay đổi bất kỳ phần tử nào:
+\begin{equation}
+T'(y) = \mathrm{Id}(y) = y \quad \forall y \in \mathcal{Y}
+\end{equation}
+
+Khi đó, thay $y = f(x)$ vào biểu thức trên, vế phải của phương trình~\eqref{eq:equivariance-special} trở thành:
+\begin{equation}
+T'(f(x)) = \mathrm{Id}(f(x)) = f(x)
+\end{equation}
+
+Thế ngược lại vào phương trình~\eqref{eq:equivariance-special}, ta thu được ngay:
+\begin{equation}
+\label{eq:invariance-special}
+f(T(x)) = f(x) \quad \forall x \in \mathcal{X}
+\end{equation}
+Đây chính là định nghĩa của tính bất biến. 
+
+
+\textbf{Kết luận:} Bất biến chính là đẳng biến với phép biến đổi đồng nhất ở đầu ra.
+\end{infobox}
+ 
+Mối quan hệ giữa biến đổi đầu vào và biến đổi đầu ra được tóm tắt gọn gàng bằng
+sơ đồ giao hoán ở Hình~\ref{fig:commute}. Tính
+đẳng bất biến tương đương với việc sơ đồ tương ứng giao hoán: mọi đường
+đi từ góc trên-trái đến góc dưới-phải (hoặc tới $\mathcal{Y}$) đều cho cùng kết
+quả.
+ 
+
+ 
+% ------------------------------------------------------------------ HÌNH 2
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[font=\normalsize]
+  % (a) Equivariance
+  \node at (0,2.6) {\textbf{(a) Đẳng biến}};
+  \node (X1) at (0,1.6) {$\mathcal{X}$};
+  \node (Y1) at (2.4,1.6) {$\mathcal{Y}$};
+  \node (X2) at (0,0) {$\mathcal{X}$};
+  \node (Y2) at (2.4,0) {$\mathcal{Y}$};
+  \draw[-{Latex[length=2mm]}] (X1) -- node[above]{$f$} (Y1);
+  \draw[-{Latex[length=2mm]}] (X2) -- node[below]{$f$} (Y2);
+  \draw[-{Latex[length=2mm]}] (X1) -- node[left]{$T$} (X2);
+  \draw[-{Latex[length=2mm]}] (Y1) -- node[right]{$T'$} (Y2);
+  % (b) Invariance
+  \node at (7.2,2.6) {\textbf{(b) Bất biến}};
+  \node (A1) at (6.0,1.6) {$\mathcal{X}$};
+  \node (B1) at (8.4,0.8) {$\mathcal{Y}$};
+  \node (A2) at (6.0,0) {$\mathcal{X}$};
+  \draw[-{Latex[length=2mm]}] (A1) -- node[above right]{$f$} (B1);
+  \draw[-{Latex[length=2mm]}] (A2) -- node[below right]{$f$} (B1);
+  \draw[-{Latex[length=2mm]}] (A1) -- node[left]{$T$} (A2);
+\end{tikzpicture}
+\caption[Sơ đồ giao hoán của bất biến và đẳng biến]{Sơ đồ giao hoán của bất biến và đẳng biến.\protect\\[2pt]
+\textit{Ghi chú: (a) Đẳng biến: phép biến đổi $T$ trên đầu vào tương ứng với phép biến đổi $T'$ trên đầu ra. (b) Bất biến: đầu ra không đổi dù đầu vào bị biến đổi bởi $T$.}}
+\label{fig:commute}
+\end{figure}
+ 
+\subsubsection{Vì sao tính đối xứng lại quan trọng?}
+Việc mã hoá sẵn đối xứng vào mô hình mang lại ba lợi ích đã được chứng thực
+rộng rãi trong thực nghiệm:
+\begin{itemize}[leftmargin=1.4em, itemsep=2pt, topsep=2pt]
+  \item \textbf{Giảm bậc tự do và tăng hiệu quả dữ liệu.} Nếu đã biết hàm cần
+  học có sẵn đối xứng, ta không cần học lại đối xứng đó từ dữ liệu. Trong bài toán dự đoán thế năng liên nguyên tử, các mô hình bất biến/đẳng biến đạt cùng độ chính xác trong khi dùng ít hơn tới ba bậc độ lớn khoảng $10^{3}$ lần dữ liệu huấn luyện so với mô hình không đối xứng~\cite{batzner2022nequip}.
+  \item \textbf{Tăng độ bền vững và tổng quát hoá ngoài phân phối.} Nếu
+  mô hình tôn trọng phép biến đổi, ta biết chính xác nó sẽ ngoại suy thế nào khi dữ liệu bị xoay/tịnh tiến mà không bị ảnh hưởng bởi thay đổi nhỏ. Vô hình chung là hành vi có thể dự đoán được và ổn định hơn.
+  \item \textbf{Nền tảng cho mô hình tạo sinh.} Hiểu cơ chế duy trì và phá vỡ
+  đối xứng cung cấp khung lý thuyết để thiết kế mô hình sinh cấu trúc phức tạp như phân tử thuốc, protein.
+\end{itemize}
+ 
+\subsection{Cơ sở lý thuyết nhóm}
 \label{subsec:group-theory}
-% Trình bày:
-%   - Group G: 4 tính chất (associativity, identity, inverse, closure)
-%   - Ví dụ: S_n (permutations), SO(3) (rotations), C_n (cyclic/shift),
-%     E(3) (Euclidean: rotation + reflection + translation)
-%   - Group action: G acts on X as g.x
-%   - Group representation: biểu diễn g bằng ma trận ρ(g),
-%     yêu cầu ρ(gh) = ρ(g)ρ(h)
-%   - Orbit: Orb_G(x) = {g.x | g ∈ G}
+ 
+Các phép biến đổi mà ta quan tâm như phép quay, tịnh tiến, hoán vị không phải
+là tuỳ ý: chúng có thể kết hợp với nhau, có thể đảo ngược, và luôn chứa phép không làm gì cả. Cấu trúc đại số nắm bắt chính xác những tính chất này là nhóm.
+ 
+\begin{definition}[Nhóm]
+\label{def:nhom}
+Một nhóm là một cặp $(G,\cdot)$ gồm một tập hợp khác rỗng $G$ và một phép toán hai ngôi
+$\cdot:G\times G\to G$ gọi là phép hợp thành, thoả mãn bốn tính chất:
+\begin{enumerate}[label=\textbf{(G\arabic*)}, leftmargin=2.6em, itemsep=2pt, topsep=2pt]
+  \item \textbf{Tính đóng:} với mọi $g,h\in G$ thì $g\cdot h\in G$.
+  \item \textbf{Tính kết hợp:}
+        $(g\cdot h)\cdot \ell = g\cdot(h\cdot \ell)$ với mọi $g,h,\ell\in G$.
+  \item \textbf{Phần tử đơn vị:} tồn tại $e\in G$ sao cho
+        $e\cdot g = g\cdot e = g$ với mọi $g\in G$.
+  \item \textbf{Phần tử nghịch đảo:} với mỗi $g\in G$, tồn tại
+        $g^{-1}\in G$ sao cho $g\cdot g^{-1}=g^{-1}\cdot g = e$.
+\end{enumerate}
+Để gọn, ta thường viết $gh$ thay cho $g\cdot h$.
+\end{definition}
+ 
+\begin{remark}
+Định nghĩa nhóm không đòi hỏi tính giao hoán $gh=hg$. Nếu nhóm thoả thêm
+tính chất này, ta gọi nó là nhóm giao hoán. Phép quay trong mặt phẳng là giao hoán, nhưng phép quay trong không gian ba chiều và phép
+hoán vị với $n\ge 3$ thì không.
+\end{remark}
+ 
+\begin{example}[Một số nhóm tiêu biểu]
+\label{vd:cac-nhom}
+\leavevmode
+\begin{itemize}[leftmargin=1.4em, itemsep=2pt, topsep=2pt]
+  \item Nhóm tịnh tiến $(\mathbb{R}^{d},+)$: phần tử đơn vị là vector $0$, nghịch
+  đảo của $v$ là $-v$.
+  \item Nhóm đối xứng (hoán vị) $S_{n}$: gồm $n!$ hoán vị của tập
+  $\{1,\dots,n\}$, phép hợp thành là phép hợp các hàm.
+  \item Nhóm xoay tuần hoàn $C_{n}$: $n$ phép quay quanh một trục bởi các góc bội
+  của $360^{\circ}/n$ (ví dụ $C_{4}$ ứng với các góc
+  $0^{\circ},90^{\circ},180^{\circ},270^{\circ}$).
+  \item Nhóm trực giao $O(d)$ và nhóm quay đặc biệt $SO(d)$: các ma trận trực
+  giao bảo toàn khoảng cách (gồm cả phản chiếu) và riêng các phép quay.
+  \item Nhóm Euclid $E(d)$ (và $SE(d)$): các phép dời hình cứng (quay $+$ tịnh
+  tiến), trung tâm trong robotics và mô phỏng phân tử.
+\end{itemize}
+\end{example}
+ 
+\begin{table}[t]
+\centering
+\caption{Một số nhóm thường gặp trong Học máy Hình học và miền dữ liệu tương ứng.}
+\label{tab:cac-nhom}
+\renewcommand{\arraystretch}{1.25}
+\begin{tabularx}{\linewidth}{@{}l c L L@{}}
+\toprule
+\textbf{Nhóm} & \textbf{Ký hiệu} & \textbf{Phép biến đổi} & \textbf{Miền dữ liệu điển hình}\\
+\midrule
+Hoán vị        & $S_{n}$       & Đổi thứ tự phần tử      & Tập hợp, đồ thị, đám mây điểm \\
+Tịnh tiến      & $(\mathbb{R}^{d},+)$ & Dịch chuyển       & Ảnh, tín hiệu, lưới (grid) \\
+Xoay tuần hoàn & $C_{n}$       & Quay rời rạc            & Ảnh xoay, tinh thể \\
+Trực giao      & $O(d),\,SO(d)$& Quay (và phản chiếu)    & Đám mây điểm 3D, phân tử \\
+Euclid (dời hình) & $E(d),\,SE(d)$ & Quay $+$ tịnh tiến  & Robotics, hệ nguyên tử \\
+Tuyến tính tổng quát & $GL(n)$  & Biến đổi khả nghịch     & Không gian trọng số (Chương 4) \\
+\bottomrule
+\end{tabularx}
+\end{table}
+ 
+\subsubsection{Tác động nhóm và biểu diễn nhóm}
+\label{ssub:group-action}
+ 
+Một nhóm trở nên hữu ích khi nó tác động lên dữ liệu: các phần tử của nhóm
+là những phép biến đổi, nên chúng phải ``biến đổi'' một thứ gì đó.
+ 
+\begin{definition}[Tác động nhóm]
+\label{def:tac-dong}
+Một tác động (trái) của nhóm $G$ lên tập $\mathcal{X}$ là một ánh xạ
+$G\times\mathcal{X}\to\mathcal{X}$, $(g,x)\mapsto g\cdot x$, thoả mãn:
+\begin{equation}
+e\cdot x = x \quad\text{và}\quad (gh)\cdot x = g\cdot(h\cdot x),
+\qquad \forall g,h\in G,\ \forall x\in\mathcal{X}.
+\end{equation}
+Tức là phần tử đơn vị không làm gì, và tác động liên tiếp tương thích với phép
+hợp thành trong nhóm.
+\end{definition}
+ 
+\begin{example}
+\label{vd:action}
+Hoán vị $\sigma\in S_{n}$ tác động lên tập chỉ số $\{1,\dots,n\}$ theo
+$\sigma\cdot i = \sigma(i)$. Ma trận khả nghịch $A\in GL(n)$ tác động lên
+$\mathbb{R}^{n}$ bằng phép nhân ma trận $A\cdot x = Ax$.
+\end{example}
+ 
+Trong các trường hợp ta quan tâm, tác động nhóm có thể được tuyến tính
+hoá: mỗi phần tử nhóm được biểu diễn bằng một ma trận. Đây là chiếc cầu nối
+giữa lý thuyết nhóm trừu tượng và đại số tuyến tính của mạng nơ-ron.
+ 
+\begin{definition}[Biểu diễn nhóm]
+\label{def:bieu-dien}
+Một biểu diễn của nhóm $G$ trên không gian vector $V$ là một ánh xạ
+$\rho:G\to GL(V)$ tương thích với phép hợp thành:
+\begin{equation}
+\label{eq:rep-hom}
+\rho(gh) = \rho(g)\,\rho(h), \qquad \forall g,h\in G,
+\end{equation}
+khi đó tác động được viết dưới dạng nhân ma trận $g\cdot x = \rho(g)\,x$.
+\end{definition}
+ 
+\begin{example}
+\label{vd:rep}
+Hoán vị $\sigma$ tác động lên vector qua ma trận hoán vị
+$\sigma\cdot x = P_{\sigma}\,x$. Phép quay tác động qua ma trận quay
+$g\cdot x = R\,x = \rho(g)\,x$. Hình~\ref{fig:permutation} minh hoạ tác động của
+một hoán vị lên một mảng năm phần tử.
+\end{example}
+ 
+% ------------------------------------------------------------------ HÌNH 3
+\begin{figure}[t]
+\centering
+\begin{tikzpicture}[font=\small]
+  \def\sq{0.7}
+  % hàng trên
+  \foreach \i/\c in {0/blue!70, 1/teal!70, 2/green!60!black, 3/orange!80, 4/red!70}{
+    \fill[\c] (\i*\sq, 1.2) rectangle (\i*\sq+\sq, 1.2+\sq);
+    \draw[black!50] (\i*\sq, 1.2) rectangle (\i*\sq+\sq, 1.2+\sq);
+  }
+  % hàng dưới (đã hoán vị)
+  \foreach \i/\c in {0/blue!70, 1/orange!80, 2/green!60!black, 3/red!70, 4/teal!70}{
+    \fill[\c] (\i*\sq, 0) rectangle (\i*\sq+\sq, \sq);
+    \draw[black!50] (\i*\sq, 0) rectangle (\i*\sq+\sq, \sq);
+  }
+  % mũi tên hoán vị
+  \foreach \a/\b in {0/0, 1/4, 2/2, 3/1, 4/3}{
+    \draw[-{Latex[length=1.6mm]}, red!55, thick]
+      (\a*\sq+\sq/2, 1.2) -- (\b*\sq+\sq/2, \sq);
+  }
+  \node[anchor=west] at (5*\sq+0.3, 1.55) {$x$};
+  \node[anchor=west] at (5*\sq+0.3, 0.35) {$\sigma\cdot x = P_{\sigma}\,x$};
+\end{tikzpicture}
+\caption[Tác động hoán vị lên một mảng]{Tác động hoán vị lên một mảng.\protect\\[2pt]
+\textit{Ghi chú: Hoán vị $\sigma\in S_{5}$ tráo đổi thứ tự các phần tử của mảng đầu vào $x$, biểu diễn bằng phép nhân với ma trận hoán vị $P_{\sigma}$; nguồn: nhóm tự vẽ.}}
+\label{fig:permutation}
+\end{figure}
+ 
+\subsubsection{Quỹ đạo}
+\label{ssub:orbit}
+ 
+\begin{definition}[Quỹ đạo]
+\label{def:quy-dao}
+Quỹ đạo của một điểm $x\in\mathcal{X}$ dưới tác động của nhóm $G$ là tập
+hợp tất cả các điểm có thể đạt tới từ $x$ bằng các phép biến đổi trong $G$:
+\begin{equation}
+\label{eq:orbit}
+\mathrm{Orb}_{G}(x) = \{\, g\cdot x \mid g\in G \,\}.
+\end{equation}
+\end{definition}
+ 
+\begin{example}
+\label{vd:orbit}
+Với nhóm $C_{4}$ (các phép quay $90^{\circ}$) tác động lên một điểm trong mặt
+phẳng, quỹ đạo gồm đúng bốn điểm là bốn vị trí quay của điểm đó
+(Hình~\ref{fig:orbit}). Với nhóm tịnh tiến tác động lên một ảnh, quỹ đạo của ảnh
+là tập tất cả các phiên bản dịch chuyển của nó.
+\end{example}
+ 
+\begin{remark}[Nhóm ổn định / Nhóm đẳng hướng]
+Bên cạnh quỹ đạo, một khái niệm hữu ích là nhóm ổn định (stabilizer, hay
+nhóm đẳng hướng) của $x$: $G_{x}=\{g\in G \mid g\cdot x = x\}$~--~tập các phép
+biến đổi giữ nguyên $x$. Khái niệm này đóng vai trò then chốt khi phân tích hiện
+tượng phá vỡ đối xứng (symmetry breaking) ở các chương sau: có thể chứng
+minh rằng đầu ra của một mô hình đẳng biến luôn ``đối xứng ít nhất bằng'' đầu vào,
+nghĩa là $G_{x}\subseteq G_{f(x)}$~\cite{wang2024symmetry}.
+\end{remark}
+ 
+% ------------------------------------------------------------------ HÌNH 4
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[font=\small]
+  \def\rad{1.5}
+  \draw[black!25, dashed] (0,0) circle (\rad);
+  \fill[black!35] (0,0) circle (1.2pt);
+  \node[below right] at (0,0) {tâm quay};
+  % bốn điểm trên quỹ đạo
+  \foreach \ang/\lab/\col in {45/{$x$}/gmlblue, 135/{$g\cdot x$}/gmlorange,
+                               225/{$g^{2}\!\cdot x$}/gmlorange, 315/{$g^{3}\!\cdot x$}/gmlorange}{
+    \fill[\col] (\ang:\rad) circle (2.6pt);
+    \node[\col!60!black] at (\ang:\rad+0.55) {\lab};
+  }
+  % mũi tên quay 90 độ
+  \foreach \a/\b in {45/135, 135/225, 225/315, 315/405}{
+    \draw[-{Latex[length=1.8mm]}, red!55, thick] (\a+8:\rad) arc (\a+8:\b-8:\rad);
+  }
+  \node[red!60!black] at (90:\rad+0.05) {\scriptsize $g=90^{\circ}$};
+  \node[anchor=west, align=left] at (2.4,0)
+    {$\mathrm{Orb}_{C_{4}}(x)=$\\[2pt]$\{x,\,g\cdot x,\,g^{2}\!\cdot x,\,g^{3}\!\cdot x\}$};
+\end{tikzpicture}
+\caption[Quỹ đạo của một điểm dưới nhóm $C_4$]{Quỹ đạo của một điểm dưới nhóm $C_4$.\protect\\[2pt]
+\textit{Ghi chú: Dưới tác động của nhóm xoay tuần hoàn $C_4$ (phép quay $90^{\circ}$), quỹ đạo của điểm $x$ gồm bốn vị trí quay liên tiếp; nguồn: nhóm tự vẽ.}}
+\label{fig:orbit}
+\end{figure}
+ 
+\begin{infobox}{Liên hệ khái niệm quỹ đạo với tính bất biến}
+Một hàm $f$ là bất biến $G$ khi và chỉ khi nó nhận giá trị hằng trên
+mỗi quỹ đạo: $f$ không phân biệt được hai điểm thuộc cùng một
+$\mathrm{Orb}_{G}(x)$. Quan sát đơn giản này là chìa khoá cho hai họ phương pháp
+ở Chương~3: chuẩn hoá (canonicalization) chọn một đại diện cố định cho mỗi
+quỹ đạo, còn lấy trung bình nhóm (group/frame averaging) trung bình hoá
+giá trị trên toàn bộ quỹ đạo để ép buộc tính bất biến.
+\end{infobox}
 
-\subsection{Biểu diễn nhóm và ý nghĩa với kiến trúc mạng}
-\label{subsec:group-representation}
-% Trình bày:
-%   - Regular vs. irreducible representations
-%   - Schur's Lemma (dẫn dắt tới hạn chế của equivariant linear layers
-%     ở Chương 3, mục Tensor Methods)
-%   - Fourier analysis trên groups (dẫn dắt tới Expanders ở Chương 4)
-% Chú ý: không cần quá sâu, mục tiêu là cung cấp vocabulary
-%   cho các chương sau.
+\subsubsection{Phát biểu hình thức của bất biến và đẳng biến}
+\label{ssub:formal-inv-equiv}
+ 
+Với ngôn ngữ tác động nhóm, hai khái niệm ở mục~\ref{subsec:doi-xung-bat-bien}
+được phát biểu lại một cách chính xác và tổng quát.
+ 
+\begin{definition}[Bất biến và đẳng biến theo nhóm]
+\label{def:formal}
+Cho nhóm $G$ tác động lên không gian đầu vào $\mathcal{X}$ và đầu ra
+$\mathcal{Y}$. Hàm $f:\mathcal{X}\to\mathcal{Y}$ được gọi là:
+\begin{itemize}[leftmargin=1.4em, itemsep=2pt, topsep=2pt]
+  \item G-invariant nếu
+        $\displaystyle f(g\cdot x) = f(x)$ với mọi $g\in G$;
+  \item G-equivariant nếu
+        $\displaystyle f(g\cdot x) = g\cdot f(x)$ với mọi $g\in G$, hay tổng quát
+        hơn $f\bigl(\rho_{1}(g)\,x\bigr)=\rho_{2}(g)\,f(x)$ khi tác động trên
+        đầu vào và đầu ra dùng hai biểu diễn $\rho_{1},\rho_{2}$ khác nhau.
+\end{itemize}
+\end{definition}
+ 
+ 
+\begin{table}[H]
+\centering
+\caption{So sánh hai loại đối xứng cơ bản.}
+\label{tab:inv-vs-equiv}
+\renewcommand{\arraystretch}{1.3}
+\begin{tabularx}{\linewidth}{@{}l L L@{}}
+\toprule
+\rowcolor{black!8} & \textbf{Bất biến } & \textbf{Đẳng biến}\\
+\midrule
+Điều kiện      & $f(g\cdot x)=f(x)$        & $f(g\cdot x)=g\cdot f(x)$ \\
+Đầu ra điển hình & Vô hướng & Vector / có cấu trúc \\
+Ví dụ          & Phân loại ảnh/đồ thị      & Nhúng nút, dự đoán lực, robot \\
+Quan hệ        & \multicolumn{2}{c}{Bất biến là trường hợp riêng của đẳng biến} \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[font=\small]
+  % ===================== Hàng (a): BẤT BIẾN =====================
+  \node[anchor=west] at (-6.1,2.35)
+    {\textbf{(a) Bất biến} (phân loại):\; $f(g\cdot x)=f(x)$};
+  % khung ảnh 1 (mèo phía dưới-trái)
+  \draw[rounded corners=3pt, thick, black!55, fill=blue!3] (-6.0,0.5) rectangle (-4.6,1.9);
+  \catface{-5.55}{0.90}{0.8}
+  % mũi tên biến đổi g
+  \draw[-{Latex[length=1.8mm]}, thick] (-4.52,1.2) -- (-3.78,1.2);
+  \node at (-4.15,1.46) {$g$};
+  % khung ảnh 2 (mèo dịch lên-phải)
+  \draw[rounded corners=3pt, thick, black!55, fill=blue!3] (-3.7,0.5) rectangle (-2.3,1.9);
+  \catface{-2.70}{1.30}{0.8}
+  % qua mô hình f -> nhãn
+  \node[draw, rounded corners=2pt, fill=gmlblue, text=white,
+        minimum width=0.8cm, minimum height=0.62cm] (fa) at (-1.0,1.2) {$f$};
+  \draw[-{Latex[length=1.8mm]}, thick] (-2.22,1.2) -- (fa.west);
+  \node[draw, rounded corners=2pt, fill=green!12, minimum width=1.0cm] (ya) at (1.1,1.2) {Mèo};
+  \draw[-{Latex[length=1.8mm]}, thick] (fa.east) -- (ya.west);
+ 
+  % ===================== Hàng (b): ĐẲNG BIẾN =====================
+  \node[anchor=west] at (-6.1,-0.25)
+    {\textbf{(b) Đẳng biến} (định vị):\; $f(g\cdot x)=g\cdot f(x)$};
+  % khung ảnh 1 + khung bao (mèo bên trái)
+  \draw[rounded corners=3pt, thick, black!55, fill=blue!3] (-6.0,-1.9) rectangle (-4.6,-0.5);
+  \catface{-5.60}{-1.20}{0.8}
+  \draw[dashed, red!75, thick] (-5.95,-1.62) rectangle (-5.26,-0.78);
+  % mũi tên biến đổi g
+  \draw[-{Latex[length=1.8mm]}, thick] (-4.52,-1.2) -- (-3.78,-1.2);
+  \node at (-4.15,-0.94) {$g$};
+  % khung ảnh 2 + khung bao dịch phải (mèo bên phải)
+  \draw[rounded corners=3pt, thick, black!55, fill=blue!3] (-3.7,-1.9) rectangle (-2.3,-0.5);
+  \catface{-2.66}{-1.20}{0.8}
+  \draw[dashed, red!75, thick] (-3.01,-1.62) rectangle (-2.32,-0.78);
+  % qua mô hình f -> toạ độ khung bao (biến đổi theo)
+  \node[draw, rounded corners=2pt, fill=gmlblue, text=white,
+        minimum width=0.8cm, minimum height=0.62cm] (fb) at (-1.0,-1.2) {$f$};
+  \draw[-{Latex[length=1.8mm]}, thick] (-2.22,-1.2) -- (fb.west);
+  \node[draw, rounded corners=2pt, fill=red!8, minimum width=1.5cm] (yb) at (1.35,-1.2)
+        {hộp $g\cdot\mathrm{box}$};
+  \draw[-{Latex[length=1.8mm]}, thick] (fb.east) -- (yb.west);
+\end{tikzpicture}
+\caption[Trực quan bất biến và đẳng biến]{Trực quan hoá bất biến và đẳng biến.\protect\\[2pt]
+\textit{Ghi chú: (a) Bất biến: tác động $g$ lên con mèo trong khung hình không làm thay đổi nhãn đầu ra, $f(g\cdot x)=f(x)$. (b) Đẳng biến: khung bao đầu ra biến đổi tương ứng, $f(g\cdot x)=g\cdot f(x)$.}}
+\label{fig:inv-equiv}
+\end{figure}
 
 \clearpage

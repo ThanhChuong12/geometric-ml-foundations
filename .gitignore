@@ -221,3 +221,7 @@ __marimo__/
 /demo/geo-ml-web/frame-averaging-code-paper
 
 /demo/geo-ml-web/notebooks/data
+# Project specific ignores
+data/
+nequip-env/nequip/
+

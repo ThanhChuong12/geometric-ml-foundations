@@ -2236,7 +2236,7 @@ Applications: computational complexity, approximate symmetry, data augmentation
 • II: Validation of symmetry — testing for symmetry in data
 
 
-• III: Theoretical benefits  — sample complexity, generalization bounds 
+• III: Theoretical benefits  — sample complexity, generalization bounds
 
 • New directions:  
 
