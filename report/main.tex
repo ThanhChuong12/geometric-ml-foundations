@@ -54,6 +54,29 @@
   breakable
 }
 
+\newtcolorbox{infobox}[1]{
+  colback=blue!5!white,
+  colframe=blue!70!black,
+  fonttitle=\bfseries,
+  title={#1},
+  breakable
+}
+
+\newtcolorbox{warningbox}[1]{
+  colback=red!5!white,
+  colframe=red!70!black,
+  fonttitle=\bfseries,
+  title={#1},
+  breakable
+}
+
+\newtcolorbox{importantbox}[1]{
+  colback=green!5!white,
+  colframe=green!50!black,
+  fonttitle=\bfseries,
+  title={#1},
+  breakable
+}
 
 % Code listing
 \usepackage{listings}
@@ -183,8 +206,10 @@ API & Giao diện lập trình ứng dụng (Application Programming Interface) 
 AUC & Diện tích dưới đường cong ROC (Area Under the Curve) \\
 CNN & Mạng tích chập (Convolutional Neural Network) \\
 DA & Tăng cường dữ liệu (Data Augmentation) \\
+FLOPs & Số phép toán dấu phẩy động mỗi giây (Floating Point Operations Per Second) \\
 GNN & Mạng nơ-ron đồ thị (Graph Neural Network) \\
 MLP & Perceptron đa lớp (Multi-Layer Perceptron) \\
+MVCNN & Mạng chập đa góc nhìn (Multi-view Convolutional Neural Network) \\
 PCA & Phân tích thành phần chính (Principal Component Analysis) \\
 SSL & Học tự giám sát (Self-Supervised Learning) \\
 
@@ -206,8 +231,15 @@ $S_n$ & Nhóm hoán vị $n$ phần tử \\
 $SO(d)$ & Nhóm quay đặc biệt trong $\mathbb{R}^d$ \\
 $E(3)$ & Nhóm Euclidean trong $\mathbb{R}^3$ (quay, phản xạ, tịnh tiến) \\
 $T_a, R_a$ & Phép biến đổi tuyến tính trong không gian ẩn tương ứng với phép tăng cường $a$ \\
+$A$ & Ma trận biến đổi afin dự đoán bởi mạng học sâu (ví dụ T-Net) \\
 $c(x)$ & Dạng chuẩn (canonical form) của điểm dữ liệu $x$ \\
+$\mathcal{F}(X)$ & Tập hợp khung (Frame) trích xuất từ điểm dữ liệu $X$ \\
+$\rho_1, \rho_2$ & Biểu diễn nhóm (group representations) \\
+$\langle \Phi \rangle_G$ & Phép toán lấy trung bình nhóm (Group averaging) \\
+$\langle \Phi \rangle_{\mathcal{F}}$ & Phép toán lấy trung bình khung (Frame averaging) \\
 $\mathcal{L}$ & Hàm mất mát (loss function) \\
+$L_{reg}$ & Hàm mất mát chính quy hóa (regularization loss) \\
+$n, N$ & Số lượng phần tử hoặc số lượng điểm đầu vào \\
 
 \hline
 
@@ -242,20 +274,33 @@ $\alpha$ & Biên an toàn (margin) / Giới hạn độ tin cậy / Ngưỡng ki
 
 Absolute convergence & Hội tụ tuyệt đối \\
 Accepting path & Đường đi chấp nhận \\
+Affine transformation & Phép biến đổi afin \\
 Canonical form / Canonicalization & Dạng chuẩn / Chuẩn hóa \\
 Contrastive learning & Học tương phản \\
+Critical points & Điểm tới hạn \\
 Data augmentation & Tăng cường dữ liệu \\
 Equivariance & Tương biến (equivariance) \\
 Frame averaging & Lấy trung bình khung \\
+Generator (of a group) & Tập sinh (của một nhóm) \\
 Graph isomorphism & Đẳng cấu đồ thị \\
 Group & Nhóm (đại số) \\
 Group averaging / Reynolds operator & Lấy trung bình nhóm / Toán tử Reynolds \\
 Invariance & Bất biến (invariance) \\
 Latent space & Không gian ẩn \\
+Max pooling & Gộp cực đại \\
+Monte Carlo & Phương pháp Monte Carlo \\
+Orthogonal matrix & Ma trận trực giao \\
 Orbit & Quỹ đạo \\
 Point cloud & Đám mây điểm \\
 Representation learning & Học biểu diễn \\
+Robust frames & Khung bền vững \\
+Self-supervised learning & Học tự giám sát \\
+Set equivariance & Tương biến tập hợp \\
+Spectral averaging & Lấy trung bình phổ \\
+Supervised learning & Học có giám sát \\
 Symmetry & Tính đối xứng \\
+Symmetry function & Hàm đối xứng \\
+Universal approximation & Xấp xỉ phổ quát \\
 
 
 \end{longtable}
