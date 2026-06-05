@@ -225,3 +225,14 @@ __marimo__/
 data/
 nequip-env/nequip/
 
+
+# Model weights (file lon, khong push len GitHub - train lai bang scripts/)
+*.pth
+*.pt
+*.ckpt
+
+# Sample point cloud data (generate lai bang download_assets.py)
+demo/geo-ml-web/backend/data/sample_clouds/
+
+# Next.js build output
+demo/geo-ml-web/frontend/.next/

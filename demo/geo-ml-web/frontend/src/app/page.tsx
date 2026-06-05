@@ -6,22 +6,57 @@ import { PredictionCard } from '@/components/PredictionCard';
 import { predictDigit } from '@/services/predictionService';
 import { ApiResponse } from '@/types';
 import { Loader2 } from 'lucide-react';
+// ── Part 2: PointNet imports ──
+import { PointCloudViewer } from '@/components/PointCloudViewer';
+import { PointNetResultCard } from '@/components/PointNetResultCard';
+import { NumPointsSlider } from '@/components/NumPointsSlider';
+import { PerturbationControls, PerturbationState, DEFAULT_PERTURBATION } from '@/components/PerturbationControls';
+import { classifyPointCloud, getSampleCloud } from '@/services/pointnetService';
+import { PointNetApiResponse, DEMO_CLASSES, DemoClass } from '@/types/pointnet';
 
 export default function Home() {
   const [activeTab, setActiveTab] = useState<'part1' | 'part2'>('part1');
+  // ── Part 1 state ──
   const [rotation, setRotation] = useState(0);
   const [imageData, setImageData] = useState('');
   const [predictions, setPredictions] = useState<ApiResponse | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  // ── Part 2 state ──
+  const [selectedClass, setSelectedClass] = useState<DemoClass>('airplane');
+  const [numPoints, setNumPoints] = useState(1024);
+  const [p2Loading, setP2Loading] = useState(false);
+  const [p2Result, setP2Result] = useState<PointNetApiResponse | null>(null);
+  const [rawPoints, setRawPoints] = useState<number[][]>([]);
+  const [showCritical, setShowCritical] = useState(false);
+  const [perturbation, setPerturbation] = useState<PerturbationState>(DEFAULT_PERTURBATION);
+
+  const handleLoadSample = async (cls: DemoClass) => {
+    setSelectedClass(cls);
+    setP2Result(null);
+    setShowCritical(false);
+    try {
+      const data = await getSampleCloud(cls);
+      setRawPoints(data.points);
+    } catch { setRawPoints([]); }
+  };
+
+  const handleClassify = async () => {
+    if (rawPoints.length === 0) return;
+    setP2Loading(true);
+    try {
+      const result = await classifyPointCloud(rawPoints, numPoints, perturbation);
+      setP2Result(result);
+    } catch (e) {
+      alert('Lỗi: ' + e);
+    } finally { setP2Loading(false); }
+  };
 
   const handlePredict = async () => {
     if (!imageData) {
       alert('Vui lòng vẽ một chữ số trước!');
       return;
     }
-
     setIsLoading(true);
-
     try {
       const result = await predictDigit(imageData);
       setPredictions(result);
@@ -35,64 +70,47 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-stone-100 font-sans text-stone-900 pb-16">
-      {/* Academic Header & Methods Combined */}
+      {/* Header */}
       <header className="w-full px-4 md:px-8 pt-6 pb-4">
         <div className="bg-stone-50 border-2 border-stone-900 p-6 shadow-[6px_6px_0px_0px_rgba(28,25,23,1)] flex flex-col md:flex-row gap-6 md:items-start">
-
-          {/* Left Side: Title */}
+          {/* Left: Title */}
           <div className="flex-1">
             <div className="inline-block mb-3 px-2 py-1 bg-blue-600 border-2 border-stone-900 shadow-[2px_2px_0px_0px_rgba(28,25,23,1)]">
               <span className="text-white text-[10px] font-bold uppercase tracking-widest font-sans">Geometric Deep Learning</span>
             </div>
             <h1 className="text-3xl md:text-4xl font-black text-stone-900 mb-2 font-serif uppercase tracking-tight leading-none">
-              Rotation Invariance<br />on MNIST
+              {activeTab === 'part1' ? <>Rotation Invariance<br />on MNIST</> : <>Phân Loại 3D<br />với PointNet</>}
             </h1>
             <p className="text-sm text-stone-700 font-serif mt-3 border-t-2 border-stone-200 pt-3">
-              Khám phá học máy nhận thức đối xứng qua phân loại chữ số viết tay.
+              {activeTab === 'part1'
+                ? 'Khám phá học máy nhận thức đối xứng qua phân loại chữ số viết tay.'
+                : 'Phân loại vật thể 3D từ đám mây điểm — Qi et al., CVPR 2017.'}
             </p>
           </div>
 
-          {/* Right Side: Methods */}
+          {/* Right: Methods */}
           <div className="flex-[1.5] border-t-2 md:border-t-0 md:border-l-2 border-stone-900 pt-4 md:pt-0 md:pl-6">
             <h2 className="text-sm font-black text-stone-900 mb-3 font-serif uppercase tracking-widest bg-yellow-400 border-2 border-stone-900 shadow-[2px_2px_0px_0px_rgba(28,25,23,1)] inline-block px-2 py-1">Phương pháp Thử nghiệm</h2>
             {activeTab === 'part1' ? (
               <>
                 <p className="text-stone-800 text-sm leading-relaxed font-sans mb-3 hidden lg:block">
-                  Bản trình diễn tương tác so sánh 3 cách tiếp cận bất biến xoay:
+                  So sánh 3 cách tiếp cận bất biến xoay:
                 </p>
                 <ul className="text-stone-800 text-sm leading-relaxed font-sans space-y-3">
-                  <li>
-                    <strong className="text-stone-900 bg-red-400 px-1.5 py-0.5 border-2 border-stone-900 shadow-[2px_2px_0px_0px_rgba(28,25,23,1)] mr-2 inline-block">(1) CNN Cơ sở:</strong>
-                    Huấn luyện hoàn toàn trên các hướng thẳng đứng chuẩn.
-                  </li>
-                  <li>
-                    <strong className="text-stone-900 bg-amber-400 px-1.5 py-0.5 border-2 border-stone-900 shadow-[2px_2px_0px_0px_rgba(28,25,23,1)] mr-2 inline-block">(2) Tăng cường Dữ liệu:</strong>
-                    Kết hợp các phép biến đổi xoay đa dạng trong huấn luyện.
-                  </li>
-                  <li>
-                    <strong className="text-stone-900 bg-emerald-400 px-1.5 py-0.5 border-2 border-stone-900 shadow-[2px_2px_0px_0px_rgba(28,25,23,1)] mr-2 inline-block">(3) Trung bình Khung:</strong>
-                    Tận dụng các dự đoán tương đương nhóm khi kiểm tra.
-                  </li>
+                  <li><strong className="text-stone-900 bg-red-400 px-1.5 py-0.5 border-2 border-stone-900 shadow-[2px_2px_0px_0px_rgba(28,25,23,1)] mr-2 inline-block">(1) CNN Cơ sở:</strong>Huấn luyện hoàn toàn trên các hướng thẳng đứng chuẩn.</li>
+                  <li><strong className="text-stone-900 bg-amber-400 px-1.5 py-0.5 border-2 border-stone-900 shadow-[2px_2px_0px_0px_rgba(28,25,23,1)] mr-2 inline-block">(2) Tăng cường Dữ liệu:</strong>Kết hợp các phép biến đổi xoay đa dạng trong huấn luyện.</li>
+                  <li><strong className="text-stone-900 bg-emerald-400 px-1.5 py-0.5 border-2 border-stone-900 shadow-[2px_2px_0px_0px_rgba(28,25,23,1)] mr-2 inline-block">(3) Trung bình Khung:</strong>Tận dụng các dự đoán tương đương nhóm khi kiểm tra.</li>
                 </ul>
               </>
             ) : (
               <>
                 <p className="text-stone-800 text-sm leading-relaxed font-sans mb-3 hidden lg:block">
-                  Các phương pháp phân tích mạng nơ-ron đồ thị (Đang phát triển):
+                  Phân loại vật thể 3D từ đám mây điểm (Qi et al., CVPR 2017):
                 </p>
                 <ul className="text-stone-800 text-sm leading-relaxed font-sans space-y-3">
-                  <li>
-                    <strong className="text-stone-900 bg-purple-400 px-1.5 py-0.5 border-2 border-stone-900 shadow-[2px_2px_0px_0px_rgba(28,25,23,1)] mr-2 inline-block">(1) Message Passing:</strong>
-                    Truyền tải thông điệp cục bộ qua các cạnh của đồ thị.
-                  </li>
-                  <li>
-                    <strong className="text-stone-900 bg-cyan-400 px-1.5 py-0.5 border-2 border-stone-900 shadow-[2px_2px_0px_0px_rgba(28,25,23,1)] mr-2 inline-block">(2) Graph Convolution:</strong>
-                    Tích chập phổ hoặc không gian trên cấu trúc đồ thị (GCN).
-                  </li>
-                  <li>
-                    <strong className="text-stone-900 bg-lime-400 px-1.5 py-0.5 border-2 border-stone-900 shadow-[2px_2px_0px_0px_rgba(28,25,23,1)] mr-2 inline-block">(3) Equivariant GNNs:</strong>
-                    Mạng nơ-ron bảo toàn tính đối xứng (xoay, lật, dịch chuyển).
-                  </li>
+                  <li><strong className="text-stone-900 bg-red-400 px-1.5 py-0.5 border-2 border-stone-900 shadow-[2px_2px_0px_0px_rgba(28,25,23,1)] mr-2 inline-block">(1) PointNet Basic:</strong>Shared MLP + Max Pooling, không có T-Net.</li>
+                  <li><strong className="text-stone-900 bg-emerald-400 px-1.5 py-0.5 border-2 border-stone-900 shadow-[2px_2px_0px_0px_rgba(28,25,23,1)] mr-2 inline-block">(2) PointNet Full:</strong>Có Input & Feature Transform (T-Net) và regularization loss.</li>
+                  <li><strong className="text-stone-900 bg-violet-400 px-1.5 py-0.5 border-2 border-stone-900 shadow-[2px_2px_0px_0px_rgba(28,25,23,1)] mr-2 inline-block">(3) Critical Points:</strong>Visualize tập điểm quyết định kết quả (Theorem 2).</li>
                 </ul>
               </>
             )}
@@ -102,134 +120,220 @@ export default function Home() {
 
       {/* TAB SWITCHER */}
       <div className="w-full px-4 md:px-8 mb-6 flex flex-wrap gap-4">
-        <button 
+        <button
           onClick={() => setActiveTab('part1')}
           className={`px-6 py-3 font-black text-sm md:text-base uppercase tracking-widest border-2 border-stone-900 transition-all ${
-            activeTab === 'part1' 
-            ? 'bg-rose-400 shadow-[4px_4px_0px_0px_rgba(28,25,23,1)] translate-y-0 translate-x-0' 
+            activeTab === 'part1'
+            ? 'bg-rose-400 shadow-[4px_4px_0px_0px_rgba(28,25,23,1)] translate-y-0 translate-x-0'
             : 'bg-white shadow-none translate-y-1 translate-x-1 hover:bg-stone-50'
           }`}
         >
           Nhận diện Hình ảnh (SO(2))
         </button>
-        <button 
+        <button
           onClick={() => setActiveTab('part2')}
           className={`px-6 py-3 font-black text-sm md:text-base uppercase tracking-widest border-2 border-stone-900 transition-all ${
-            activeTab === 'part2' 
-            ? 'bg-emerald-400 shadow-[4px_4px_0px_0px_rgba(28,25,23,1)] translate-y-0 translate-x-0' 
+            activeTab === 'part2'
+            ? 'bg-emerald-400 shadow-[4px_4px_0px_0px_rgba(28,25,23,1)] translate-y-0 translate-x-0'
             : 'bg-white shadow-none translate-y-1 translate-x-1 hover:bg-stone-50'
           }`}
         >
-          Phân tích Đồ thị (GNN)
+          Phân loại 3D (PointNet)
         </button>
       </div>
 
       <main className="w-full px-4 md:px-8 pb-8">
         {activeTab === 'part1' ? (
           <>
-        {/* Main Interactive Section */}
-        <div className="grid lg:grid-cols-5 gap-8 mb-12">
-          {/* Canvas Section */}
-          <div className="lg:col-span-3 flex flex-col bg-stone-50 border-2 border-stone-900 p-8 shadow-[8px_8px_0px_0px_rgba(28,25,23,1)]">
-            <div className="flex items-center gap-4 mb-8 pb-4 border-b-2 border-stone-900">
-              <div className="w-10 h-10 bg-rose-500 border-2 border-stone-900 shadow-[2px_2px_0px_0px_rgba(28,25,23,1)] flex items-center justify-center text-stone-900 font-black font-sans text-xl">
-                1
+            {/* Part 1: Frame Averaging */}
+            <div className="grid lg:grid-cols-5 gap-8 mb-12">
+              <div className="lg:col-span-3 flex flex-col bg-stone-50 border-2 border-stone-900 p-8 shadow-[8px_8px_0px_0px_rgba(28,25,23,1)]">
+                <div className="flex items-center gap-4 mb-8 pb-4 border-b-2 border-stone-900">
+                  <div className="w-10 h-10 bg-rose-500 border-2 border-stone-900 shadow-[2px_2px_0px_0px_rgba(28,25,23,1)] flex items-center justify-center text-stone-900 font-black font-sans text-xl">1</div>
+                  <h2 className="text-2xl font-black text-stone-900 font-serif uppercase tracking-tight">Vẽ & Mô phỏng</h2>
+                </div>
+                <div className="flex-1 flex flex-col justify-center">
+                  <DigitCanvas onImageChange={setImageData} rotation={rotation} />
+                </div>
               </div>
-              <h2 className="text-2xl font-black text-stone-900 font-serif uppercase tracking-tight">Vẽ & Mô phỏng</h2>
-            </div>
-            <div className="flex-1 flex flex-col justify-center">
-              <DigitCanvas onImageChange={setImageData} rotation={rotation} />
-            </div>
-          </div>
 
-          {/* Controls Section */}
-          <div className="lg:col-span-2 space-y-8 flex flex-col">
+              <div className="lg:col-span-2 space-y-8 flex flex-col">
+                <div className="bg-stone-50 border-2 border-stone-900 p-8 shadow-[8px_8px_0px_0px_rgba(28,25,23,1)]">
+                  <div className="flex items-center gap-4 mb-8 pb-4 border-b-2 border-stone-900">
+                    <div className="w-10 h-10 bg-sky-400 border-2 border-stone-900 shadow-[2px_2px_0px_0px_rgba(28,25,23,1)] flex items-center justify-center text-stone-900 font-black font-sans text-xl">2</div>
+                    <h2 className="text-2xl font-black text-stone-900 font-serif uppercase tracking-tight">Xoay Ảnh</h2>
+                  </div>
+                  <RotationSlider value={rotation} onChange={setRotation} />
+                </div>
+
+                <div className="bg-stone-50 border-2 border-stone-900 p-8 shadow-[8px_8px_0px_0px_rgba(28,25,23,1)] flex-1 flex flex-col">
+                  <div className="flex items-center gap-4 mb-8 pb-4 border-b-2 border-stone-900">
+                    <div className="w-10 h-10 bg-violet-400 border-2 border-stone-900 shadow-[2px_2px_0px_0px_rgba(28,25,23,1)] flex items-center justify-center text-stone-900 font-black font-sans text-xl">3</div>
+                    <h2 className="text-2xl font-black text-stone-900 font-serif uppercase tracking-tight">Phân loại</h2>
+                  </div>
+                  <button
+                    onClick={handlePredict}
+                    disabled={isLoading || !imageData}
+                    className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-stone-300 disabled:border-stone-300 disabled:text-stone-500 disabled:cursor-not-allowed text-white font-black py-5 px-6 transition-colors border-2 border-stone-900 disabled:shadow-none shadow-[6px_6px_0px_0px_rgba(28,25,23,1)] active:shadow-none active:translate-y-1 active:translate-x-1 flex items-center justify-center gap-3 text-lg font-sans uppercase tracking-widest mt-auto mb-auto"
+                  >
+                    {isLoading ? (<><Loader2 className="w-6 h-6 animate-spin" />Đang xử lý...</>) : 'Chạy Phân loại'}
+                  </button>
+                  {predictions && (
+                    <div className="mt-8 bg-stone-100 border-2 border-stone-900 p-5">
+                      <p className="text-sm text-stone-800 leading-relaxed font-sans">
+                        <span className="font-bold text-stone-900 uppercase tracking-widest text-xs block mb-1">Quan sát:</span>
+                        Mô hình cơ sở bị giảm hiệu suất đáng kể khi ảnh bị xoay, trong khi phương pháp trung bình khung thể hiện tính bất biến mạnh mẽ ở mọi góc độ.
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-stone-50 border-2 border-stone-900 p-8 shadow-[8px_8px_0px_0px_rgba(28,25,23,1)]">
+              <div className="flex items-center gap-4 mb-10 pb-4 border-b-2 border-stone-900">
+                <div className="w-12 h-12 bg-pink-400 border-2 border-stone-900 shadow-[2px_2px_0px_0px_rgba(28,25,23,1)] flex items-center justify-center text-stone-900 font-black text-2xl font-serif">*</div>
+                <h2 className="text-3xl font-black text-stone-900 font-serif uppercase tracking-tight">Phân tích So sánh</h2>
+              </div>
+              <div className="grid md:grid-cols-3 gap-8">
+                <PredictionCard title="CNN Cơ sở" description="Chỉ huấn luyện trên chữ số thẳng đứng" result={predictions?.baseline || null} variant="baseline" />
+                <PredictionCard title="Tăng cường dữ liệu" description="Huấn luyện với dữ liệu tăng cường xoay" result={predictions?.augmentation || null} variant="augmentation" />
+                <PredictionCard title="Trung bình khung" description="Trung bình hóa qua nhiều góc xoay" result={predictions?.averaging || null} variant="averaging" />
+              </div>
+            </div>
+          </>
+        ) : (
+          // ────────────────────────────────────────────
+          // PART 2: PointNet 3D Demo
+          // ────────────────────────────────────────────
+          <div className="space-y-8">
+
+            {/* Row 1: Viewer + Controls */}
+            <div className="grid lg:grid-cols-5 gap-8">
+
+              {/* Left: 3D Viewer */}
+              <div className="lg:col-span-3 flex flex-col bg-stone-50 border-2 border-stone-900 p-8 shadow-[8px_8px_0px_0px_rgba(28,25,23,1)]">
+                <div className="flex items-center gap-4 mb-6 pb-4 border-b-2 border-stone-900">
+                  <div className="w-10 h-10 bg-violet-400 border-2 border-stone-900 shadow-[2px_2px_0px_0px_rgba(28,25,23,1)] flex items-center justify-center text-stone-900 font-black font-sans text-xl">1</div>
+                  <h2 className="text-2xl font-black text-stone-900 font-serif uppercase tracking-tight">Đám Mây Điểm 3D</h2>
+                  {p2Result && (
+                    <button
+                      onClick={() => setShowCritical(v => !v)}
+                      className={`ml-auto px-4 py-2 text-xs font-black font-sans uppercase tracking-widest border-2 border-stone-900 transition-all ${
+                        showCritical
+                          ? 'bg-red-500 text-white shadow-[3px_3px_0px_0px_rgba(28,25,23,1)]'
+                          : 'bg-white text-stone-900 shadow-none hover:bg-stone-50'
+                      }`}
+                    >
+                      {showCritical ? 'Chế độ Tới hạn' : 'Chế độ Bình thường'}
+                    </button>
+                  )}
+                </div>
+                <div className="flex-1" style={{ minHeight: 340 }}>
+                  <PointCloudViewer
+                    points={p2Result ? p2Result.point_cloud : rawPoints}
+                    criticalPoints={p2Result ? (showCritical ? p2Result.full_model.critical_points : []) : []}
+                    showCritical={showCritical}
+                    isLoading={p2Loading}
+                  />
+                </div>
+              </div>
+
+              {/* Right: Controls */}
+              <div className="lg:col-span-2 space-y-6 flex flex-col">
+
+                {/* Object selector */}
+                <div className="bg-stone-50 border-2 border-stone-900 p-6 shadow-[8px_8px_0px_0px_rgba(28,25,23,1)]">
+                  <div className="flex items-center gap-4 mb-5 pb-4 border-b-2 border-stone-900">
+                    <div className="w-10 h-10 bg-sky-400 border-2 border-stone-900 shadow-[2px_2px_0px_0px_rgba(28,25,23,1)] flex items-center justify-center text-stone-900 font-black font-sans text-xl">2</div>
+                    <h2 className="text-xl font-black text-stone-900 font-serif uppercase tracking-tight">Chọn Vật Thể</h2>
+                  </div>
+                  <div className="grid grid-cols-5 gap-2 mb-4">
+                    {DEMO_CLASSES.map((cls) => (
+                      <button
+                        key={cls}
+                        onClick={() => handleLoadSample(cls)}
+                        className={`flex flex-col items-center gap-1 py-3 px-1 border-2 border-stone-900 text-xs font-black font-sans uppercase tracking-wide transition-all ${
+                          selectedClass === cls
+                            ? 'bg-emerald-400 shadow-[3px_3px_0px_0px_rgba(28,25,23,1)]'
+                            : 'bg-white shadow-none hover:bg-stone-50 translate-y-0.5 translate-x-0.5'
+                        }`}
+                      >
+                        <span className="text-xl">{cls === 'airplane' ? '✈' : cls === 'chair' ? '🪑' : cls === 'car' ? '🚗' : cls === 'lamp' ? '💡' : '🪵'}</span>
+                        <span className="truncate w-full text-center" style={{fontSize:'9px'}}>{cls === 'airplane' ? 'Máy bay' : cls === 'chair' ? 'Ghế' : cls === 'car' ? 'Ô tô' : cls === 'lamp' ? 'Đèn' : 'Bàn'}</span>
+                      </button>
+                    ))}
+                  </div>
+                  {rawPoints.length > 0 && (
+                    <p className="text-xs text-stone-500 font-sans border-t border-stone-200 pt-2">
+                      Đã tải: <span className="font-bold text-stone-900">{selectedClass}</span> — {rawPoints.length} điểm
+                    </p>
+                  )}
+                </div>
+
+                {/* Num Points slider */}
+                <div className="bg-stone-50 border-2 border-stone-900 p-6 shadow-[8px_8px_0px_0px_rgba(28,25,23,1)]">
+                  <div className="flex items-center gap-4 mb-5 pb-4 border-b-2 border-stone-900">
+                    <div className="w-10 h-10 bg-amber-400 border-2 border-stone-900 shadow-[2px_2px_0px_0px_rgba(28,25,23,1)] flex items-center justify-center text-stone-900 font-black font-sans text-xl">3</div>
+                    <h2 className="text-xl font-black text-stone-900 font-serif uppercase tracking-tight">Số Điểm</h2>
+                  </div>
+                  <NumPointsSlider value={numPoints} onChange={setNumPoints} />
+                </div>
+
+                {/* Classify button */}
+                <button
+                  onClick={handleClassify}
+                  disabled={p2Loading || rawPoints.length === 0}
+                  className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-stone-300 disabled:border-stone-300 disabled:text-stone-500 disabled:cursor-not-allowed text-white font-black py-5 px-6 transition-colors border-2 border-stone-900 disabled:shadow-none shadow-[6px_6px_0px_0px_rgba(28,25,23,1)] active:shadow-none active:translate-y-1 active:translate-x-1 flex items-center justify-center gap-3 text-lg font-sans uppercase tracking-widest"
+                >
+                  {p2Loading ? (<><Loader2 className="w-6 h-6 animate-spin" />Đang phân tích...</>) : 'Chạy Phân Loại'}
+                </button>
+              </div>
+            </div>
+
+            {/* Row 2: Perturbation Controls */}
+            <PerturbationControls
+              value={perturbation}
+              onChange={setPerturbation}
+              onReset={() => setPerturbation(DEFAULT_PERTURBATION)}
+            />
+
+            {/* Row 3: Results */}
             <div className="bg-stone-50 border-2 border-stone-900 p-8 shadow-[8px_8px_0px_0px_rgba(28,25,23,1)]">
               <div className="flex items-center gap-4 mb-8 pb-4 border-b-2 border-stone-900">
-                <div className="w-10 h-10 bg-sky-400 border-2 border-stone-900 shadow-[2px_2px_0px_0px_rgba(28,25,23,1)] flex items-center justify-center text-stone-900 font-black font-sans text-xl">
-                  2
-                </div>
-                <h2 className="text-2xl font-black text-stone-900 font-serif uppercase tracking-tight">Xoay Ảnh</h2>
-              </div>
-              <RotationSlider value={rotation} onChange={setRotation} />
-            </div>
-
-            <div className="bg-stone-50 border-2 border-stone-900 p-8 shadow-[8px_8px_0px_0px_rgba(28,25,23,1)] flex-1 flex flex-col">
-              <div className="flex items-center gap-4 mb-8 pb-4 border-b-2 border-stone-900">
-                <div className="w-10 h-10 bg-violet-400 border-2 border-stone-900 shadow-[2px_2px_0px_0px_rgba(28,25,23,1)] flex items-center justify-center text-stone-900 font-black font-sans text-xl">
-                  3
-                </div>
-                <h2 className="text-2xl font-black text-stone-900 font-serif uppercase tracking-tight">Phân loại</h2>
-              </div>
-
-              <button
-                onClick={handlePredict}
-                disabled={isLoading || !imageData}
-                className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-stone-300 disabled:border-stone-300 disabled:text-stone-500 disabled:cursor-not-allowed text-white font-black py-5 px-6 transition-colors border-2 border-stone-900 disabled:shadow-none shadow-[6px_6px_0px_0px_rgba(28,25,23,1)] active:shadow-none active:translate-y-1 active:translate-x-1 flex items-center justify-center gap-3 text-lg font-sans uppercase tracking-widest mt-auto mb-auto"
-              >
-                {isLoading ? (
-                  <>
-                    <Loader2 className="w-6 h-6 animate-spin" />
-                    Analyzing...
-                  </>
-                ) : (
-                  'Run Classification'
+                <div className="w-12 h-12 bg-pink-400 border-2 border-stone-900 shadow-[2px_2px_0px_0px_rgba(28,25,23,1)] flex items-center justify-center text-stone-900 font-black text-2xl font-serif">*</div>
+                <h2 className="text-3xl font-black text-stone-900 font-serif uppercase tracking-tight">Phân tích So sánh</h2>
+                {p2Result && (
+                  <span className="ml-auto text-xs font-bold font-sans text-stone-500 border border-stone-300 px-3 py-1">
+                    {p2Result.processing_time_ms.toFixed(0)} ms
+                  </span>
                 )}
-              </button>
-
-              {predictions && (
-                <div className="mt-8 bg-stone-100 border-2 border-stone-900 p-5">
+              </div>
+              <div className="grid md:grid-cols-2 gap-8">
+                <PointNetResultCard
+                  title="PointNet Basic"
+                  description="Shared MLP + Max Pool, không có T-Net (baseline)"
+                  result={p2Result?.basic_model ?? null}
+                  variant="basic"
+                />
+                <PointNetResultCard
+                  title="PointNet Full"
+                  description="Có Input & Feature Transform (T-Net), regularization loss"
+                  result={p2Result?.full_model ?? null}
+                  variant="full"
+                />
+              </div>
+              {p2Result && (
+                <div className="mt-6 bg-stone-100 border-2 border-stone-900 p-5">
                   <p className="text-sm text-stone-800 leading-relaxed font-sans">
                     <span className="font-bold text-stone-900 uppercase tracking-widest text-xs block mb-1">Quan sát:</span>
-                    Mô hình cơ sở bị giảm hiệu suất đáng kể khi ảnh bị xoay, trong khi phương pháp trung bình khung thể hiện tính bất biến mạnh mẽ ở mọi góc độ.
+                    Full model (có T-Net) thường có độ tự tin cao hơn Basic model. Chuyển sang{' '}
+                    <span className="font-bold text-red-600">Chế độ Tới hạn</span> để xem những điểm nào quyết định kết quả (Theorem 2).
+                    Thử điều chỉnh các thanh <span className="font-bold text-violet-700">Kiểm Chứng Robustness</span> bên trên rồi phân loại lại để thấy tác động.
                   </p>
                 </div>
               )}
             </div>
-          </div>
-        </div>
-
-        {/* Results Section */}
-        <div className="bg-stone-50 border-2 border-stone-900 p-8 shadow-[8px_8px_0px_0px_rgba(28,25,23,1)]">
-          <div className="flex items-center gap-4 mb-10 pb-4 border-b-2 border-stone-900">
-            <div className="w-12 h-12 bg-pink-400 border-2 border-stone-900 shadow-[2px_2px_0px_0px_rgba(28,25,23,1)] flex items-center justify-center text-stone-900 font-black text-2xl font-serif">
-              *
-            </div>
-            <h2 className="text-3xl font-black text-stone-900 font-serif uppercase tracking-tight">Phân tích So sánh</h2>
-          </div>
-
-          <div className="grid md:grid-cols-3 gap-8">
-            <PredictionCard
-              title="CNN Cơ sở"
-              description="Chỉ huấn luyện trên chữ số thẳng đứng"
-              result={predictions?.baseline || null}
-              variant="baseline"
-            />
-            <PredictionCard
-              title="Tăng cường dữ liệu"
-              description="Huấn luyện với dữ liệu tăng cường xoay"
-              result={predictions?.augmentation || null}
-              variant="augmentation"
-            />
-            <PredictionCard
-              title="Trung bình khung"
-              description="Trung bình hóa qua nhiều góc xoay"
-              result={predictions?.averaging || null}
-              variant="averaging"
-            />
-          </div>
-        </div>
-          </>
-        ) : (
-          <div className="bg-stone-50 border-2 border-stone-900 p-12 shadow-[8px_8px_0px_0px_rgba(28,25,23,1)] text-center flex flex-col items-center">
-            <div className="mb-6 w-16 h-16 bg-emerald-400 border-2 border-stone-900 shadow-[4px_4px_0px_0px_rgba(28,25,23,1)] flex items-center justify-center text-stone-900 font-black text-3xl font-serif">
-              !
-            </div>
-            <h2 className="text-3xl md:text-4xl font-black text-stone-900 font-serif uppercase tracking-tight mb-6">Giao diện Đang Cập Nhật</h2>
-            <p className="text-stone-700 font-sans text-lg max-w-2xl mx-auto border-t-2 border-stone-200 pt-6">
-              Phần demo <strong>Mạng Neural Đồ Thị (Equivariant GNNs)</strong> đang được phát triển.<br/>
-              Dữ liệu mô phỏng và API Backend sẽ được tích hợp riêng tại đây.
-            </p>
           </div>
         )}
       </main>
