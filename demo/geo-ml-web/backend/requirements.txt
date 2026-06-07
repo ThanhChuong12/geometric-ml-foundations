@@ -4,3 +4,4 @@ pydantic
 torch
 torchvision
 Pillow
+numpy
