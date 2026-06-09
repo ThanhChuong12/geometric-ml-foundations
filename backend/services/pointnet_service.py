@@ -18,26 +18,26 @@ import numpy as np
 import torch
 import torch.nn.functional as F
 
-from backend.core.pointnet_model import PointNetBasic, PointNetFull
+from core.pointnet_model import PointNetBasic, PointNetFull
 
 # ─────────────────────────────────────────────────────────────
 # Paths & Constants
 # ─────────────────────────────────────────────────────────────
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-BACKEND_DIR = os.path.join(BASE_DIR, '..')
-MODELS_DIR = os.path.join(BACKEND_DIR, 'models')
-DATA_DIR   = os.path.join(BACKEND_DIR, 'data')
+STORAGE_DIR = os.path.join(BASE_DIR, '..', '..', 'storage')
+WEIGHTS_DIR = os.path.join(STORAGE_DIR, 'weights')
+DATA_DIR    = os.path.join(STORAGE_DIR, 'data')
 
 CLASSES_JSON   = os.path.join(DATA_DIR, 'modelnet40_classes.json')
 SAMPLE_CLOUDS  = os.path.join(DATA_DIR, 'sample_clouds')
-WEIGHTS_FULL  = os.path.join(MODELS_DIR, 'pointnet_cls.pth')
-WEIGHTS_BASIC = os.path.join(MODELS_DIR, 'pointnet_basic.pth')
+WEIGHTS_FULL  = os.path.join(WEIGHTS_DIR, 'pointnet_cls.pth')
+WEIGHTS_BASIC = os.path.join(WEIGHTS_DIR, 'pointnet_basic.pth')
 
 NUM_CLASSES = 5   # Demo: airplane, chair, car, lamp, table
 DEFAULT_NUM_POINTS = 1024
 
-# CPU only (machine has no CUDA)
-device = torch.device("cpu")
+# Tự động nhận diện thiết bị (đồng bộ với Part 1)
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 # Demo class names (5 classes matching training)
 _FALLBACK_CLASSES = ['airplane', 'chair', 'car', 'lamp', 'table']
