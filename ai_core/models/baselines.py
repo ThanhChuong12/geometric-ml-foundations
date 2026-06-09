@@ -1,1 +1,0 @@
-# Mã nguồn mô hình phi tương biến

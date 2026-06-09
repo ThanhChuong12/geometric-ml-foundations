@@ -19,7 +19,7 @@ Mở một Terminal mới, di chuyển vào thư mục `backend`:
 ```bash
 cd backend
 pip install -r requirements.txt
-uvicorn main:app --reload
+python -m uvicorn main:app --reload
 ```
 Server sẽ chạy ở địa chỉ: `http://localhost:8000`.
 

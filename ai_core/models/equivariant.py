@@ -1,1 +1,0 @@
-# (Bonus) Class Equivariant layer tự code bằng PyTorch

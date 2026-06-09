@@ -217,22 +217,14 @@ __marimo__/
 # Streamlit
 .streamlit/secrets.toml
 
-
-/demo/geo-ml-web/frame-averaging-code-paper
-
-/demo/geo-ml-web/notebooks/data
 # Project specific ignores
-data/
+# data/
 nequip-env/nequip/
 
-
 # Model weights (file lon, khong push len GitHub - train lai bang scripts/)
-*.pth
-*.pt
-*.ckpt
-
-# Sample point cloud data (generate lai bang download_assets.py)
-demo/geo-ml-web/backend/data/sample_clouds/
+# *.pth
+# *.pt
+# *.ckpt
 
 # Next.js build output
 demo/geo-ml-web/frontend/.next/

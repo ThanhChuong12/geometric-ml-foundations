@@ -18,7 +18,7 @@ import numpy as np
 import torch
 import torch.nn.functional as F
 
-from services.pointnet_model import PointNetBasic, PointNetFull
+from backend.core.pointnet_model import PointNetBasic, PointNetFull
 
 # ─────────────────────────────────────────────────────────────
 # Paths & Constants
