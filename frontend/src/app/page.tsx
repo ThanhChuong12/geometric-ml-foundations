@@ -69,7 +69,7 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-stone-100 font-sans text-stone-900 pb-16">
+    <div className="min-h-screen bg-stone-100 font-sans text-stone-900 pb-16" suppressHydrationWarning>
       {/* Header */}
       <header className="w-full px-4 md:px-8 pt-6 pb-4">
         <div className="bg-stone-50 border-2 border-stone-900 p-6 shadow-[6px_6px_0px_0px_rgba(28,25,23,1)] flex flex-col md:flex-row gap-6 md:items-start">
