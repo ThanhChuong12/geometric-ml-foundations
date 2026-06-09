@@ -222,9 +222,13 @@ __marimo__/
 nequip-env/nequip/
 
 # Model weights (file lon, khong push len GitHub - train lai bang scripts/)
-# *.pth
-# *.pt
-# *.ckpt
+*.pth
+*.pt
+*.ckpt
 
 # Next.js build output
 demo/geo-ml-web/frontend/.next/
+
+# Ignore debug outputs
+storage/debug_images/*
+!storage/debug_images/.gitkeep
