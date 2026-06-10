@@ -1,0 +1,220 @@
+model:
+  _target_: nequip.model.NequIPGNNModel
+  do_derivatives: false
+  seed: 42
+  model_dtype: float32
+  type_names:
+  - H
+  - C
+  - 'N'
+  - O
+  - F
+  r_max: 5.0
+  num_bessels: 8
+  bessel_trainable: false
+  polynomial_cutoff_p: 6
+  num_layers: 4
+  l_max: 0
+  parity: false
+  num_features: 32
+  radial_mlp_depth: 2
+  radial_mlp_width: 64
+  avg_num_neighbors: 15.597769257581035
+  per_type_energy_scales: 144.80331510088283
+  per_type_energy_shifts: -646.2134982095375
+  per_type_energy_scales_trainable: false
+  per_type_energy_shifts_trainable: false
+num_datasets:
+  train: 1
+  val: 1
+  test: 1
+  predict: 0
+optimizer:
+  _target_: torch.optim.Adam
+  lr: 0.005
+lr_scheduler:
+  scheduler:
+    _target_: torch.optim.lr_scheduler.ReduceLROnPlateau
+    factor: 0.6
+    patience: 10
+    threshold: 0.1
+    min_lr: 1.0e-06
+  monitor: val0_epoch/weighted_sum
+  interval: epoch
+  frequency: 1
+loss:
+  _target_: nequip.train.EnergyOnlyLoss
+  per_atom_energy: true
+train_metrics:
+  _target_: nequip.train.EnergyOnlyMetrics
+  coeffs:
+    total_energy_mae: 1.0
+    total_energy_rmse: null
+    per_atom_energy_mae: null
+    per_atom_energy_rmse: null
+    total_energy_maxabserr: null
+    per_atom_energy_maxabserr: null
+val_metrics:
+  _target_: nequip.train.EnergyOnlyMetrics
+  coeffs:
+    total_energy_mae: 1.0
+    total_energy_rmse: null
+    per_atom_energy_mae: null
+    per_atom_energy_rmse: null
+    total_energy_maxabserr: null
+    per_atom_energy_maxabserr: null
+test_metrics:
+  _target_: nequip.train.EnergyOnlyMetrics
+  coeffs:
+    total_energy_mae: 1.0
+    total_energy_rmse: null
+    per_atom_energy_mae: null
+    per_atom_energy_rmse: null
+    total_energy_maxabserr: null
+    per_atom_energy_maxabserr: null
+info_dict:
+  versions:
+    torch: 2.12.0
+    e3nn: 0.6.0
+    nequip: 0.18.0
+  data:
+    _target_: nequip.data.datamodule.ASEDataModule
+    seed: 42
+    split_dataset:
+      file_path: /mnt/d/3rdY_HCMUS/Machine_Learning/LAB/L3/geometric-ml-foundations/ai_core/data/qm9/qm9_subset_1000.extxyz
+      train: 800
+      val: 100
+      test: 100
+    transforms:
+    - _target_: nequip.data.transforms.ChemicalSpeciesToAtomTypeMapper
+      model_type_names:
+      - H
+      - C
+      - 'N'
+      - O
+      - F
+    - _target_: nequip.data.transforms.NeighborListTransform
+      r_max: 5.0
+    train_dataloader:
+      _target_: torch.utils.data.DataLoader
+      batch_size: 5
+      num_workers: 4
+      shuffle: true
+    val_dataloader:
+      _target_: torch.utils.data.DataLoader
+      batch_size: 10
+      num_workers: 4
+    test_dataloader:
+      _target_: torch.utils.data.DataLoader
+      batch_size: 10
+      num_workers: 4
+    stats_manager:
+      _target_: nequip.data.EnergyOnlyDataStatisticsManager
+      dataloader_kwargs:
+        batch_size: 10
+      type_names:
+      - H
+      - C
+      - 'N'
+      - O
+      - F
+  trainer:
+    _target_: lightning.Trainer
+    accelerator: auto
+    enable_checkpointing: true
+    max_epochs: 200
+    log_every_n_steps: 10
+    logger:
+      _target_: lightning.pytorch.loggers.csv_logs.CSVLogger
+      save_dir: /mnt/d/3rdY_HCMUS/Machine_Learning/LAB/L3/geometric-ml-foundations/ai_core/outputs/baseline_l0_1000
+      name: baseline_l0_1000
+    callbacks:
+    - _target_: lightning.pytorch.callbacks.EarlyStopping
+      monitor: val0_epoch/weighted_sum
+      min_delta: 0.0001
+      patience: 30
+    - _target_: lightning.pytorch.callbacks.ModelCheckpoint
+      monitor: val0_epoch/weighted_sum
+      dirpath: /mnt/d/3rdY_HCMUS/Machine_Learning/LAB/L3/geometric-ml-foundations/ai_core/outputs/baseline_l0_1000
+      filename: best
+      save_last: true
+    - _target_: lightning.pytorch.callbacks.LearningRateMonitor
+      logging_interval: epoch
+  global_options:
+    allow_tf32: false
+  runs:
+  - train
+  - test
+  training_module:
+    _target_: nequip.train.EMALightningModule
+    ema_decay: 0.999
+    loss:
+      _target_: nequip.train.EnergyOnlyLoss
+      per_atom_energy: true
+    val_metrics:
+      _target_: nequip.train.EnergyOnlyMetrics
+      coeffs:
+        total_energy_mae: 1.0
+        total_energy_rmse: null
+        per_atom_energy_mae: null
+        per_atom_energy_rmse: null
+        total_energy_maxabserr: null
+        per_atom_energy_maxabserr: null
+    train_metrics:
+      _target_: nequip.train.EnergyOnlyMetrics
+      coeffs:
+        total_energy_mae: 1.0
+        total_energy_rmse: null
+        per_atom_energy_mae: null
+        per_atom_energy_rmse: null
+        total_energy_maxabserr: null
+        per_atom_energy_maxabserr: null
+    test_metrics:
+      _target_: nequip.train.EnergyOnlyMetrics
+      coeffs:
+        total_energy_mae: 1.0
+        total_energy_rmse: null
+        per_atom_energy_mae: null
+        per_atom_energy_rmse: null
+        total_energy_maxabserr: null
+        per_atom_energy_maxabserr: null
+    optimizer:
+      _target_: torch.optim.Adam
+      lr: 0.005
+    lr_scheduler:
+      scheduler:
+        _target_: torch.optim.lr_scheduler.ReduceLROnPlateau
+        factor: 0.6
+        patience: 10
+        threshold: 0.1
+        min_lr: 1.0e-06
+      monitor: val0_epoch/weighted_sum
+      interval: epoch
+      frequency: 1
+    model:
+      _target_: nequip.model.NequIPGNNModel
+      do_derivatives: false
+      seed: 42
+      model_dtype: float32
+      type_names:
+      - H
+      - C
+      - 'N'
+      - O
+      - F
+      r_max: 5.0
+      num_bessels: 8
+      bessel_trainable: false
+      polynomial_cutoff_p: 6
+      num_layers: 4
+      l_max: 0
+      parity: false
+      num_features: 32
+      radial_mlp_depth: 2
+      radial_mlp_width: 64
+      avg_num_neighbors: 15.597769257581035
+      per_type_energy_scales: 144.80331510088283
+      per_type_energy_shifts: -646.2134982095375
+      per_type_energy_scales_trainable: false
+      per_type_energy_shifts_trainable: false
+ema_decay: 0.999
