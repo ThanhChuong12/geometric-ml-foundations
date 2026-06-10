@@ -55,7 +55,7 @@ logger = logging.getLogger("nequip_learning_curve")
 def parse_csv_metrics(csv_path: str | Path) -> Dict[str, float]:
     """Parse a Lightning CSVLogger ``metrics.csv`` file.
 
-    Extracts the final (last-epoch) values for energy MAE and forces MAE.
+    Extracts the final (last-epoch) values for energy MAE.
 
     Parameters
     ----------
@@ -65,7 +65,7 @@ def parse_csv_metrics(csv_path: str | Path) -> Dict[str, float]:
     Returns
     -------
     dict
-        Keys: ``'energy_mae'``, ``'forces_mae'`` (float values).
+        Keys: ``'energy_mae'`` (float value).
     """
     import csv
 
@@ -84,48 +84,44 @@ def parse_csv_metrics(csv_path: str | Path) -> Dict[str, float]:
     if not rows:
         raise ValueError(f"No data rows found in {csv_path}")
 
-    # Look for test metrics columns (NequIP convention)
-    # Typical column names from EnergyForceMetrics:
-    #   test0_epoch/total_energy_mae, test0_epoch/forces_mae
-    #   val0_epoch/total_energy_mae, val0_epoch/forces_mae
-    last_row = rows[-1]
-
+    # Look for test/val metrics in the last row containing them
     energy_mae = None
-    forces_mae = None
 
-    # Priority: test metrics > val metrics
-    for prefix in ["test0_epoch", "val0_epoch"]:
-        energy_key = f"{prefix}/total_energy_mae"
-        forces_key = f"{prefix}/forces_mae"
+    # Priority: search from the end of the file for the first non-empty energy MAE metric
+    for row in reversed(rows):
+        for prefix in ["test0_epoch", "val0_epoch"]:
+            energy_key = f"{prefix}/total_energy_mae"
+            if energy_key in row and row[energy_key]:
+                energy_mae = float(row[energy_key])
+                break
+        if energy_mae is not None:
+            break
 
-        if energy_mae is None and energy_key in last_row and last_row[energy_key]:
-            energy_mae = float(last_row[energy_key])
-        if forces_mae is None and forces_key in last_row and last_row[forces_key]:
-            forces_mae = float(last_row[forces_key])
-
-    # Fallback: search for any column containing "energy_mae" or "forces_mae"
+    # Fallback: search for any column containing "energy_mae" or "total_energy_mae" in all rows starting from the end
     if energy_mae is None:
-        for key, val in last_row.items():
-            if "energy_mae" in key.lower() and val:
-                energy_mae = float(val)
-                break
-    if forces_mae is None:
-        for key, val in last_row.items():
-            if "forces_mae" in key.lower() and val:
-                forces_mae = float(val)
+        for row in reversed(rows):
+            for key, val in row.items():
+                if "total_energy_mae" in key.lower() and val:
+                    energy_mae = float(val)
+                    break
+                elif "energy_mae" in key.lower() and val:
+                    energy_mae = float(val)
+                    break
+            if energy_mae is not None:
                 break
 
-    if energy_mae is None or forces_mae is None:
+    if energy_mae is None:
+        # Check last row keys to report
+        last_row = rows[-1]
         logger.warning(
-            "Could not find all metrics in %s. Available columns: %s",
+            "Could not find energy_mae in %s. Available columns: %s",
             csv_path,
             list(last_row.keys()),
         )
-        energy_mae = energy_mae or float("nan")
-        forces_mae = forces_mae or float("nan")
+        energy_mae = float("nan")
 
-    result = {"energy_mae": energy_mae, "forces_mae": forces_mae}
-    logger.info("  → Energy MAE: %.6f, Forces MAE: %.6f", energy_mae, forces_mae)
+    result = {"energy_mae": energy_mae}
+    logger.info("  → Energy MAE: %.6f", energy_mae)
     return result
 
 
@@ -150,7 +146,7 @@ def collect_results_from_logs(
     Returns
     -------
     dict
-        Nested dict: ``{model_label: {dataset_size: {energy_mae, forces_mae}}}``
+        Nested dict: ``{model_label: {dataset_size: {energy_mae}}}``
     """
     results_dir = Path(results_dir)
     logger.info("Scanning results directory: %s", results_dir)
@@ -175,10 +171,13 @@ def collect_results_from_logs(
         found = False
         for csv_path in candidates:
             if csv_path.exists():
-                metrics = parse_csv_metrics(csv_path)
-                results.setdefault(label, {})[size] = metrics
-                found = True
-                break
+                try:
+                    metrics = parse_csv_metrics(csv_path)
+                    results.setdefault(label, {})[size] = metrics
+                    found = True
+                    break
+                except Exception as e:
+                    logger.warning("Error parsing %s: %s", csv_path, e)
 
         if not found:
             logger.warning(
@@ -207,12 +206,12 @@ def get_placeholder_results() -> Dict[str, Dict[int, Dict[str, float]]]:
     """
     return {
         "Invariant ($\\ell=0$)": {
-            100: {"energy_mae": 0.150, "forces_mae": 0.085},
-            1000: {"energy_mae": 0.045, "forces_mae": 0.032},
+            100: {"energy_mae": 0.150},
+            1000: {"energy_mae": 0.045},
         },
         "Equivariant ($\\ell=1$)": {
-            100: {"energy_mae": 0.080, "forces_mae": 0.035},
-            1000: {"energy_mae": 0.015, "forces_mae": 0.010},
+            100: {"energy_mae": 0.080},
+            1000: {"energy_mae": 0.015},
         },
     }
 
@@ -280,9 +279,8 @@ def plot_learning_curves(
 ) -> None:
     """Generate a publication-quality log-log learning curve plot.
 
-    Creates a figure with two subplots:
-      - Left:  Energy MAE vs Dataset Size
-      - Right: Forces MAE vs Dataset Size
+    Creates a figure with a single subplot:
+      - Energy MAE vs Dataset Size
 
     Both axes use log scale. Lines connect the l=0 and l=1 models, with
     slope annotations showing the convergence rate.
@@ -298,76 +296,76 @@ def plot_learning_curves(
     """
     plt.rcParams.update(STYLE_CONFIG)
 
-    fig, axes = plt.subplots(1, 2, figsize=(14, 6), sharey=False)
+    fig, ax = plt.subplots(figsize=(8, 6))
     fig.suptitle(
         "NequIP Ablation Study: Learning Curves on QM9\n"
         "Invariant ($\\ell_{\\max}=0$) vs Equivariant ($\\ell_{\\max}=1$)",
-        fontsize=16,
+        fontsize=14,
         fontweight="bold",
-        y=1.02,
+        y=0.98,
     )
 
-    metric_keys = [("energy_mae", "Energy MAE (Ha)"), ("forces_mae", "Forces MAE (Ha/Å)")]
+    metric_key = "energy_mae"
+    ylabel = "Energy MAE"
 
-    for ax, (metric_key, ylabel) in zip(axes, metric_keys):
-        for model_label, size_metrics in sorted(results.items()):
-            sizes = sorted(size_metrics.keys())
-            maes = [size_metrics[s][metric_key] for s in sizes]
+    for model_label, size_metrics in sorted(results.items()):
+        sizes = sorted(size_metrics.keys())
+        maes = [size_metrics[s][metric_key] for s in sizes]
 
-            color = COLORS.get(model_label, "#333333")
-            marker = MARKERS.get(model_label, "D")
-            ls = LINESTYLES.get(model_label, "-")
+        color = COLORS.get(model_label, "#333333")
+        marker = MARKERS.get(model_label, "D")
+        ls = LINESTYLES.get(model_label, "-")
 
-            ax.plot(
-                sizes,
-                maes,
+        ax.plot(
+            sizes,
+            maes,
+            color=color,
+            marker=marker,
+            markersize=10,
+            linewidth=2.5,
+            linestyle=ls,
+            label=model_label,
+            markeredgecolor="white",
+            markeredgewidth=1.5,
+            zorder=5,
+        )
+
+        # Annotate slope
+        slope = compute_slope(sizes, maes)
+        if not np.isnan(slope):
+            # Place annotation at midpoint (geometric mean)
+            mid_x = np.sqrt(sizes[0] * sizes[-1])
+            mid_y = np.sqrt(maes[0] * maes[-1])
+            ax.annotate(
+                f"slope = {slope:.2f}",
+                xy=(mid_x, mid_y),
+                fontsize=10,
+                fontweight="bold",
                 color=color,
-                marker=marker,
-                markersize=10,
-                linewidth=2.5,
-                linestyle=ls,
-                label=model_label,
-                markeredgecolor="white",
-                markeredgewidth=1.5,
-                zorder=5,
+                ha="center",
+                va="bottom",
+                bbox=dict(
+                    boxstyle="round,pad=0.3",
+                    facecolor="white",
+                    edgecolor=color,
+                    alpha=0.85,
+                ),
             )
 
-            # Annotate slope
-            slope = compute_slope(sizes, maes)
-            if not np.isnan(slope):
-                # Place annotation at midpoint (geometric mean)
-                mid_x = np.sqrt(sizes[0] * sizes[-1])
-                mid_y = np.sqrt(maes[0] * maes[-1])
-                ax.annotate(
-                    f"slope = {slope:.2f}",
-                    xy=(mid_x, mid_y),
-                    fontsize=9,
-                    fontweight="bold",
-                    color=color,
-                    ha="center",
-                    va="bottom",
-                    bbox=dict(
-                        boxstyle="round,pad=0.3",
-                        facecolor="white",
-                        edgecolor=color,
-                        alpha=0.85,
-                    ),
-                )
+    ax.set_xscale("log")
+    ax.set_yscale("log")
+    ax.set_xlabel("Dataset Size ($N$)", fontweight="bold")
+    ax.set_ylabel(ylabel, fontweight="bold")
 
-        ax.set_xscale("log")
-        ax.set_yscale("log")
-        ax.set_xlabel("Dataset Size ($N$)", fontweight="bold")
-        ax.set_ylabel(ylabel, fontweight="bold")
+    # Custom tick labels for dataset sizes
+    all_sizes = sorted({s for sm in results.values() for s in sm.keys()})
+    ax.set_xticks(all_sizes)
+    ax.set_xticklabels([str(s) for s in all_sizes])
+    ax.xaxis.set_minor_formatter(matplotlib.ticker.NullFormatter())
 
-        # Custom tick labels for dataset sizes
-        all_sizes = sorted({s for sm in results.values() for s in sm.keys()})
-        ax.set_xticks(all_sizes)
-        ax.set_xticklabels([str(s) for s in all_sizes])
-        ax.xaxis.set_minor_formatter(matplotlib.ticker.NullFormatter())
-
-        ax.legend(loc="upper right", framealpha=0.9, edgecolor="gray")
-        ax.spines["top"].set_visible(False)
-        ax.spines["right"].set_visible(False)
+    ax.legend(loc="upper right", framealpha=0.9, edgecolor="gray")
+    ax.spines["top"].set_visible(False)
+    ax.spines["right"].set_visible(False)
 
     plt.tight_layout()
 
@@ -392,7 +390,7 @@ def print_results_table(
     results: Dict[str, Dict[int, Dict[str, float]]],
 ) -> None:
     """Print a formatted summary table of all ablation results."""
-    header = f"{'Model':<30} {'N':>6} {'Energy MAE':>12} {'Forces MAE':>12} {'Slope (E)':>10} {'Slope (F)':>10}"
+    header = f"{'Model':<30} {'N':>6} {'Energy MAE':>14} {'Slope (E)':>10}"
     separator = "─" * len(header)
 
     print("\n" + separator)
@@ -405,18 +403,14 @@ def print_results_table(
         size_metrics = results[model_label]
         sizes = sorted(size_metrics.keys())
         energy_maes = [size_metrics[s]["energy_mae"] for s in sizes]
-        forces_maes = [size_metrics[s]["forces_mae"] for s in sizes]
 
         slope_e = compute_slope(sizes, energy_maes)
-        slope_f = compute_slope(sizes, forces_maes)
 
         for i, size in enumerate(sizes):
             m = size_metrics[size]
             slope_e_str = f"{slope_e:.2f}" if i == 0 and not np.isnan(slope_e) else ""
-            slope_f_str = f"{slope_f:.2f}" if i == 0 and not np.isnan(slope_f) else ""
             print(
-                f"{model_label:<30} {size:>6} {m['energy_mae']:>12.6f} "
-                f"{m['forces_mae']:>12.6f} {slope_e_str:>10} {slope_f_str:>10}"
+                f"{model_label:<30} {size:>6} {m['energy_mae']:>14.6f} {slope_e_str:>10}"
             )
 
     print(separator)
@@ -473,7 +467,7 @@ def main(argv=None) -> None:
                 "No results found in '%s'. Falling back to placeholder data.\n"
                 "  → Run the experiments first, or use --use-placeholder-data.",
                 args.results_dir,
-            )
+                )
             results = get_placeholder_results()
 
     # Print summary table
