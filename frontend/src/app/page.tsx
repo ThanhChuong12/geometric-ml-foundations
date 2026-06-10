@@ -1,5 +1,5 @@
 "use client";
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { DigitCanvas } from '@/components/DigitCanvas';
 import { RotationSlider } from '@/components/RotationSlider';
 import { PredictionCard } from '@/components/PredictionCard';
@@ -29,6 +29,10 @@ export default function Home() {
   const [rawPoints, setRawPoints] = useState<number[][]>([]);
   const [showCritical, setShowCritical] = useState(false);
   const [perturbation, setPerturbation] = useState<PerturbationState>(DEFAULT_PERTURBATION);
+  // Chặn SSR render → tránh hydration mismatch từ browser extension
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+  if (!mounted) return null;
 
   const handleLoadSample = async (cls: DemoClass) => {
     setSelectedClass(cls);
@@ -46,9 +50,22 @@ export default function Home() {
     try {
       const result = await classifyPointCloud(rawPoints, numPoints, perturbation);
       setP2Result(result);
+      // Backend đã apply rotation vào data trả về
+      // → reset visual rotation về 0 để không bị double-rotation
+      setPerturbation(prev => ({ ...prev, rotation_x: 0, rotation_y: 0, rotation_z: 0 }));
     } catch (e) {
       alert('Lỗi: ' + e);
     } finally { setP2Loading(false); }
+  };
+
+  // Cập nhật slider X/Y khi drag trên viewer
+  const handleRotationChange = (x: number, y: number) => {
+    setPerturbation(prev => ({ ...prev, rotation_x: x, rotation_y: y }));
+  };
+
+  // Cập nhật slider Z khi scroll trên viewer
+  const handleRotationChangeZ = (z: number) => {
+    setPerturbation(prev => ({ ...prev, rotation_z: z }));
   };
 
   const handlePredict = async () => {
@@ -235,6 +252,11 @@ export default function Home() {
                     criticalPoints={p2Result ? (showCritical ? p2Result.full_model.critical_points : []) : []}
                     showCritical={showCritical}
                     isLoading={p2Loading}
+                    rotationX={perturbation.rotation_x}
+                    rotationY={perturbation.rotation_y}
+                    rotationZ={perturbation.rotation_z}
+                    onRotationChange={handleRotationChange}
+                    onRotationChangeZ={handleRotationChangeZ}
                   />
                 </div>
               </div>

@@ -24,6 +24,11 @@ interface PointCloudViewerProps {
   criticalPoints: number[][];
   showCritical: boolean;
   isLoading?: boolean;
+  rotationX?: number;
+  rotationY?: number;
+  rotationZ?: number;
+  onRotationChange?: (x: number, y: number) => void;
+  onRotationChangeZ?: (z: number) => void;
 }
 
 // Re-export với tên gốc để page.tsx import không cần đổi

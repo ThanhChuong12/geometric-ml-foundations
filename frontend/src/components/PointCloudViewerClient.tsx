@@ -10,6 +10,16 @@ interface PointCloudViewerProps {
   criticalPoints: number[][];
   showCritical: boolean;
   isLoading?: boolean;
+  /** Góc xoay X (độ) từ slider bên ngoài — đồng bộ 2 chiều */
+  rotationX?: number;
+  /** Góc xoay Y (độ) từ slider bên ngoài — đồng bộ 2 chiều */
+  rotationY?: number;
+  /** Góc xoay Z (độ) từ slider bên ngoài — chỉ 1 chiều slider→viewer */
+  rotationZ?: number;
+  /** Callback khi drag thay đổi góc X/Y — cập nhật slider bên ngoài */
+  onRotationChange?: (x: number, y: number) => void;
+  /** Callback khi scroll thay đổi góc Z — cập nhật slider bên ngoài */
+  onRotationChangeZ?: (z: number) => void;
 }
 
 export function PointCloudViewer({
@@ -17,15 +27,34 @@ export function PointCloudViewer({
   criticalPoints,
   showCritical,
   isLoading = false,
+  rotationX,
+  rotationY,
+  rotationZ,
+  onRotationChange,
+  onRotationChangeZ,
 }: PointCloudViewerProps) {
   const mountRef    = useRef<HTMLDivElement>(null);
   const sceneRef    = useRef<THREE.Scene | null>(null);
   const cameraRef   = useRef<THREE.PerspectiveCamera | null>(null);
   const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
   const frameRef    = useRef<number>(0);
-  const rotationRef = useRef({ x: 0.3, y: 0.5 });
+  const rotationRef = useRef({ x: 0.3, y: 0.5, z: 0 });
   const isDragging  = useRef(false);
   const prevMouse   = useRef({ x: 0, y: 0 });
+  // Giữ ref đến callback để tránh stale closure trong animation loop
+  const onRotationChangeRef  = useRef(onRotationChange);
+  const onRotationChangeZRef = useRef(onRotationChangeZ);
+  useEffect(() => { onRotationChangeRef.current  = onRotationChange;  }, [onRotationChange]);
+  useEffect(() => { onRotationChangeZRef.current = onRotationChangeZ; }, [onRotationChangeZ]);
+
+  // Đồng bộ từ slider → viewer (X/Y chỉ khi không đang drag; Z luôn cập nhật)
+  useEffect(() => {
+    if (!isDragging.current) {
+      if (rotationX !== undefined) rotationRef.current.x = (rotationX * Math.PI) / 180;
+      if (rotationY !== undefined) rotationRef.current.y = (rotationY * Math.PI) / 180;
+    }
+    if (rotationZ !== undefined) rotationRef.current.z = (rotationZ * Math.PI) / 180;
+  }, [rotationX, rotationY, rotationZ]);
 
   // ── Init scene once ──
   useEffect(() => {
@@ -56,6 +85,7 @@ export function PointCloudViewer({
         if (child instanceof THREE.Points) {
           child.rotation.x = rotationRef.current.x;
           child.rotation.y = rotationRef.current.y;
+          child.rotation.z = rotationRef.current.z;
         }
       });
       renderer.render(scene, camera);
@@ -70,10 +100,24 @@ export function PointCloudViewer({
       camera.updateProjectionMatrix();
       renderer.setSize(W, H);
     };
+
+    // Scroll wheel → xoay trục Z
+    const handleWheel = (e: WheelEvent) => {
+      e.preventDefault();
+      rotationRef.current.z += e.deltaY * 0.005;
+      if (onRotationChangeZRef.current) {
+        let d = ((rotationRef.current.z * 180) / Math.PI) % 360;
+        if (d < 0) d += 360;
+        onRotationChangeZRef.current(Math.round(d / 5) * 5);
+      }
+    };
+    mount.addEventListener('wheel', handleWheel, { passive: false });
+
     window.addEventListener('resize', handleResize);
 
     return () => {
       window.removeEventListener('resize', handleResize);
+      mount.removeEventListener('wheel', handleWheel);
       cancelAnimationFrame(frameRef.current);
       renderer.dispose();
       if (mount.contains(renderer.domElement)) mount.removeChild(renderer.domElement);
@@ -150,6 +194,18 @@ export function PointCloudViewer({
     rotationRef.current.y += (e.clientX - prevMouse.current.x) * 0.01;
     rotationRef.current.x += (e.clientY - prevMouse.current.y) * 0.01;
     prevMouse.current = { x: e.clientX, y: e.clientY };
+    // Gửi góc (độ) ra ngoài để cập nhật slider
+    if (onRotationChangeRef.current) {
+      const toDeg = (rad: number) => {
+        let d = ((rad * 180) / Math.PI) % 360;
+        if (d < 0) d += 360;
+        return Math.round(d / 5) * 5; // snap to step=5
+      };
+      onRotationChangeRef.current(
+        toDeg(rotationRef.current.x),
+        toDeg(rotationRef.current.y),
+      );
+    }
   };
   const onMouseUp = () => { isDragging.current = false; };
 
@@ -198,7 +254,7 @@ export function PointCloudViewer({
       {points.length > 0 && (
         <div className="absolute top-2 right-2">
           <span className="text-[10px] font-bold font-sans uppercase tracking-widest bg-white border border-stone-300 text-stone-500 px-2 py-1">
-            Drag to rotate
+            Drag XY · Scroll Z
           </span>
         </div>
       )}

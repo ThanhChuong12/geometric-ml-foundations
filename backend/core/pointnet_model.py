@@ -58,13 +58,17 @@ class InputTransformNet(nn.Module):
 
         x = torch.max(x, dim=2)[0]  # Global max pool -> (B, 1024)
 
-        # Use BN only when batch > 1 (avoids error with single-sample inference)
-        if x.shape[0] > 1:
-            x = F.relu(self.bn4(self.fc1(x)))
-            x = F.relu(self.bn5(self.fc2(x)))
-        else:
+        # FIX: Skip BN *only* during training with B=1 (zero variance -> NaN/undefined).
+        # In eval() mode, BN uses running_mean/running_var regardless of batch size
+        # -> safe for B=1. Old condition `if x.shape[0] > 1` was wrong because it
+        # also skipped BN in eval mode, creating a train/test mismatch that caused
+        # the T-Net to produce garbage transforms at inference time.
+        if self.training and x.shape[0] == 1:
             x = F.relu(self.fc1(x))
             x = F.relu(self.fc2(x))
+        else:
+            x = F.relu(self.bn4(self.fc1(x)))
+            x = F.relu(self.bn5(self.fc2(x)))
         x = self.fc3(x)
 
         return x.view(-1, 3, 3)  # (B, 3, 3)
@@ -113,13 +117,13 @@ class FeatureTransformNet(nn.Module):
 
         x = torch.max(x, dim=2)[0]  # Global max pool -> (B, 1024)
 
-        # Use BN only when batch > 1
-        if x.shape[0] > 1:
-            x = F.relu(self.bn4(self.fc1(x)))
-            x = F.relu(self.bn5(self.fc2(x)))
-        else:
+        # FIX: same as InputTransformNet — skip BN only when training with B=1
+        if self.training and x.shape[0] == 1:
             x = F.relu(self.fc1(x))
             x = F.relu(self.fc2(x))
+        else:
+            x = F.relu(self.bn4(self.fc1(x)))
+            x = F.relu(self.bn5(self.fc2(x)))
         x = self.fc3(x)
 
         return x.view(-1, self.K, self.K)  # (B, K, K)
@@ -249,9 +253,10 @@ class PointNetFull(nn.Module):
         Args:
             x: (B, N, 3) — batch of point clouds
         Returns:
-            logits: (B, num_classes)
-            critical_indices: (B, 1024) — critical points (Theorem 2)
-            feature_transform: (B, 64, 64) — for orthogonal regularization loss
+            logits:           (B, num_classes)
+            critical_indices: (B, 1024)  — critical points (Theorem 2)
+            trans_feat:       (B, 64, 64) — feature transform, for orthogonal reg loss
+            trans_input:      (B, 3, 3)   — input transform,   for orthogonal reg loss
         """
         B, N, _ = x.shape
 
@@ -286,7 +291,8 @@ class PointNetFull(nn.Module):
         x = self.dropout(x)
         x = self.fc3(x)
 
-        return x, critical_indices, trans_feat
+        # Return 4 values: trans_input exposed so training can regularize both T-Nets
+        return x, critical_indices, trans_feat, trans_input
 
 
 def feature_transform_regularizer(trans):

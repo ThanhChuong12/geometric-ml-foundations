@@ -32,10 +32,11 @@ from services.pointnet_model import PointNetBasic, PointNetFull, feature_transfo
 CLASSES       = ['airplane', 'chair', 'car', 'lamp', 'table']
 NUM_CLASSES   = len(CLASSES)   # 5
 NUM_POINTS    = 1024
-BATCH_SIZE    = 8
-EPOCHS        = 30             # 30 là đủ cho 5 class synthetic
+BATCH_SIZE    = 16             # tăng từ 8: BN cần batch đủ lớn để ổn định
+EPOCHS        = 50             # tăng từ 30 để hội tụ tốt hơn
 LR            = 0.001
-REG_WEIGHT    = 0.00001        # giảm 100x: tránh T-Net dominate loss gây mode collapse
+REG_WEIGHT    = 0.001          # FIX: paper dùng 0.001 — đủ mạnh để T-Net giữ orthogonality
+                               # Giá trị cũ 0.00001 quá nhỏ → T-Net collapse → bias về car
 
 DATA_DIR   = os.path.join(os.path.dirname(__file__), '..', 'backend', 'data', 'sample_clouds')
 MODELS_DIR = os.path.join(os.path.dirname(__file__), '..', 'backend', 'models')
@@ -162,9 +163,12 @@ def train_one_model(model, model_name, is_full, train_loader, val_loader):
             optimizer.zero_grad()
 
             if is_full:
-                logits, _, trans_feat = model(pts)
+                logits, _, trans_feat, trans_input = model(pts)
                 cls_loss = criterion(logits, labels)
-                reg_loss = feature_transform_regularizer(trans_feat)
+                # Regularize BOTH T-Nets: input (3×3) + feature (64×64)
+                # Prevents both from collapsing into non-orthogonal matrices
+                reg_loss = (feature_transform_regularizer(trans_feat) +
+                            feature_transform_regularizer(trans_input))
                 loss     = cls_loss + REG_WEIGHT * reg_loss
             else:
                 logits, _ = model(pts)
@@ -191,7 +195,7 @@ def train_one_model(model, model_name, is_full, train_loader, val_loader):
                     pts    = pts.to(device)
                     labels = labels.to(device)
                     if is_full:
-                        logits, _, _ = model(pts)
+                        logits, _, _, _ = model(pts)
                     else:
                         logits, _ = model(pts)
                     pred        = logits.argmax(dim=1)
@@ -224,8 +228,9 @@ if __name__ == '__main__':
     os.makedirs(MODELS_DIR, exist_ok=True)
 
     # Datasets
-    train_set = AugmentedDataset(samples_per_class=100, augment=True)   # 100×5=500 samples
-    val_set   = AugmentedDataset(samples_per_class=30,  augment=False)  # 30×5=150 samples
+    # Datasets — tăng samples để model không bị overfit vào 1 class
+    train_set = AugmentedDataset(samples_per_class=400, augment=True)   # 400×5=2000 samples
+    val_set   = AugmentedDataset(samples_per_class=80,  augment=False)  # 80×5=400 samples
 
     train_loader = torch.utils.data.DataLoader(
         train_set, batch_size=BATCH_SIZE, shuffle=True, num_workers=0

@@ -226,7 +226,7 @@ def _run_inference(model, tensor: torch.Tensor, is_full: bool):
     """
     with torch.no_grad():
         if is_full:
-            logits, critical_indices, _ = model(tensor)
+            logits, critical_indices, _, _ = model(tensor)  # 4 values: logits, crit_idx, trans_feat, trans_input
         else:
             logits, critical_indices = model(tensor)
 

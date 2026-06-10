@@ -226,8 +226,11 @@ nequip-env/nequip/
 *.pt
 *.ckpt
 
+# Nhưng cho phép weights trong storage/weights/ để team chạy được ngay
+!storage/weights/*.pth
+
 # Next.js build output
-demo/geo-ml-web/frontend/.next/
+frontend/.next/
 
 # Ignore debug outputs
 storage/debug_images/*

@@ -56,17 +56,27 @@ def generate_synthetic_clouds():
         return pts
 
     def make_airplane(n=2048):
-        # Fuselage: cylinder along x-axis
+        # Fuselage: cylinder along x-axis  (n//2 points)
         t = np.linspace(-1, 1, n // 2)
         r = 0.08 * (1 - 0.5 * t**2)
         angle = np.random.uniform(0, 2*np.pi, n // 2)
         fuselage = np.stack([t, r*np.cos(angle), r*np.sin(angle)], axis=1)
-        # Wings: flat rectangle
+        # Main wings: flat rectangle  (n//4 points)
         wx = np.random.uniform(-0.3, 0.3, n // 4)
         wy = np.random.uniform(-0.7, 0.7, n // 4)
         wz = np.random.uniform(-0.02, 0.02, n // 4)
         wings = np.stack([wx, wy, wz], axis=1)
-        pts = np.vstack([fuselage, wings])
+        # Tail: horizontal stabilizer near back  (n//8 points)
+        tx = np.random.uniform(0.7, 0.95, n // 8)
+        ty = np.random.uniform(-0.25, 0.25, n // 8)
+        tz = np.random.uniform(-0.01, 0.01, n // 8)
+        tail_h = np.stack([tx, ty, tz], axis=1)
+        # Tail: vertical stabilizer  (n//8 points)
+        vx = np.random.uniform(0.7, 0.95, n // 8)
+        vy = np.random.uniform(-0.01, 0.01, n // 8)
+        vz = np.random.uniform(0.0, 0.2, n // 8)
+        tail_v = np.stack([vx, vy, vz], axis=1)
+        pts = np.vstack([fuselage, wings, tail_h, tail_v])
         pts += np.random.randn(*pts.shape) * 0.01
         return _normalize(pts[:n])
 
@@ -147,12 +157,9 @@ def generate_synthetic_clouds():
     print("[SYNTHETIC] Generating synthetic point clouds for demo...")
     for cls, gen_fn in generators.items():
         out_path = os.path.join(sample_dir, f"{cls}_sample.npy")
-        if not os.path.exists(out_path):
-            pts = gen_fn(2048)
-            np.save(out_path, pts.astype(np.float32))
-            print(f"  Created: {cls}_sample.npy ({len(pts)} points)")
-        else:
-            print(f"  [OK] Already exists: {cls}_sample.npy")
+        pts = gen_fn(2048)
+        np.save(out_path, pts.astype(np.float32))
+        print(f"  Created: {cls}_sample.npy ({len(pts)} points)")
     print("[SYNTHETIC] Done.")
 
 

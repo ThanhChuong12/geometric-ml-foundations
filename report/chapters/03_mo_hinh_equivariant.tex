@@ -1205,33 +1205,236 @@ Một đám mây điểm được biểu diễn là tập hợp $\{P_i | i=1,...
 % Khai thác các nhóm đối xứng không gian: Các công trình này ứng dụng mạng nơ-ron đẳng biến với nhóm xoay SO(2) hoặc nhóm Euclid SE(3) (bao gồm cả xoay và tịnh tiến) vào bài toán điều khiển thao tác (manipulation) và nhận diện điểm gắp (grasp learning)
 % Hiệu quả dữ liệu (Sample-Efficiency): Nhờ mã hóa trực tiếp tính đẳng biến vào mô hình thay vì bắt robot phải tự học lại các góc độ xoay từ số 0, các công trình này cho phép robot học cách gắp thả vật thể cực kỳ nhanh và tiết kiệm dữ liệu (sample-efficient learning)
 
+Trong robotics, equivariance xuất hiện rất tự nhiên vì nhiều hành động của robot phải thay đổi nhất quán theo hình học của môi trường. Nếu camera quan sát một vật thể trên bàn và toàn bộ cảnh được xoay một góc, chiến lược điều khiển hợp lý không nên học lại từ đầu như một trường hợp mới. Thay vào đó, action tương ứng cũng cần được xoay theo cùng phép biến đổi. Trực giác này đặc biệt rõ trong các bài toán manipulation, nơi robot phải chọn vị trí gắp, hướng gripper, hoặc quỹ đạo tiếp cận dựa trên hình dạng và tư thế của vật thể. Khi vật thể bị rotate hoặc translate, action tối ưu thường cũng rotate hoặc translate theo cùng cấu trúc hình học.
 
+\begin{figure}[H]
+    \centering
+    \begin{tikzpicture}[
+        node distance=1.8cm and 2.6cm,
+        box/.style={
+            draw,
+            rounded corners,
+            align=center,
+            minimum width=3.3cm,
+            minimum height=1.05cm,
+            font=\small
+        },
+        arrow/.style={-{Latex[length=2mm]}, thick},
+        trans/.style={-{Latex[length=2mm]}, dashed, thick}
+    ]
+        \node[box] (state) {visual state\\$s$};
+        \node[box, right=of state] (action) {optimal action\\$\pi^*(s)$};
 
-\subsection{Giới hạn: Vấn đề Symmetry Breaking}
+        \node[box, below=of state] (gstate) {transformed state\\$g \cdot s$};
+        \node[box, right=of gstate] (gaction) {transformed action\\$g \cdot \pi^*(s)$};
+
+        \draw[arrow] (state) -- node[above, font=\small] {policy} (action);
+        \draw[trans] (state) -- node[left, font=\small] {$g$} (gstate);
+        \draw[trans] (action) -- node[right, font=\small] {$g$} (gaction);
+        \draw[arrow] (gstate) -- node[below, font=\small] {$\pi^*(g \cdot s)$} (gaction);
+    \end{tikzpicture}
+    \caption{Tính nhất quán hình học giữa state và action trong robot manipulation.}
+    \label{fig:robotics-equivariance}
+\end{figure}
+
+\noindent\textit{Ghi chú.} Sơ đồ mô tả trường hợp một phép biến đổi hình học $g$ tác động lên state. Nếu policy học được đúng cấu trúc equivariance, action đầu ra cũng biến đổi theo cùng $g$, thay vì sinh ra một action không nhất quán với hình học của cảnh.
+
+% ============================================================
+% 1. Định lý cốt lõi về MDPs: optimal policy là equivariant
+% ============================================================
+
+Một cách mô hình hóa phổ biến cho bài toán ra quyết định của robot là Markov decision process $\mathcal{M}=(\mathcal{S},\mathcal{A},\mathcal{T},\mathcal{R},\gamma)$, trong đó $\mathcal{S}$ là state space, $\mathcal{A}$ là action space, $\mathcal{T}$ là transition function, $\mathcal{R}$ là reward function và $\gamma$ là discount factor. Giả sử có một group $G$ tác động lên cả state và action. Với mỗi $g \in G$, ta ký hiệu state sau biến đổi là $g \cdot s$ và action sau biến đổi là $g \cdot a$.
+
+\begin{InfoBox}{Định lý cốt lõi về optimal policy đẳng biến}
+Xét một MDP có đối xứng theo group $G$. Nếu reward function và transition function tương thích với tác động của group, nghĩa là
+\begin{equation}
+    \mathcal{R}(g \cdot s,\, g \cdot a) = \mathcal{R}(s,\,a),
+    \label{eq:reward-equivariance}
+\end{equation}
+\begin{equation}
+    \mathcal{T}(g \cdot s' \mid g \cdot s,\, g \cdot a)
+    =
+    \mathcal{T}(s' \mid s,\,a),
+    \label{eq:transition-equivariance}
+\end{equation}
+thì optimal value function và optimal action-value function thỏa mãn
+\begin{equation}
+    V^*(g \cdot s) = V^*(s),
+    \qquad
+    Q^*(g \cdot s,\, g \cdot a) = Q^*(s,\,a).
+    \label{eq:value-invariance}
+\end{equation}
+Từ đó, nếu optimal action là duy nhất hoặc cơ chế chọn action được ràng buộc nhất quán theo group, optimal policy có dạng equivariant:
+\begin{equation}
+    \pi^*(g \cdot s) = g \cdot \pi^*(s),
+    \qquad \forall g \in G.
+    \label{eq:policy-equivariance}
+\end{equation}
+\end{InfoBox}
+
+Ý nghĩa của kết quả \eqref{eq:policy-equivariance} là: nếu một scene được rotate, action tối ưu của robot cũng phải rotate theo cùng phép biến đổi. Chẳng hạn, nếu robot học được cách gắp một khối hộp tại một hướng nhất định, thì khi khối hộp bị xoay đi, vị trí và hướng gắp hợp lý cũng phải xoay theo. Trong bối cảnh này, equivariance không chỉ là một thuộc tính hình học đẹp về mặt lý thuyết, mà còn là một inductive bias trực tiếp giúp mô hình tránh học lặp lại nhiều tình huống vốn là cùng một bài toán sau phép biến đổi.
+
+\begin{NoteBox}{Phác thảo lập luận từ Bellman optimality}
+Bellman optimality equation cho optimal action-value function có dạng
+\begin{equation}
+    Q^*(s,a)
+    =
+    \mathcal{R}(s,a)
+    +
+    \gamma\,
+    \mathbb{E}_{s' \sim \mathcal{T}(\cdot \mid s,a)}
+    \bigl[
+        V^*(s')
+    \bigr].
+    \label{eq:bellman}
+\end{equation}
+Khi thay $(s,a)$ bằng $(g \cdot s, g \cdot a)$, reward function không đổi theo \eqref{eq:reward-equivariance} và phân phối transition chỉ được biến đổi theo cùng $g$ theo \eqref{eq:transition-equivariance}. Vì vậy, giá trị kỳ vọng của future return được bảo toàn dưới tác động của group, dẫn đến $Q^*(g \cdot s, g \cdot a)=Q^*(s,a)$. Khi action tối ưu được lấy từ $\operatorname*{arg\,max}_{a \in \mathcal{A}} Q^*(s,a)$, tập action tối ưu tại $g \cdot s$ chính là ảnh qua $g$ của tập action tối ưu tại $s$.
+\end{NoteBox}
+
+% ============================================================
+% 2. Khai thác các nhóm đối xứng không gian: SO(2), SE(2), SE(3)
+% ============================================================
+
+Trong robotics, $G$ có thể là $SO(2)$ khi chỉ xét phép xoay trên mặt phẳng, $SE(2)$ khi xét cả tịnh tiến và xoay trên mặt phẳng, hoặc $SE(3)$ khi xét chuyển động rigid body trong không gian ba chiều. Sự lựa chọn group phụ thuộc vào bậc tự do của bài toán cụ thể.
+
+\begin{figure}[H]
+    \centering
+    \begin{tikzpicture}[
+        level distance=1.6cm,
+        sibling distance=4.2cm,
+        edge from parent/.style={draw, -{Latex[length=2mm]}, thick},
+        node/.style={draw, rounded corners, align=center, minimum width=3.0cm,
+                     minimum height=0.9cm, font=\small},
+        leaf/.style={draw, rounded corners, align=center, minimum width=3.2cm,
+                     minimum height=1.5cm, font=\small, fill=gray!8}
+    ]
+        \node[node] {Symmetry group $G$}
+            child { node[node] {$SO(2)$\\xoay phẳng}
+                child { node[leaf] {tabletop\\manipulation} }
+            }
+            child { node[node] {$SE(2)$\\xoay + tịnh tiến phẳng}
+                child { node[leaf] {planar\\grasp learning} }
+            }
+            child { node[node] {$SE(3)$\\rigid body 3D}
+                child { node[leaf] {6-DoF grasping\\object rearrangement} }
+            };
+    \end{tikzpicture}
+    \caption{Phân loại symmetry group theo bậc tự do của bài toán robot manipulation.}
+    \label{fig:group-taxonomy}
+\end{figure}
+
+\noindent\textit{Ghi chú.} Mỗi group biểu diễn tập hợp các phép biến đổi mà robot có thể gặp lặp lại trong môi trường nhưng về bản chất không làm thay đổi mục tiêu thao tác.
+
+Trong các bài toán tabletop manipulation, $SO(2)$ thường được dùng để mô hình hóa phép xoay quanh trục vuông góc với mặt bàn. Khi action bao gồm cả vị trí trên ảnh hoặc trên mặt phẳng thao tác, $SE(2)$ phù hợp hơn vì nó biểu diễn đồng thời translation và rotation. Với các bài toán 6-DoF grasping, object rearrangement hoặc thao tác trong không gian ba chiều, $SE(3)$ là lựa chọn tự nhiên hơn vì nó mô tả pose đầy đủ của rigid body. Điểm chung của các nhóm này là chúng biểu diễn những biến đổi mà robot có thể gặp nhiều lần trong môi trường, nhưng về bản chất không làm thay đổi mục tiêu thao tác.
+
+Các công trình gần đây trong robot learning khai thác trực tiếp cấu trúc này. Trong \textit{Equivariant Q Learning in Spatial Action Spaces}, Wang et al.\ xây dựng $Q$-learning cho visual state space và spatial action space, trong đó action của robot nằm trong không gian liên hệ với $SE(2)$; đóng góp quan trọng của công trình này là chỉ ra điều kiện để $Q^*$ mang tính equivariant và thiết kế $Q$-network phản ánh cấu trúc đó \cite{wang2021equivariant}. Tiếp theo, \textit{$SO(2)$-Equivariant Reinforcement Learning} mở rộng ý tưởng trên sang cả DQN và SAC, cho thấy các đặc trưng equivariant và invariant của $Q^*$ cũng như optimal policy có thể được mã hóa vào kiến trúc mạng để cải thiện hiệu quả học trong manipulation \cite{wang2022so2}. Trong \textit{On-Robot Learning With Equivariant Models}, Wang et al.\ đưa hướng tiếp cận này vào thiết lập học trực tiếp trên robot thật, nơi dữ liệu thu thập thường đắt và thời gian thử nghiệm bị giới hạn \cite{wang2022onrobot}. Riêng với grasp learning, \textit{On Robot Grasp Learning Using Equivariant Models} của Zhu et al.\ xem planar grasp function như một hàm $SE(2)$-equivariant, từ đó ràng buộc mô hình học grasp theo đúng cấu trúc hình học của bài toán \cite{zhu2023robot}. Với grasp detection trong không gian ba chiều, \textit{OrbitGrasp} mở rộng trực giác tương tự sang $SE(3)$ bằng cách học grasp quality function từ point cloud dưới ràng buộc equivariance \cite{hu2024orbitgrasp}.
+
+\begin{WarningBox}{Lưu ý về điều kiện áp dụng}
+Tính equivariance của optimal policy phụ thuộc vào cách định nghĩa state, action, reward và transition. Nếu camera bị che khuất, gripper có giới hạn cơ học không đối xứng, hoặc reward phụ thuộc vào một hướng cố định trong môi trường, giả thiết đối xứng có thể chỉ đúng một phần. Trong các trường hợp đó, mô hình partially equivariant thường phù hợp hơn mô hình ép toàn bộ kiến trúc phải equivariant theo mọi biến đổi của group.
+\end{WarningBox}
+
+% ============================================================
+% 3. Hiệu quả dữ liệu (Sample efficiency)
+% ============================================================
+
+Lợi ích chính của equivariance trong robotics là sample-efficient learning. Một mạng nơ-ron thông thường có thể phải quan sát nhiều phiên bản xoay khác nhau của cùng một tình huống để học rằng chúng có chung cấu trúc quyết định. Ngược lại, một equivariant model mã hóa quan hệ này ngay trong kiến trúc, nên kinh nghiệm học được ở một pose có thể được tái sử dụng cho các pose liên hệ với nó qua group action. Điều này đặc biệt quan trọng với robot thật, vì mỗi grasp attempt, mỗi lần thất bại, hoặc mỗi lần reset môi trường đều tiêu tốn thời gian và có thể gây hao mòn phần cứng.
+
+Hiệu quả trên có thể được hiểu theo nghĩa kích thước hypothesis space hiệu dụng. Một mạng không ràng buộc phải tìm kiếm mapping $\pi: \mathcal{S} \to \mathcal{A}$ trên toàn bộ không gian hàm. Khi áp đặt ràng buộc equivariance \eqref{eq:policy-equivariance}, tập hàm tìm kiếm bị thu nhỏ xuống tập con các hàm thỏa mãn đối xứng group. Về mặt lý thuyết, điều này tương đương với một prior mạnh trên kiến trúc, từ đó giảm lượng dữ liệu cần thiết để hội tụ đến optimal policy. Trong thực nghiệm, các công trình kể trên báo cáo tốc độ học nhanh hơn đáng kể so với baseline không có inductive bias hình học tương ứng \cite{wang2021equivariant, wang2022so2, zhu2023robot}.
+
+Tóm lại, equivariance cung cấp một cầu nối rõ ràng giữa hình học và decision making trong robotics. Thay vì xem các scene sau rotate hoặc translate là những dữ liệu độc lập, mô hình tận dụng group symmetry để ràng buộc output policy biến đổi nhất quán với input state. Nhờ đó, các hệ thống grasp learning và manipulation có thể học ổn định hơn, tổng quát hóa tốt hơn giữa các pose, và giảm đáng kể lượng dữ liệu cần thu thập từ robot thật.
+
+\subsection{Giới hạn: Vấn đề phá vỡ tính đối xứng}
 \label{subsec:symmetry-breaking}
-% Trình bày:
-%   - Theorem: equivariant architectures không thể break symmetry
-%     Proof: G_x ⊆ G_y (output always more symmetric than input)
-%   - Hệ quả: không thể generate non-symmetric output
-%     từ symmetric input (problem cho generative models)
-%   - Giải pháp: weight perturbation, gradients, sets
-%   (Wang et al ICML 2024)
 
+Mặc dù các kiến trúc tương biến mang lại nhiều lợi ích về hiệu quả học tập và khả năng khái quát hóa, chúng mang một hạn chế toán học chặt chẽ. Hạn chế này thường được biết đến với tên gọi là vấn đề phá vỡ tính đối xứng.
+
+\begin{infobox}{Định lý về nhóm đẳng hướng}
+Xét một hàm tương biến $f$ đối với nhóm $G$, thỏa mãn tính chất $f(g \cdot x) = g \cdot f(x)$ với mọi $g \in G$.
+
+Với một điểm dữ liệu $x$, ta định nghĩa nhóm đẳng hướng $G_x$ là tập hợp tất cả các phép biến đổi thuộc $G$ mà khi tác động lên $x$ thì không làm thay đổi $x$:
+\begin{equation}
+    G_x = \{g \in G \mid g \cdot x = x\}
+\end{equation}
+
+Tương tự, gọi $y = f(x)$ là đầu ra của mô hình, và $G_y$ là nhóm đẳng hướng của $y$. Nếu ta lấy một phép biến đổi $g$ bất kỳ thuộc $G_x$ và tác động lên $y$, ta có sự liên hệ sau:
+\begin{equation}
+    g \cdot y = g \cdot f(x) = f(g \cdot x) = f(x) = y
+\end{equation}
+
+Phương trình này chứng minh rằng $g$ cũng giữ nguyên $y$, nghĩa là $g \in G_y$. Từ đó suy ra $G_x \subseteq G_y$[cite: 1012, 1014, 1015, 1016].
+\end{infobox}
+
+Hệ quả trực tiếp của định lý trên là đầu ra của một kiến trúc tương biến luôn có mức độ đối xứng bằng hoặc cao hơn so với đầu vào của nó[cite: 1012]. Đặc tính này trở thành một rào cản kỹ thuật nghiêm trọng đối với các mô hình tạo sinh, nơi nhiệm vụ của mạng nơ-ron là biến đổi một phân phối nhiễu cơ bản thành một cấu trúc dữ liệu phức tạp.
+
+\begin{examplebox}{Ví dụ về sự cố trong mô hình tạo sinh}
+Giả sử ta muốn sử dụng một mô hình khuếch tán tương biến để tạo sinh ra cấu trúc 3D của một chiếc ghế. Đầu vào ban đầu của mô hình là một đám mây điểm nhiễu có phân phối dạng hình cầu. Hình cầu là một vật thể có tính đối xứng cực kỳ cao, nó không thay đổi dưới bất kỳ góc quay nào trong không gian. 
+
+Do mô hình mang tính tương biến, định lý trên ép buộc đầu ra của nó cũng phải duy trì sự bất biến dưới mọi góc quay đó. Kết quả là mạng nơ-ron không thể phá vỡ hình dáng đối xứng ban đầu để tạo ra các chi tiết góc cạnh của chiếc ghế. Nó bị kẹt trong việc chỉ có thể sinh ra các vật thể hình cầu hoặc các cấu trúc có tính đối xứng tương đương[cite: 386, 387, 1012].
+\end{examplebox}
+
+\begin{figure}[H]
+    \centering
+    \begin{tikzpicture}[>=Stealth, thick]
+        % Input: Symmetric noise (Circle)
+        \node[circle, fill=blue!15, minimum size=1.5cm, draw=blue!50] (noise) at (0,0) {};
+        \node[font=\footnotesize, align=center] at (0, -1.2) {Nhiễu đầu vào $x$\\ (Đối xứng cầu)};
+
+        % Arrow to Model
+        \draw[->] (1.2, 0) -- (2.5, 0);
+
+        % Equivariant Model
+        \node[draw, rounded corners, fill=orange!15, minimum width=2cm, minimum height=1.5cm, align=center] (model) at (3.8, 0) {Mô hình\\ Tương biến};
+
+        % Arrow to Output
+        \draw[->] (5.1, 0) -- (6.4, 0);
+
+        % Output 1: Forced symmetric (Circle/Blob)
+        \node[circle, fill=red!15, minimum size=1.5cm, draw=red!50] (sym_out) at (7.6, 0) {};
+        \node[font=\footnotesize, align=center] at (7.6, -1.2) {Đầu ra thực tế $y$\\ (Bị ép đối xứng)};
+
+        % Desired Output: Asymmetric (Chair - abstract polygon)
+        \draw[fill=green!15, draw=green!50] (7.2, 2.5) -- (7.2, 1.5) -- (8.2, 1.5) -- (8.2, 1.2) -- (8.0, 1.2) -- (8.0, 1.5) -- (7.4, 1.5) -- (7.4, 1.2) -- (7.2, 1.2) -- cycle;
+        \node[font=\footnotesize, align=center] at (7.6, 3.0) {Mục tiêu kỳ vọng\\ (Ít đối xứng hơn)};
+
+        % Cross mark for desired output
+        \draw[->, dashed, red] (model.north) |- (7.0, 2.0);
+        \node[red, font=\huge] at (6.0, 1.5) {$\times$};
+    \end{tikzpicture}
+    \caption{Minh họa sự cản trở của vấn đề phá vỡ đối xứng.}
+    \label{fig:symmetry-breaking}
+\end{figure}
+
+Để giải quyết hạn chế này, các nghiên cứu gần đây buộc phải tìm cách phá vỡ tính đối xứng một cách có chủ đích. Các kỹ thuật can thiệp bao gồm việc thêm nhiễu ngẫu nhiên vào trọng số của mạng trong quá trình học, thao tác trên không gian gradient thay vì dự đoán trực tiếp giá trị, hoặc chuyển đổi kiến trúc để dự đoán một tập hợp các trạng thái thay vì một đầu ra duy nhất[cite: 1013, 1016]. Những phương pháp này nới lỏng sự kìm kẹp của nhóm đẳng hướng, cung cấp cho mô hình đủ sự linh hoạt để hình thành các cấu trúc bất đối xứng cần thiết.
+
+% ============================================================
 \subsection{So sánh hai hướng tiếp cận}
 \label{subsec:comparison}
-% Bảng tổng hợp:
-%
-%  | Tiêu chí         | Off-the-shelf       | Constructed        |
-%  |------------------|---------------------|--------------------|
-%  | Flexibility      | Cao (dùng bất kỳ)   | Thấp (thiết kế lại)|
-%  | Symmetry đảm bảo | Approximate (Aug.)  | Exact              |
-%  |                  | Exact (Canon/Avg.)  |                    |
-%  | Expressiveness   | Kế thừa base model  | Phụ thuộc design   |
-%  | Computational    | Có thể đắt (Avg.)   | Efficient          |
-%  | Continuity       | Vấn đề (Canon.)     | Không vấn đề       |
-%
-% Khi nào dùng gì:
-%   - Off-the-shelf: khi có base model tốt, symmetries ít đặc biệt
-%   - Constructed: khi symmetry rõ ràng, data đắt (science/robotics)
+
+Sau khi phân tích chi tiết nền tảng lý thuyết và các kiến trúc tiêu biểu, ta có thể hệ thống hóa sự khác biệt giữa hai trường phái thiết kế mạng nơ-ron nhận thức hình học thông qua Bảng~\ref{tab:comparison-approaches}.
+
+\begin{table}[H]
+\centering
+\small
+\renewcommand{\arraystretch}{1.3}
+\begin{tabular}{p{0.22\textwidth} p{0.35\textwidth} p{0.35\textwidth}}
+\toprule
+\textbf{Tiêu chí} & \textbf{Hướng 1: Can thiệp dữ liệu} & \textbf{Hướng 2: Xây dựng kiến trúc} \\
+\midrule
+\textbf{Độ linh hoạt} & Rất cao. Có thể kết hợp với bất kỳ mô hình cơ sở nào đang có sẵn (Transformer, CNN) mà không cần lập trình lại lõi mạng. & Thấp. Đòi hỏi thiết kế lại toán học của từng lớp mạng từ đầu, khó tích hợp chéo với các kiến trúc bên ngoài. \\
+\textbf{Bảo đảm đối xứng} & Tùy kỹ thuật. Chỉ đạt mức xấp xỉ nếu dùng tăng cường dữ liệu. Đạt mức chính xác nếu dùng chuẩn hóa hoặc lấy trung bình. & Chính xác tại mọi điểm. Ràng buộc đối xứng được mã hóa cứng vào trọng số nên không thể bị vi phạm. \\
+\textbf{Sức mạnh biểu diễn} & Kế thừa trọn vẹn năng lực của mô hình cơ sở. & Phụ thuộc vào thiết kế. Dễ gặp giới hạn biểu diễn do bổ đề Schur nếu không sử dụng phương pháp tensor. \\
+\textbf{Chi phí tính toán} & Có thể rất đắt đỏ (với lấy trung bình nhóm) hoặc gây mất ổn định (với chuẩn hóa). Kỹ thuật lấy trung bình khung giải quyết được đa số nhược điểm. & Tối ưu cao. Số lượng tham số giảm mạnh do cơ chế chia sẻ, thời gian suy luận nhanh ở các kiến trúc cơ bản. \\
+\textbf{Sự phụ thuộc dữ liệu} & Cần dữ liệu lớn để mô hình có thể tự nhận ra các quy luật đối xứng qua quá trình tối ưu hóa. & Hiệu quả dữ liệu vượt trội. Mô hình có thể hội tụ nhanh chóng chỉ với một lượng mẫu huấn luyện rất nhỏ. \\
+\bottomrule
+\end{tabular}
+\caption{Bảng tổng hợp đối chiếu ưu nhược điểm giữa phương pháp hộp đen (Hướng 1) và phương pháp xây dựng từ lõi (Hướng 2).}
+\label{tab:comparison-approaches}
+\end{table}
+
+Việc lựa chọn giữa hai hướng tiếp cận không tuân theo một quy tắc cứng nhắc mà phụ thuộc sâu sắc vào bản chất của bài toán thực tế. 
+
+Hướng can thiệp dữ liệu thể hiện sự ưu việt khi ta đang làm việc với các hệ thống trí tuệ nhân tạo quy mô lớn mang tính nền tảng. Chẳng hạn, trong lĩnh vực xử lý ngôn ngữ tự nhiên hoặc thị giác máy tính, việc tự xây dựng một mô hình tương biến khổng lồ từ đầu là không khả thi về mặt tài chính và thời gian. Hơn nữa, các đối xứng trong dữ liệu tự nhiên thường không hoàn hảo hoặc phụ thuộc ngữ cảnh[cite: 1020, 1021]. Trong bối cảnh đó, việc tái sử dụng các mô hình mạnh mẽ hiện có và tinh chỉnh chúng qua dữ liệu là phương án kinh tế và linh hoạt nhất.
+
+Ngược lại, hướng xây dựng kiến trúc từ đầu là sự lựa chọn duy nhất đúng đắn cho các bài toán khoa học tự nhiên. Trong hóa học lượng tử, mô phỏng vật lý đa hạt hay điều khiển tay máy robot, dữ liệu thu thập vô cùng đắt đỏ và các định luật bảo toàn không gian là những tiên đề bất di bất dịch[cite: 977, 1069]. Việc sử dụng kiến trúc mã hóa cứng như NequIP hay Mạng đồ thị tương biến giúp loại bỏ mọi rủi ro về sai số vật lý, tận dụng tối đa giá trị của từng điểm dữ liệu nhỏ giọt để đạt được độ chính xác mà các phương pháp truyền thống không thể chạm tới.
 
 \clearpage
