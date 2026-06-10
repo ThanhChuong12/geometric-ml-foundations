@@ -1,0 +1,165 @@
+# =============================================================================
+# NequIP Ablation Study — Equivariant GNN (l_max=1) on 100 QM9 molecules
+# =============================================================================
+# This configuration enables SE(3) equivariance by setting l_max=1 and
+# parity=true, allowing the network to learn with both scalar (l=0) and
+# vector (l=1) features, including even and odd parities.
+#
+# Dataset: 100-molecule QM9 subset (prepared by prepare_qm9_subsets.py)
+# Loss:    λ_E = 1, λ_F = 100 (force-weighted)
+# Format:  NequIP v0.7+ Hydra/Lightning configuration
+# =============================================================================
+
+# =====================
+#     RUN
+# =====================
+run: [train, test]
+
+# =====================
+#     SHARED PARAMS
+# =====================
+cutoff_radius: 5.0
+num_layers: 4
+l_max: 1                  # ← EQUIVARIANT: scalar (l=0) + vector (l=1) features
+num_features: 32
+
+# QM9 contains 5 elements
+model_type_names: [H, C, N, O, F]
+chemical_species: ${model_type_names}
+
+monitored_metric: val0_epoch/weighted_sum
+
+# =====================
+#     DATA
+# =====================
+data:
+  _target_: nequip.data.datamodule.ASEDataModule
+  seed: 42
+
+  split_dataset:
+    file_path: ${hydra:runtime.cwd}/data/qm9/qm9_subset_100.extxyz
+    train: 80
+    val: 10
+    test: 10
+
+  transforms:
+    - _target_: nequip.data.transforms.ChemicalSpeciesToAtomTypeMapper
+      model_type_names: ${model_type_names}
+    - _target_: nequip.data.transforms.NeighborListTransform
+      r_max: ${cutoff_radius}
+
+  train_dataloader:
+    _target_: torch.utils.data.DataLoader
+    batch_size: 5
+    num_workers: 4
+    shuffle: true
+  val_dataloader:
+    _target_: torch.utils.data.DataLoader
+    batch_size: 10
+    num_workers: ${data.train_dataloader.num_workers}
+  test_dataloader: ${data.val_dataloader}
+
+  stats_manager:
+    _target_: nequip.data.CommonDataStatisticsManager
+    dataloader_kwargs:
+      batch_size: 10
+    type_names: ${model_type_names}
+
+# =====================
+#     TRAINER
+# =====================
+trainer:
+  _target_: lightning.Trainer
+  accelerator: auto
+  enable_checkpointing: true
+  max_epochs: 200
+  log_every_n_steps: 10
+
+  logger:
+    _target_: lightning.pytorch.loggers.csv_logs.CSVLogger
+    save_dir: ${hydra:runtime.output_dir}
+    name: nequip_l1_100
+
+  callbacks:
+    - _target_: lightning.pytorch.callbacks.EarlyStopping
+      monitor: ${monitored_metric}
+      min_delta: 1e-4
+      patience: 30
+
+    - _target_: lightning.pytorch.callbacks.ModelCheckpoint
+      monitor: ${monitored_metric}
+      dirpath: ${hydra:runtime.output_dir}
+      filename: best
+      save_last: true
+
+    - _target_: lightning.pytorch.callbacks.LearningRateMonitor
+      logging_interval: epoch
+
+# =====================
+#     TRAINING MODULE
+# =====================
+training_module:
+  _target_: nequip.train.EMALightningModule
+  ema_decay: 0.999
+
+  # ---- Loss: λ_E = 1, λ_F = 100 (force-heavy weighting) ----
+  loss:
+    _target_: nequip.train.EnergyForceLoss
+    per_atom_energy: true
+    coeffs:
+      total_energy: 1.0        # λ_E = 1
+      forces: 100.0             # λ_F = 100
+
+  val_metrics:
+    _target_: nequip.train.EnergyForceMetrics
+    coeffs:
+      total_energy_mae: 1.0
+      forces_mae: 1.0
+  train_metrics: ${training_module.val_metrics}
+  test_metrics: ${training_module.val_metrics}
+
+  optimizer:
+    _target_: torch.optim.Adam
+    lr: 0.005
+
+  lr_scheduler:
+    scheduler:
+      _target_: torch.optim.lr_scheduler.ReduceLROnPlateau
+      factor: 0.6
+      patience: 10
+      threshold: 0.1
+      min_lr: 1e-6
+    monitor: ${monitored_metric}
+    interval: epoch
+    frequency: 1
+
+  # ---- Model ----
+  model:
+    _target_: nequip.model.NequIPGNNModel
+
+    seed: 42
+    model_dtype: float32
+    type_names: ${model_type_names}
+    r_max: ${cutoff_radius}
+
+    # Bessel basis
+    num_bessels: 8
+    bessel_trainable: false
+    polynomial_cutoff_p: 6
+
+    # Architecture — EQUIVARIANT (l_max=1, parity=true)
+    num_layers: ${num_layers}
+    l_max: ${l_max}            # 1 → scalar + vector features
+    parity: true               # include both even and odd parity irreps
+    num_features: ${num_features}
+
+    # Radial MLP
+    radial_mlp_depth: 2
+    radial_mlp_width: 64
+
+    # Dataset statistics for initialization
+    avg_num_neighbors: ${training_data_stats:num_neighbors_mean}
+    per_type_energy_scales: ${training_data_stats:per_type_forces_rms}
+    per_type_energy_shifts: ${training_data_stats:per_atom_energy_mean}
+    per_type_energy_scales_trainable: false
+    per_type_energy_shifts_trainable: false
