@@ -30,6 +30,26 @@ AI_CORE_DIR="$(dirname "$SCRIPT_DIR")"
 CONFIG_DIR="${AI_CORE_DIR}/configs"
 OUTPUT_DIR="${AI_CORE_DIR}/outputs"
 
+# Add local virtual environment to PATH if present
+PROJECT_ROOT="$(dirname "${AI_CORE_DIR}")"
+VENV_BIN="${PROJECT_ROOT}/nequip-env/bin"
+if [ -d "${VENV_BIN}" ]; then
+    export PATH="${VENV_BIN}:${PATH}"
+fi
+
+# Detect CUDA environment issues and fall back to CPU if necessary
+if python -c "import torch; assert torch.cuda.is_available(); torch.cuda.get_device_properties(0)" >/dev/null 2>&1; then
+    echo "CUDA is functional. Training will proceed on GPU."
+else
+    # Check if there was a warning/error during import/availability check
+    if python -c "import torch; torch.cuda.is_available()" 2>&1 | grep -i -E "warning|error|fail|too old" >/dev/null; then
+        echo "[WARNING] CUDA driver initialization failed or warning detected. Forcing CPU training via export CUDA_VISIBLE_DEVICES=''"
+    else
+        echo "CUDA is not available. Training will proceed on CPU."
+    fi
+    export CUDA_VISIBLE_DEVICES=""
+fi
+
 # List of experiment configs (order matters for sequential execution)
 EXPERIMENTS=(
     "baseline_l0_100"

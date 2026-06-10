@@ -97,9 +97,9 @@ def _pyg_data_to_ase_atoms(
 ) -> "ase.Atoms":
     """Convert a single PyG QM9 Data object to an ASE Atoms object.
 
-    The resulting Atoms object carries a ``SinglePointCalculator`` with
-    ``energy`` (U0 in Hartree) and ``forces`` (set to near-zero for
-    equilibrium geometries, shape [N, 3]).
+    The resulting Atoms object stores the energy (U0 in Hartree)
+    in its atoms.info dict. No force labels are attached since QM9
+    only contains scalar molecular properties.
 
     Parameters
     ----------
@@ -111,10 +111,9 @@ def _pyg_data_to_ase_atoms(
     Returns
     -------
     ase.Atoms
-        Atoms object with positions, atomic numbers, and calculator results.
+        Atoms object with positions, atomic numbers, and energy in info.
     """
     import ase
-    from ase.calculators.singlepoint import SinglePointCalculator
 
     atomic_numbers: np.ndarray = data.z.cpu().numpy().astype(int)
     positions: np.ndarray = data.pos.cpu().numpy().astype(np.float64)
@@ -125,21 +124,12 @@ def _pyg_data_to_ase_atoms(
     else:
         energy = float(data.y[energy_index].cpu().item())
 
-    # QM9 molecules are at equilibrium → forces ≈ 0.
-    # We populate a small random perturbation so that the field is non-trivially
-    # present for NequIP's force loss, while remaining physically consistent.
-    # Magnitude: O(1e-6) Ha/Å — negligible compared to real force scales.
-    rng = np.random.RandomState(hash(tuple(atomic_numbers.tolist())) & 0xFFFFFFFF)
-    forces: np.ndarray = rng.randn(len(atomic_numbers), 3).astype(np.float64) * 1e-6
-
     atoms = ase.Atoms(
         numbers=atomic_numbers,
         positions=positions,
         pbc=False,
     )
-
-    calc = SinglePointCalculator(atoms, energy=energy, forces=forces)
-    atoms.calc = calc
+    atoms.info["energy"] = energy
 
     return atoms
 
@@ -164,7 +154,7 @@ def extract_atoms_list(
     Returns
     -------
     list[ase.Atoms]
-        List of ASE Atoms objects with energy + forces attached.
+        List of ASE Atoms objects with energy attached in atoms.info.
     """
     n = len(dataset) if max_molecules is None else min(max_molecules, len(dataset))
     logger.info("Converting %d PyG Data objects → ASE Atoms...", n)
@@ -268,7 +258,6 @@ def save_extxyz(atoms_list: List["ase.Atoms"], path: str | Path) -> None:
         file_size_mb,
     )
 
-
 def validate_extxyz(path: str | Path, expected_count: int) -> bool:
     """Quick sanity check: re-read the file and verify molecule count + fields.
 
@@ -296,24 +285,29 @@ def validate_extxyz(path: str | Path, expected_count: int) -> bool:
         )
         return False
 
-    # Check that energy and forces are present in the first frame
+    # Check that energy is present in the first frame (either in info or calc.results)
     sample = frames[0]
-    has_energy = sample.calc is not None and "energy" in sample.calc.results
-    has_forces = sample.calc is not None and "forces" in sample.calc.results
+    has_energy = ("energy" in sample.info) or (sample.calc is not None and "energy" in sample.calc.results)
 
     if not has_energy:
-        logger.error("Validation FAILED: 'energy' missing from calculator results.")
+        logger.error("Validation FAILED: 'energy' missing from atoms.info and calculator results.")
         return False
-    if not has_forces:
-        logger.error("Validation FAILED: 'forces' missing from calculator results.")
+
+    energy_val = sample.info.get("energy", None)
+    if energy_val is None and sample.calc is not None:
+        energy_val = sample.calc.results.get("energy", None)
+
+    if not isinstance(energy_val, (float, int, np.floating, np.integer)):
+        logger.error("Validation FAILED: 'energy' is not a numeric type.")
         return False
 
     logger.info(
-        "Validation PASSED for '%s': %d frames, energy ✓, forces ✓.",
+        "Validation PASSED for '%s': %d frames, energy ✓.",
         path,
         len(frames),
     )
     return True
+
 
 
 # ===========================================================================

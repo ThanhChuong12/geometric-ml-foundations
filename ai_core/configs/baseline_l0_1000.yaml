@@ -60,7 +60,7 @@ data:
   test_dataloader: ${data.val_dataloader}
 
   stats_manager:
-    _target_: nequip.data.CommonDataStatisticsManager
+    _target_: nequip.data.EnergyOnlyDataStatisticsManager
     dataloader_kwargs:
       batch_size: 10
     type_names: ${model_type_names}
@@ -102,19 +102,20 @@ training_module:
   _target_: nequip.train.EMALightningModule
   ema_decay: 0.999
 
-  # ---- Loss: λ_E = 1, λ_F = 100 (force-heavy weighting) ----
+  # ---- Loss: Energy-only Prediction ----
   loss:
-    _target_: nequip.train.EnergyForceLoss
+    _target_: nequip.train.EnergyOnlyLoss
     per_atom_energy: true
-    coeffs:
-      total_energy: 1.0        # λ_E = 1
-      forces: 100.0             # λ_F = 100
 
   val_metrics:
-    _target_: nequip.train.EnergyForceMetrics
+    _target_: nequip.train.EnergyOnlyMetrics
     coeffs:
       total_energy_mae: 1.0
-      forces_mae: 1.0
+      total_energy_rmse: null
+      per_atom_energy_mae: null
+      per_atom_energy_rmse: null
+      total_energy_maxabserr: null
+      per_atom_energy_maxabserr: null
   train_metrics: ${training_module.val_metrics}
   test_metrics: ${training_module.val_metrics}
 
@@ -136,6 +137,7 @@ training_module:
   # ---- Model ----
   model:
     _target_: nequip.model.NequIPGNNModel
+    do_derivatives: false
 
     seed: 42
     model_dtype: float32
@@ -159,7 +161,7 @@ training_module:
 
     # Dataset statistics for initialization
     avg_num_neighbors: ${training_data_stats:num_neighbors_mean}
-    per_type_energy_scales: ${training_data_stats:per_type_forces_rms}
+    per_type_energy_scales: ${training_data_stats:per_atom_energy_std}
     per_type_energy_shifts: ${training_data_stats:per_atom_energy_mean}
     per_type_energy_scales_trainable: false
     per_type_energy_shifts_trainable: false
