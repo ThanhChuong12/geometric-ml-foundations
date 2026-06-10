@@ -13,9 +13,17 @@ import { NumPointsSlider } from '@/components/NumPointsSlider';
 import { PerturbationControls, PerturbationState, DEFAULT_PERTURBATION } from '@/components/PerturbationControls';
 import { classifyPointCloud, getSampleCloud } from '@/services/pointnetService';
 import { PointNetApiResponse, DEMO_CLASSES, DemoClass } from '@/types/pointnet';
+// ── Part 3: NequIP imports ──
+import { MoleculeViewer3D } from '@/components/MoleculeViewer3D';
+import { MoleculeEditor } from '@/components/MoleculeEditor';
+import { PredictionPanel } from '@/components/PredictionPanel';
+import { EnergyResultCard } from '@/components/EnergyResultCard';
+import { ExampleMolecules } from '@/components/ExampleMolecules';
+import { predictEnergy } from '@/services/nequipService';
+import { Atom } from '@/types/molecule';
 
 export default function Home() {
-  const [activeTab, setActiveTab] = useState<'part1' | 'part2'>('part1');
+  const [activeTab, setActiveTab] = useState<'part1' | 'part2' | 'part3'>('part1');
   // ── Part 1 state ──
   const [rotation, setRotation] = useState(0);
   const [imageData, setImageData] = useState('');
@@ -29,9 +37,67 @@ export default function Home() {
   const [rawPoints, setRawPoints] = useState<number[][]>([]);
   const [showCritical, setShowCritical] = useState(false);
   const [perturbation, setPerturbation] = useState<PerturbationState>(DEFAULT_PERTURBATION);
+  // ── Part 3 state ──
+  const [atoms, setAtoms] = useState<Atom[]>([
+    { atomicNumber: 8, x: 0.0, y: 0.0, z: 0.1163 },
+    { atomicNumber: 1, x: 0.0, y: 0.7583, z: -0.4654 },
+    { atomicNumber: 1, x: 0.0, y: -0.7583, z: -0.4654 }
+  ]);
+  const [selectedMoleculeName, setSelectedMoleculeName] = useState<string>('Nước');
+  const [energyResult, setEnergyResult] = useState<number | null>(null);
+  const [p3Loading, setP3Loading] = useState(false);
+  const [p3Error, setP3Error] = useState<string | null>(null);
+  const [latencyMs, setLatencyMs] = useState<number | undefined>(undefined);
+
   // Chặn SSR render → tránh hydration mismatch từ browser extension
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
+
+  const handlePredictEnergy = async () => {
+    if (atoms.length === 0) {
+      setP3Error('Vui lòng thêm ít nhất một nguyên tử vào phân tử.');
+      return;
+    }
+    setP3Loading(true);
+    setP3Error(null);
+    setEnergyResult(null);
+    const start = performance.now();
+    try {
+      const input = {
+        atomic_numbers: atoms.map(a => a.atomicNumber),
+        positions: atoms.map(a => [a.x, a.y, a.z])
+      };
+      const result = await predictEnergy(input);
+      setEnergyResult(result.energy);
+      const end = performance.now();
+      setLatencyMs(end - start);
+    } catch (e: any) {
+      setP3Error(e.message || 'Lỗi không xác định.');
+    } finally {
+      setP3Loading(false);
+    }
+  };
+
+  const handleResetMolecule = () => {
+    setAtoms([
+      { atomicNumber: 8, x: 0.0, y: 0.0, z: 0.1163 },
+      { atomicNumber: 1, x: 0.0, y: 0.7583, z: -0.4654 },
+      { atomicNumber: 1, x: 0.0, y: -0.7583, z: -0.4654 }
+    ]);
+    setSelectedMoleculeName('Nước');
+    setEnergyResult(null);
+    setP3Error(null);
+    setLatencyMs(undefined);
+  };
+
+  const handleSelectExampleMolecule = (name: string, presetAtoms: Atom[]) => {
+    setAtoms(presetAtoms);
+    setSelectedMoleculeName(name);
+    setEnergyResult(null);
+    setP3Error(null);
+    setLatencyMs(undefined);
+  };
+
   if (!mounted) return null;
 
   const handleLoadSample = async (cls: DemoClass) => {
@@ -96,12 +162,14 @@ export default function Home() {
               <span className="text-white text-[10px] font-bold uppercase tracking-widest font-sans">Geometric Deep Learning</span>
             </div>
             <h1 className="text-3xl md:text-4xl font-black text-stone-900 mb-2 font-serif uppercase tracking-tight leading-none">
-              {activeTab === 'part1' ? <>Rotation Invariance<br />on MNIST</> : <>Phân Loại 3D<br />với PointNet</>}
+              {activeTab === 'part1' ? <>Rotation Invariance<br />on MNIST</> : activeTab === 'part2' ? <>Phân Loại 3D<br />với PointNet</> : <>Dự đoán Năng lượng<br />với NequIP</>}
             </h1>
             <p className="text-sm text-stone-700 font-serif mt-3 border-t-2 border-stone-200 pt-3">
               {activeTab === 'part1'
                 ? 'Khám phá học máy nhận thức đối xứng qua phân loại chữ số viết tay.'
-                : 'Phân loại vật thể 3D từ đám mây điểm — Qi et al., CVPR 2017.'}
+                : activeTab === 'part2'
+                ? 'Phân loại vật thể 3D từ đám mây điểm — Qi et al., CVPR 2017.'
+                : 'Dự đoán năng lượng cơ học lượng tử của phân tử bằng mạng thần kinh đồ thị đẳng biến E(3).'}
             </p>
           </div>
 
@@ -119,7 +187,7 @@ export default function Home() {
                   <li><strong className="text-stone-900 bg-emerald-400 px-1.5 py-0.5 border-2 border-stone-900 shadow-[2px_2px_0px_0px_rgba(28,25,23,1)] mr-2 inline-block">(3) Trung bình Khung:</strong>Tận dụng các dự đoán tương đương nhóm khi kiểm tra.</li>
                 </ul>
               </>
-            ) : (
+            ) : activeTab === 'part2' ? (
               <>
                 <p className="text-stone-800 text-sm leading-relaxed font-sans mb-3 hidden lg:block">
                   Phân loại vật thể 3D từ đám mây điểm (Qi et al., CVPR 2017):
@@ -128,6 +196,17 @@ export default function Home() {
                   <li><strong className="text-stone-900 bg-red-400 px-1.5 py-0.5 border-2 border-stone-900 shadow-[2px_2px_0px_0px_rgba(28,25,23,1)] mr-2 inline-block">(1) PointNet Basic:</strong>Shared MLP + Max Pooling, không có T-Net.</li>
                   <li><strong className="text-stone-900 bg-emerald-400 px-1.5 py-0.5 border-2 border-stone-900 shadow-[2px_2px_0px_0px_rgba(28,25,23,1)] mr-2 inline-block">(2) PointNet Full:</strong>Có Input & Feature Transform (T-Net) và regularization loss.</li>
                   <li><strong className="text-stone-900 bg-violet-400 px-1.5 py-0.5 border-2 border-stone-900 shadow-[2px_2px_0px_0px_rgba(28,25,23,1)] mr-2 inline-block">(3) Critical Points:</strong>Visualize tập điểm quyết định kết quả (Theorem 2).</li>
+                </ul>
+              </>
+            ) : (
+              <>
+                <p className="text-stone-800 text-sm leading-relaxed font-sans mb-3 hidden lg:block">
+                  Dự đoán năng lượng QM9 bằng GNN đẳng biến E(3) (Batzner et al.):
+                </p>
+                <ul className="text-stone-800 text-sm leading-relaxed font-sans space-y-3">
+                  <li><strong className="text-stone-900 bg-cyan-400 px-1.5 py-0.5 border-2 border-stone-900 shadow-[2px_2px_0px_0px_rgba(28,25,23,1)] mr-2 inline-block">(1) Đồ thị Nguyên tử:</strong>Các nguyên tử là nút đồ thị, liên kết cách nhau r &le; r_max là cạnh.</li>
+                  <li><strong className="text-stone-900 bg-emerald-400 px-1.5 py-0.5 border-2 border-stone-900 shadow-[2px_2px_0px_0px_rgba(28,25,23,1)] mr-2 inline-block">(2) E(3) Message Passing:</strong>Truyền thông điệp đẳng biến bảo toàn tính bất biến đối xứng quay và tịnh tiến 3D.</li>
+                  <li><strong className="text-stone-900 bg-indigo-400 text-white px-1.5 py-0.5 border-2 border-stone-900 shadow-[2px_2px_0px_0px_rgba(28,25,23,1)] mr-2 inline-block">(3) Global Pooling:</strong>Cộng gộp năng lượng của các nút nguyên tử để ra năng lượng tổng phân tử.</li>
                 </ul>
               </>
             )}
@@ -157,10 +236,20 @@ export default function Home() {
         >
           Phân loại 3D (PointNet)
         </button>
+        <button
+          onClick={() => setActiveTab('part3')}
+          className={`px-6 py-3 font-black text-sm md:text-base uppercase tracking-widest border-2 border-stone-900 transition-all ${
+            activeTab === 'part3'
+            ? 'bg-cyan-400 shadow-[4px_4px_0px_0px_rgba(28,25,23,1)] translate-y-0 translate-x-0'
+            : 'bg-white shadow-none translate-y-1 translate-x-1 hover:bg-stone-50'
+          }`}
+        >
+          Dự đoán Năng lượng (NequIP)
+        </button>
       </div>
 
       <main className="w-full px-4 md:px-8 pb-8">
-        {activeTab === 'part1' ? (
+        {activeTab === 'part1' && (
           <>
             {/* Part 1: Frame Averaging */}
             <div className="grid lg:grid-cols-5 gap-8 mb-12">
@@ -219,15 +308,15 @@ export default function Home() {
               </div>
             </div>
           </>
-        ) : (
+        )}
+
+        {activeTab === 'part2' && (
           // ────────────────────────────────────────────
           // PART 2: PointNet 3D Demo
           // ────────────────────────────────────────────
           <div className="space-y-8">
-
             {/* Row 1: Viewer + Controls */}
             <div className="grid lg:grid-cols-5 gap-8">
-
               {/* Left: 3D Viewer */}
               <div className="lg:col-span-3 flex flex-col bg-stone-50 border-2 border-stone-900 p-8 shadow-[8px_8px_0px_0px_rgba(28,25,23,1)]">
                 <div className="flex items-center gap-4 mb-6 pb-4 border-b-2 border-stone-900">
@@ -263,7 +352,6 @@ export default function Home() {
 
               {/* Right: Controls */}
               <div className="lg:col-span-2 space-y-6 flex flex-col">
-
                 {/* Object selector */}
                 <div className="bg-stone-50 border-2 border-stone-900 p-6 shadow-[8px_8px_0px_0px_rgba(28,25,23,1)]">
                   <div className="flex items-center gap-4 mb-5 pb-4 border-b-2 border-stone-900">
@@ -356,6 +444,61 @@ export default function Home() {
                 </div>
               )}
             </div>
+          </div>
+        )}
+
+        {activeTab === 'part3' && (
+          // ────────────────────────────────────────────
+          // PART 3: NequIP Molecular Energy Prediction
+          // ────────────────────────────────────────────
+          <div className="space-y-8">
+            {/* Row 1: Viewer + Editor */}
+            <div className="grid lg:grid-cols-5 gap-8">
+              {/* Left: 3D Viewer */}
+              <div className="lg:col-span-3 flex flex-col bg-stone-50 border-2 border-stone-900 p-8 shadow-[8px_8px_0px_0px_rgba(28,25,23,1)]">
+                <div className="flex items-center gap-4 mb-6 pb-4 border-b-2 border-stone-900">
+                  <div className="w-10 h-10 bg-cyan-400 border-2 border-stone-900 shadow-[2px_2px_0px_0px_rgba(28,25,23,1)] flex items-center justify-center text-stone-900 font-black font-sans text-xl">1</div>
+                  <h2 className="text-2xl font-black text-stone-900 font-serif uppercase tracking-tight">Trực quan hóa Phân tử 3D</h2>
+                </div>
+                <div className="flex-1" style={{ minHeight: 400 }}>
+                  <MoleculeViewer3D atoms={atoms} isLoading={p3Loading} />
+                </div>
+              </div>
+
+              {/* Right: Coordinate Editor */}
+              <div className="lg:col-span-2">
+                <MoleculeEditor atoms={atoms} onChangeAtoms={setAtoms} />
+              </div>
+            </div>
+
+            {/* Row 2: Controls + Result */}
+            <div className="grid lg:grid-cols-5 gap-8">
+              {/* Controls */}
+              <div className="lg:col-span-2">
+                <PredictionPanel
+                  onPredict={handlePredictEnergy}
+                  onReset={handleResetMolecule}
+                  isLoading={p3Loading}
+                  isDisabled={atoms.length === 0}
+                />
+              </div>
+
+              {/* Result Card */}
+              <div className="lg:col-span-3">
+                <EnergyResultCard
+                  energy={energyResult}
+                  isLoading={p3Loading}
+                  error={p3Error}
+                  durationMs={latencyMs}
+                />
+              </div>
+            </div>
+
+            {/* Row 3: Presets selection */}
+            <ExampleMolecules
+              selectedMoleculeName={selectedMoleculeName}
+              onSelectMolecule={handleSelectExampleMolecule}
+            />
           </div>
         )}
       </main>
