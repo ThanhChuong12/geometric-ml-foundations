@@ -4,7 +4,8 @@ import logging
 import threading
 from typing import Optional, List
 import torch
-from nequip.train.ema import EMALightningModule
+from nequip.utils.global_state import set_global_state
+from nequip.model import ModelFromCheckpoint
 from nequip.data import AtomicDataDict
 
 logger = logging.getLogger("nequip_predictor")
@@ -50,32 +51,32 @@ class NequIPPredictor:
 
             logger.info(f"Loading NequIP model checkpoint from '{self.checkpoint_path}'...")
             try:
-                # Load PyTorch Lightning module from checkpoint
-                pl_module = EMALightningModule.load_from_checkpoint(
-                    self.checkpoint_path, 
-                    map_location=self.device
-                )
+                # 1. Initialize NequIP global state (CRITICAL)
+                set_global_state()
 
-                # Fetch model with EMA weights loaded
-                sole_model = pl_module.evaluation_model["sole_model"]
-                sole_model.to(self.device)
-                sole_model.eval()
+                # 2. Restore model from checkpoint using NequIP's ModelFromCheckpoint API
+                model = ModelFromCheckpoint(self.checkpoint_path)
+                model.to(self.device)
+                model.eval()
 
-                # Extract metadata parameters for preprocessing
-                # Fall back to checking hparams if attributes aren't directly available
-                if hasattr(sole_model, "type_names"):
-                    type_names = sole_model.type_names
+                # 3. Extract metadata parameters for preprocessing
+                if hasattr(model, "type_names") and model.type_names:
+                    type_names = model.type_names
+                elif "type_names" in model.metadata:
+                    type_names = model.metadata["type_names"].split(" ")
                 else:
-                    type_names = pl_module.hparams["model"]["type_names"]
+                    raise KeyError("Model does not have type_names metadata")
 
-                if hasattr(sole_model, "r_max"):
-                    r_max = sole_model.r_max
+                if "r_max" in model.metadata:
+                    r_max = float(model.metadata["r_max"])
+                elif hasattr(model, "r_max"):
+                    r_max = float(model.r_max)
                 else:
-                    r_max = pl_module.hparams["model"]["r_max"]
+                    raise KeyError("Model does not have r_max metadata")
 
-                self._model = sole_model
+                self._model = model
                 self._type_names = [str(t) for t in type_names]
-                self._r_max = float(r_max)
+                self._r_max = r_max
 
                 logger.info(
                     f"Successfully loaded NequIP model: r_max={self._r_max}, "

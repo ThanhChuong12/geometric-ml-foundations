@@ -5,3 +5,6 @@ torch
 torchvision
 Pillow
 numpy
+ase
+nequip
+e3nn
