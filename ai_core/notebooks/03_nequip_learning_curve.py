@@ -164,6 +164,7 @@ def collect_results_from_logs(
     for dir_name, (label, size) in experiment_map.items():
         # Search for metrics.csv in common locations
         candidates = [
+            results_dir / dir_name / dir_name / "version_0" / "metrics.csv",
             results_dir / dir_name / "version_0" / "metrics.csv",
             results_dir / dir_name / "metrics.csv",
             results_dir / dir_name / "lightning_logs" / "version_0" / "metrics.csv",
