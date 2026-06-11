@@ -161,30 +161,30 @@ export default function Home() {
             <div className="inline-block mb-3 px-2 py-1 bg-blue-600 border-2 border-stone-900 shadow-[2px_2px_0px_0px_rgba(28,25,23,1)]">
               <span className="text-white text-[10px] font-bold uppercase tracking-widest font-sans">Geometric Deep Learning</span>
             </div>
-            <h1 className="text-3xl md:text-4xl font-black text-stone-900 mb-2 font-serif uppercase tracking-tight leading-none">
-              {activeTab === 'part1' ? <>Rotation Invariance<br />on MNIST</> : activeTab === 'part2' ? <>Phân Loại 3D<br />với PointNet</> : <>Dự đoán Năng lượng<br />với NequIP</>}
+            <h1 className="text-3xl md:text-4xl font-black text-stone-900 mb-2 uppercase tracking-tight">
+              {activeTab === 'part1' ? <>Demo MNIST<br />Bất Biến Xoay</> : activeTab === 'part2' ? <>Phân Loại 3D<br />với PointNet</> : <>Dự đoán Năng lượng<br />với NequIP</>}
             </h1>
-            <p className="text-sm text-stone-700 font-serif mt-3 border-t-2 border-stone-200 pt-3">
+            <p className="text-sm text-stone-700 mt-3 border-t-2 border-stone-200 pt-3">
               {activeTab === 'part1'
-                ? 'Khám phá học máy nhận thức đối xứng qua phân loại chữ số viết tay.'
+                ? 'Thử nghiệm nhận diện chữ số bất biến với góc xoay.'
                 : activeTab === 'part2'
-                ? 'Phân loại vật thể 3D từ đám mây điểm — Qi et al., CVPR 2017.'
-                : 'Dự đoán năng lượng cơ học lượng tử của phân tử bằng mạng thần kinh đồ thị đẳng biến E(3).'}
+                  ? 'Phân loại vật thể 3D từ đám mây điểm — Qi et al., CVPR 2017.'
+                  : 'Dự đoán năng lượng cơ học lượng tử của phân tử bằng mạng thần kinh đồ thị đẳng biến E(3).'}
             </p>
           </div>
 
           {/* Right: Methods */}
           <div className="flex-[1.5] border-t-2 md:border-t-0 md:border-l-2 border-stone-900 pt-4 md:pt-0 md:pl-6">
-            <h2 className="text-sm font-black text-stone-900 mb-3 font-serif uppercase tracking-widest bg-yellow-400 border-2 border-stone-900 shadow-[2px_2px_0px_0px_rgba(28,25,23,1)] inline-block px-2 py-1">Phương pháp Thử nghiệm</h2>
+            <h2 className="text-sm font-black text-stone-900 mb-3 uppercase tracking-widest bg-yellow-400 border-2 border-stone-900 shadow-[2px_2px_0px_0px_rgba(28,25,23,1)] inline-block px-2 py-1">Phương pháp Thử nghiệm</h2>
             {activeTab === 'part1' ? (
               <>
                 <p className="text-stone-800 text-sm leading-relaxed font-sans mb-3 hidden lg:block">
                   So sánh 3 cách tiếp cận bất biến xoay:
                 </p>
                 <ul className="text-stone-800 text-sm leading-relaxed font-sans space-y-3">
-                  <li><strong className="text-stone-900 bg-red-400 px-1.5 py-0.5 border-2 border-stone-900 shadow-[2px_2px_0px_0px_rgba(28,25,23,1)] mr-2 inline-block">(1) CNN Cơ sở:</strong>Huấn luyện hoàn toàn trên các hướng thẳng đứng chuẩn.</li>
-                  <li><strong className="text-stone-900 bg-amber-400 px-1.5 py-0.5 border-2 border-stone-900 shadow-[2px_2px_0px_0px_rgba(28,25,23,1)] mr-2 inline-block">(2) Tăng cường Dữ liệu:</strong>Kết hợp các phép biến đổi xoay đa dạng trong huấn luyện.</li>
-                  <li><strong className="text-stone-900 bg-emerald-400 px-1.5 py-0.5 border-2 border-stone-900 shadow-[2px_2px_0px_0px_rgba(28,25,23,1)] mr-2 inline-block">(3) Trung bình Khung:</strong>Tận dụng các dự đoán tương đương nhóm khi kiểm tra.</li>
+                  <li><strong className="text-stone-900 bg-red-400 px-1.5 py-0.5 border-2 border-stone-900 shadow-[2px_2px_0px_0px_rgba(28,25,23,1)] mr-2 inline-block">(1) Baseline CNN:</strong>Chỉ huấn luyện bằng ảnh chữ số thẳng đứng gốc.</li>
+                  <li><strong className="text-stone-900 bg-amber-400 px-1.5 py-0.5 border-2 border-stone-900 shadow-[2px_2px_0px_0px_rgba(28,25,23,1)] mr-2 inline-block">(2) Data Augmentation:</strong>Đưa thêm các ảnh đã bị xoay ngẫu nhiên vào lúc train.</li>
+                  <li><strong className="text-stone-900 bg-emerald-400 px-1.5 py-0.5 border-2 border-stone-900 shadow-[2px_2px_0px_0px_rgba(28,25,23,1)] mr-2 inline-block">(3) Frame Averaging:</strong>Xoay ảnh thành 4 góc vuông rồi lấy trung bình dự đoán.</li>
                 </ul>
               </>
             ) : activeTab === 'part2' ? (
@@ -205,8 +205,8 @@ export default function Home() {
                 </p>
                 <ul className="text-stone-800 text-sm leading-relaxed font-sans space-y-3">
                   <li><strong className="text-stone-900 bg-cyan-400 px-1.5 py-0.5 border-2 border-stone-900 shadow-[2px_2px_0px_0px_rgba(28,25,23,1)] mr-2 inline-block">(1) Đồ thị Nguyên tử:</strong>Các nguyên tử là nút đồ thị, liên kết cách nhau r &le; r_max là cạnh.</li>
-                  <li><strong className="text-stone-900 bg-emerald-400 px-1.5 py-0.5 border-2 border-stone-900 shadow-[2px_2px_0px_0px_rgba(28,25,23,1)] mr-2 inline-block">(2) E(3) Message Passing:</strong>Truyền thông điệp đẳng biến bảo toàn tính bất biến đối xứng quay và tịnh tiến 3D.</li>
-                  <li><strong className="text-stone-900 bg-indigo-400 text-white px-1.5 py-0.5 border-2 border-stone-900 shadow-[2px_2px_0px_0px_rgba(28,25,23,1)] mr-2 inline-block">(3) Global Pooling:</strong>Cộng gộp năng lượng của các nút nguyên tử để ra năng lượng tổng phân tử.</li>
+                  <li><strong className="text-stone-900 bg-emerald-400 px-1.5 py-0.5 border-2 border-stone-900 shadow-[2px_2px_0px_0px_rgba(28,25,23,1)] mr-2 inline-block">(2) E(3) Message Passing:</strong>Mạng GNN sử dụng cơ chế truyền thông điệp đẳng biến theo chuẩn E(3).</li>
+                  <li><strong className="text-stone-900 bg-indigo-400 text-white px-1.5 py-0.5 border-2 border-stone-900 shadow-[2px_2px_0px_0px_rgba(28,25,23,1)] mr-2 inline-block">(3) Global Pooling:</strong>Cộng tổng năng lượng của tất cả nguyên tử để dự đoán mức năng lượng chung.</li>
                 </ul>
               </>
             )}
@@ -218,31 +218,28 @@ export default function Home() {
       <div className="w-full px-4 md:px-8 mb-6 flex flex-wrap gap-4">
         <button
           onClick={() => setActiveTab('part1')}
-          className={`px-6 py-3 font-black text-sm md:text-base uppercase tracking-widest border-2 border-stone-900 transition-all ${
-            activeTab === 'part1'
+          className={`px-6 py-3 font-black text-sm md:text-base uppercase tracking-widest border-2 border-stone-900 transition-all ${activeTab === 'part1'
             ? 'bg-rose-400 shadow-[4px_4px_0px_0px_rgba(28,25,23,1)] translate-y-0 translate-x-0'
             : 'bg-white shadow-none translate-y-1 translate-x-1 hover:bg-stone-50'
-          }`}
+            }`}
         >
-          Nhận diện Hình ảnh (SO(2))
+          Nhận diện MNIST (SO(2))
         </button>
         <button
           onClick={() => setActiveTab('part2')}
-          className={`px-6 py-3 font-black text-sm md:text-base uppercase tracking-widest border-2 border-stone-900 transition-all ${
-            activeTab === 'part2'
+          className={`px-6 py-3 font-black text-sm md:text-base uppercase tracking-widest border-2 border-stone-900 transition-all ${activeTab === 'part2'
             ? 'bg-emerald-400 shadow-[4px_4px_0px_0px_rgba(28,25,23,1)] translate-y-0 translate-x-0'
             : 'bg-white shadow-none translate-y-1 translate-x-1 hover:bg-stone-50'
-          }`}
+            }`}
         >
           Phân loại 3D (PointNet)
         </button>
         <button
           onClick={() => setActiveTab('part3')}
-          className={`px-6 py-3 font-black text-sm md:text-base uppercase tracking-widest border-2 border-stone-900 transition-all ${
-            activeTab === 'part3'
+          className={`px-6 py-3 font-black text-sm md:text-base uppercase tracking-widest border-2 border-stone-900 transition-all ${activeTab === 'part3'
             ? 'bg-cyan-400 shadow-[4px_4px_0px_0px_rgba(28,25,23,1)] translate-y-0 translate-x-0'
             : 'bg-white shadow-none translate-y-1 translate-x-1 hover:bg-stone-50'
-          }`}
+            }`}
         >
           Dự đoán Năng lượng (NequIP)
         </button>
@@ -288,7 +285,7 @@ export default function Home() {
                     <div className="mt-8 bg-stone-100 border-2 border-stone-900 p-5">
                       <p className="text-sm text-stone-800 leading-relaxed font-sans">
                         <span className="font-bold text-stone-900 uppercase tracking-widest text-xs block mb-1">Quan sát:</span>
-                        Mô hình cơ sở bị giảm hiệu suất đáng kể khi ảnh bị xoay, trong khi phương pháp trung bình khung thể hiện tính bất biến mạnh mẽ ở mọi góc độ.
+                        Baseline CNN rất dễ đoán sai nếu bạn xoay ảnh chữ số. Mặc dù Data Augmentation đã tốt hơn, nhưng Frame Averaging mới là thuật toán đảm bảo dự đoán ổn định ở mọi góc độ xoay nhờ tính toán trung bình từ 4 khung.
                       </p>
                     </div>
                   )}
@@ -302,9 +299,9 @@ export default function Home() {
                 <h2 className="text-3xl font-black text-stone-900 font-serif uppercase tracking-tight">Phân tích So sánh</h2>
               </div>
               <div className="grid md:grid-cols-3 gap-8">
-                <PredictionCard title="CNN Cơ sở" description="Chỉ huấn luyện trên chữ số thẳng đứng" result={predictions?.baseline || null} variant="baseline" />
-                <PredictionCard title="Tăng cường dữ liệu" description="Huấn luyện với dữ liệu tăng cường xoay" result={predictions?.augmentation || null} variant="augmentation" />
-                <PredictionCard title="Trung bình khung" description="Trung bình hóa qua nhiều góc xoay" result={predictions?.averaging || null} variant="averaging" />
+                <PredictionCard title="Baseline CNN" description="Chỉ học ảnh thẳng đứng" result={predictions?.baseline || null} variant="baseline" />
+                <PredictionCard title="Data Augmentation" description="Thêm ảnh xoay lúc train" result={predictions?.augmentation || null} variant="augmentation" />
+                <PredictionCard title="Frame Averaging" description="Trung bình kết quả 4 góc xoay" result={predictions?.averaging || null} variant="averaging" />
               </div>
             </div>
           </>
@@ -325,11 +322,10 @@ export default function Home() {
                   {p2Result && (
                     <button
                       onClick={() => setShowCritical(v => !v)}
-                      className={`ml-auto px-4 py-2 text-xs font-black font-sans uppercase tracking-widest border-2 border-stone-900 transition-all ${
-                        showCritical
-                          ? 'bg-red-500 text-white shadow-[3px_3px_0px_0px_rgba(28,25,23,1)]'
-                          : 'bg-white text-stone-900 shadow-none hover:bg-stone-50'
-                      }`}
+                      className={`ml-auto px-4 py-2 text-xs font-black font-sans uppercase tracking-widest border-2 border-stone-900 transition-all ${showCritical
+                        ? 'bg-red-500 text-white shadow-[3px_3px_0px_0px_rgba(28,25,23,1)]'
+                        : 'bg-white text-stone-900 shadow-none hover:bg-stone-50'
+                        }`}
                     >
                       {showCritical ? 'Chế độ Tới hạn' : 'Chế độ Bình thường'}
                     </button>
@@ -363,14 +359,13 @@ export default function Home() {
                       <button
                         key={cls}
                         onClick={() => handleLoadSample(cls)}
-                        className={`flex flex-col items-center gap-1 py-3 px-1 border-2 border-stone-900 text-xs font-black font-sans uppercase tracking-wide transition-all ${
-                          selectedClass === cls
-                            ? 'bg-emerald-400 shadow-[3px_3px_0px_0px_rgba(28,25,23,1)]'
-                            : 'bg-white shadow-none hover:bg-stone-50 translate-y-0.5 translate-x-0.5'
-                        }`}
+                        className={`flex flex-col items-center gap-1 py-3 px-1 border-2 border-stone-900 text-xs font-black font-sans uppercase tracking-wide transition-all ${selectedClass === cls
+                          ? 'bg-emerald-400 shadow-[3px_3px_0px_0px_rgba(28,25,23,1)]'
+                          : 'bg-white shadow-none hover:bg-stone-50 translate-y-0.5 translate-x-0.5'
+                          }`}
                       >
                         <span className="text-xl">{cls === 'airplane' ? '✈' : cls === 'chair' ? '🪑' : cls === 'car' ? '🚗' : cls === 'lamp' ? '💡' : '🪵'}</span>
-                        <span className="truncate w-full text-center" style={{fontSize:'9px'}}>{cls === 'airplane' ? 'Máy bay' : cls === 'chair' ? 'Ghế' : cls === 'car' ? 'Ô tô' : cls === 'lamp' ? 'Đèn' : 'Bàn'}</span>
+                        <span className="truncate w-full text-center" style={{ fontSize: '9px' }}>{cls === 'airplane' ? 'Máy bay' : cls === 'chair' ? 'Ghế' : cls === 'car' ? 'Ô tô' : cls === 'lamp' ? 'Đèn' : 'Bàn'}</span>
                       </button>
                     ))}
                   </div>

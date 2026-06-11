@@ -1,0 +1,1012 @@
+% 
+\section{Lý thuyết nâng cao và các hướng nghiên cứu mới}
+\label{sec:ly-thuyet-nang-cao}
+
+Chương trước đã cho thấy bằng hàng loạt ví dụ cụ thể rằng việc nhúng tính đối xứng vào kiến trúc mang lại lợi ích thực nghiệm rõ rệt, từ NequIP cho thế năng nguyên tử, PointNet trên đám mây điểm, cho tới các mạng tích chập nhóm. Tuy nhiên, một bức tranh chỉ dừng ở mức quan sát thực nghiệm là chưa đủ. Vì sao đối xứng lại giúp ích, mức lợi ích chính xác là bao nhiêu, cái giá tính toán phải trả ra sao, và liệu giả định về đối xứng có thực sự đúng với dữ liệu hay không, đó là những câu hỏi mà chương này tập trung trả lời.
+
+
+% ─────────────────────────────────────────────────────────────
+% PHẦN A: LÝ THUYẾT VỀ LỢI ÍCH CỦA ĐỐI XỨNG
+% ─────────────────────────────────────────────────────────────
+
+\subsection{Lợi ích về độ phức tạp mẫu}
+\label{subsec:sample-complexity}
+ 
+Lý thuyết học máy hiện đại đang hướng tới việc giải thích một cách định lượng vì sao các tiên nghiệm hình học, đặc biệt là tính bất biến theo nhóm, có thể giúp mô hình học hiệu quả hơn. Một đóng góp nền tảng theo hướng này là công trình \textit{The Exact Sample Complexity Gain from Invariances for Kernel Regression} của Behrooz Tahmasebi và Stefanie Jegelka \cite{tahmasebi2023exact}, trong đó lợi ích về độ phức tạp mẫu của tính bất biến được đặc trưng chính xác trong khung hồi quy kernel trên đa tạp.
+ 
+\subsubsection{Động lực: một lý thuyết cần đủ tổng quát}
+ 
+Các kết quả lý thuyết trước đó về lợi ích của tính bất biến thường ràng buộc rất chặt vào tình huống cụ thể. Tiêu biểu là kết quả của Bietti, Venturi và Bruna \cite{bietti2021sample}, vốn chỉ áp dụng cho nhóm hữu hạn, tác động đẳng cự và dữ liệu nằm trên mặt cầu đơn vị $\{x \in \mathbb{R}^d : \|x\|_2 = 1\}$. Giả thiết mặt cầu là quá hạn chế đối với nhiều bài toán thực tế. Hãy xét một ví dụ rất phổ biến: dữ liệu là các tập hợp ba điểm trong không gian ba chiều, được xét dưới phép tịnh tiến và phép đổi hệ tọa độ. Miền dữ liệu khi đó không còn là mặt cầu, và nhóm tác động cũng không thuộc dạng chuẩn tắc mà lý thuyết cũ giả định.
+ 
+Một lý thuyết thực sự hữu ích phải làm việc được trong hai điều kiện tổng quát sau:
+\begin{enumerate}
+    \item Miền dữ liệu là một đa tạp compact bất kỳ, không nhất thiết là mặt cầu, chẳng hạn đa tạp Stiefel xuất hiện trong dữ liệu phổ.
+    \item Nhóm tác động là một continuous group bất kỳ, bao gồm cả các nhóm Lie có số chiều dương, chứ không chỉ các nhóm hữu hạn.
+\end{enumerate}
+ 
+Đóng góp cốt lõi của bài báo là mở rộng kết quả từ mặt cầu lên mọi đa tạp compact, và từ nhóm hữu hạn lên mọi smooth compact Lie group, kể cả nhóm vô hạn. Chính việc cho phép nhóm có số chiều dương đã làm lộ ra một trục giảm độ phức tạp mẫu hoàn toàn mới, điều mà các giả thiết cũ không thể nhìn thấy.
+ 
+\subsubsection{Thiết lập bài toán: hồi quy Sobolev bất biến}
+ 
+Xét một đa tạp Riemann compact, liên thông, không biên $(M, g)$ với số chiều $\dim(M)$, và một compact Lie group $G$ tác động trơn lên $M$. Không mất tính tổng quát, ta có thể giả định $G$ tác động đẳng cự, vì luôn có thể biến đổi metric ban đầu thành một metric mới mà dưới đó tác động trở thành đẳng cự. Tập dữ liệu gồm $n$ mẫu độc lập cùng phân phối $x_1, x_2, \ldots, x_n$ lấy đều trên $M$, với nhãn quan sát
+\begin{equation}
+    y_i = f_{\star}(x_i) + \epsilon_i, \qquad \mathbb{E}[\epsilon_i \mid x_i] = 0, \quad \mathbb{E}[\epsilon_i^2 \mid x_i] \le \sigma^2 .
+\end{equation}
+Hàm mục tiêu $f_{\star}$ được giả định là $G$-invariant, tức $f_{\star}(\tau(x)) = f_{\star}(x)$ với mọi $\tau \in G$, và nằm trong không gian Sobolev bất biến $H^s_{\text{inv}}(M)$, gồm các hàm bất biến có đạo hàm khả tích bình phương đến bậc $s$. Bộ ước lượng được dùng là KRR với một kernel $G$-invariant $K$:
+\begin{equation}
+    \hat{f} := \arg\min_{f \in \mathcal{H}} \; \frac{1}{n}\sum_{i=1}^{n}\bigl(y_i - f(x_i)\bigr)^2 + \eta \, \|f\|_{\mathcal{H}}^2 ,
+\end{equation}
+trong đó $\mathcal{H}$ là không gian Hilbert tái sinh của kernel Sobolev và $\eta$ là tham số điều chuẩn. Theo representer theorem, nghiệm tối ưu có dạng tổ hợp tuyến tính của các giá trị kernel tại các điểm dữ liệu, nên KRR có nghiệm đóng.
+ 
+\subsubsection{Kết quả chính: hai trục giảm độ phức tạp mẫu}
+ 
+Định lý trung tâm khẳng định một cận trên cho sai số tổng quát hóa của KRR khi hàm mục tiêu bất biến. Cụ thể, với kernel Sobolev, sai số kỳ vọng thỏa mãn
+\begin{equation}
+    \mathbb{E}\bigl[\|\hat{f} - f_{\star}\|_2^2\bigr] \;\lesssim\; \left( \frac{C_{d'}\, \sigma^2\, \mathrm{vol}(M/G)}{n} \right)^{\frac{s}{s+d'}},
+\end{equation}
+trong đó $C_{d'}$ là hằng số phụ thuộc số chiều hiệu dụng, $d' = \dim(M) - \dim(G)$ là số chiều của quotient space, và $s$ là bậc Sobolev. Quan trọng hơn, tốc độ này được chứng minh là minimax optimal, nghĩa là không có bộ ước lượng nào có thể làm tốt hơn về mặt bậc, kể cả ở hệ số đứng trước. Vì vậy đây là mức lợi ích chính xác chứ không chỉ là một cận lỏng.
+ 
+Đặt $G$ là nhóm tầm thường sẽ thu lại đúng cận tổng quát hóa cổ điển khi không có đối xứng, lúc đó $d'$ trở thành $\dim(M)$ và $\mathrm{vol}(M/G)$ trở thành $\mathrm{vol}(M)$. So sánh hai trường hợp cho thấy tính bất biến mang lại lợi ích theo hai cơ chế khác nhau về bản chất:
+ 
+\begin{itemize}
+    \item Multiplicative gain: Thể tích quotient $\mathrm{vol}(M/G)$ luôn nhỏ hơn $\mathrm{vol}(M)$. Với nhóm hữu hạn tác động hiệu quả, $\mathrm{vol}(M/G) = \mathrm{vol}(M)/|G|$, nên về thực chất mỗi mẫu dữ liệu mang lượng thông tin tương đương $|G|$ mẫu. Hiệu ứng giống như tăng kích thước tập huấn luyện lên $n \times |G|$ lần.
+    \item Exponential gain: Số mũ chứa $d' = \dim(M) - \dim(G)$ thay vì $\dim(M)$. Khi nhóm có số chiều dương, số chiều hiệu dụng giảm đi $\dim(G)$ đơn vị, kéo theo tốc độ hội tụ cải thiện theo hàm mũ. Đây chính là trục lợi ích mới mà các lý thuyết giới hạn ở nhóm hữu hạn không thể phát hiện, bởi với nhóm hữu hạn thì $\dim(G) = 0$.
+\end{itemize}
+ 
+
+ 
+\begin{table}[H]
+    \centering
+    \caption[Hai cơ chế giảm độ phức tạp mẫu theo loại nhóm tác động]{Hai cơ chế giảm độ phức tạp mẫu theo loại nhóm tác động.}
+    \label{tab:two-gains}
+    \vspace{2pt}
+    \textit{Ghi chú: Bảng do nhóm lập dựa trên Định lý 4.1 trong \cite{tahmasebi2023exact}.}
+    \vspace{4pt}
+    \begin{tabular}{lll}
+        \hline
+        \rowcolor{gray!20}
+        Tiêu chí & Nhóm hữu hạn & Nhóm Lie số chiều dương \\
+        \hline
+        $\dim(G)$ & $0$ & $> 0$ \\
+        Số chiều hiệu dụng $d'$ & $\dim(M)$ & $\dim(M) - \dim(G)$ \\
+        Lợi ích nhân & $\mathrm{vol}(M)/|G|$ & Co thể tích theo quotient \\
+        Lợi ích mũ & Không có & Có, giảm số chiều \\
+        Diễn giải trực quan & Hiệu quả như $n \times |G|$ mẫu & Vừa thêm mẫu, vừa giảm chiều \\
+        \hline
+    \end{tabular}
+\end{table}
+ 
+\textbf{Nhận xét:} Bảng \ref{tab:two-gains} cho thấy ranh giới định tính giữa nhóm hữu hạn và nhóm Lie số chiều dương. Với nhóm hữu hạn, $\dim(G)=0$ nên lợi ích chỉ là hệ số nhân, tương đương khuếch đại mỗi mẫu thành $|G|$ mẫu. Với nhóm liên tục, ngoài lợi ích nhân còn có lợi ích mũ vì số chiều hiệu dụng giảm từ $\dim(M)$ xuống $\dim(M)-\dim(G)$. Do đó giá trị lớn nhất của đối xứng liên tục không chỉ là thêm dữ liệu, mà là thu nhỏ chính số chiều của bài toán cần học, đặc biệt quan trọng khi dữ liệu khan hiếm.
+ 
+\subsubsection{Trực giác hình học: phép phản xạ trên vòng tròn}
+ 
+Để thấy rõ vì sao tính bất biến lại làm giảm độ phức tạp mẫu, ta xét ví dụ đơn giản nhất là vòng tròn đơn vị, tham số hóa bởi góc $\theta \in [0, 2\pi)$. Các eigenfunction của Laplace-Beltrami operator trên vòng tròn là hàm hằng cùng với $\sin(k\theta)$ và $\cos(k\theta)$, ứng với eigenvalue $\lambda = k^2$. Mỗi eigenvalue khác không có bội hai, đây chính là toàn bộ các Fourier modes.
+ 
+Bây giờ áp đặt tính đối xứng bằng nhóm phản xạ $G$ qua trục tung, tức yêu cầu $f_{\star}(\pi - \theta) = f_{\star}(\theta)$. Khi đó chỉ một nửa số Fourier modes sống sót, cụ thể là các hàm $\sin((2k+1)\theta)$ và $\cos(2k\theta)$, vì $|G| = 2$. Quotient space ở đây là một nửa vòng tròn, và do đó $\mathrm{vol}(M/G) = \tfrac{1}{2}\mathrm{vol}(M)$. Độ thưa của khai triển Fourier chính là cơ chế trực tiếp dẫn tới lợi ích về độ phức tạp mẫu: không gian hàm cần học bị thu nhỏ đúng một nửa, nên cần ít dữ liệu hơn để xác định hàm mục tiêu.
+ 
+\begin{figure}[H]
+    \centering
+    \begin{tikzpicture}[scale=1.8] % Tăng nhẹ scale để hình thoáng hơn
+        % Vòng tròn cơ sở
+        \draw[thick] (0,0) circle (1);
+        
+        % Trục phản xạ (Đẩy nhãn chữ xuống dưới cùng để tránh chen chúc phía trên)
+        \draw[dashed, gray, thick] (0,-1.4) -- (0,1.4);
+        \node[gray, font=\footnotesize, below] at (0,-1.4) {trục phản xạ};
+        
+        % Nửa giữ lại
+        \draw[line width=2.5pt, blue!70!black] (-90:1) arc (-90:90:1);
+        
+        % Mũi tên gập: đặt cao hơn để tránh dính nhãn điểm cố định
+        \draw[->, >=latex, red!80!black, thick] (145:1.45) arc (145:35:1.45);
+        \node[red!80!black, font=\small, above] at (90:1.48) {$\tau:\theta \mapsto \pi-\theta$};
+        
+        % Các nhãn chữ bên trong vòng tròn (Dùng align=center để xuống dòng gọn gàng)
+        \node[gray, font=\footnotesize] at (-0.5, 0) {gập $\rightarrow$};
+        \node[blue!70!black, font=\footnotesize, align=center] at (0.45, 0) {nửa\\giữ lại};
+        
+        % Điểm cố định: đặt nhãn lệch ra ngoài để không dính vào đường tròn
+        \filldraw[black] (0,1) circle (1.5pt);
+        \node[font=\footnotesize, anchor=east] at (-0.22,1.10) {$(0,1)$};
+        
+        \filldraw[black] (0,-1) circle (1.5pt);
+        \node[font=\footnotesize, anchor=east] at (-0.22,-1.10) {$(0,-1)$};
+    \end{tikzpicture}
+    \caption{Phản xạ qua trục tung gập vòng tròn thành nửa vòng tròn, chỉ một nửa số Fourier modes còn lại nên $\mathrm{vol}(M/G) = \tfrac{1}{2}\mathrm{vol}(M)$.}
+    \label{fig:circle-reflection}
+    \vspace{2mm}
+
+    \textit{Ghi chú: Hình do nhóm tự vẽ dựa trên ví dụ vòng tròn trong \cite{tahmasebi2023exact}; hai điểm $(0, \pm 1)$ là các điểm cố định, nơi xuất hiện biên của quotient space.}
+\end{figure}
+ 
+\subsubsection{Ý tưởng chứng minh: định luật Weyl mở rộng}
+ 
+Phần khó nhất của bài báo nằm ở chứng minh, và đây cũng là nơi cách tiếp cận hình học vi phân thể hiện sức mạnh. Ý tưởng là xem không gian hàm bất biến trên $M$ như không gian hàm trên quotient space $M/G$, rồi đo độ phức tạp của không gian đó qua phân bố eigenvalue của Laplace-Beltrami operator. Ta định nghĩa $N(\lambda; G)$ là số eigenfunction bất biến có eigenvalue không vượt quá $\lambda$. Định lý đếm chiều khẳng định dáng điệu tiệm cận của đại lượng này, chính là một dạng mở rộng của định luật Weyl:
+\begin{equation}
+    N(\lambda; G) \;\approx\; \frac{\omega_{d'}}{(2\pi)^{d'}} \, \mathrm{vol}(M/G)\, \lambda^{d'/2},
+\end{equation}
+trong đó $\omega_{d'}$ là thể tích hình cầu đơn vị trong $\mathbb{R}^{d'}$. Công thức này nói rằng số hàm bất biến tăng theo thể tích quotient và theo số chiều hiệu dụng, qua đó liên kết trực tiếp với hai trục lợi ích đã nêu.
+ 
+Tuy nhiên, áp dụng định luật Weyl cho $M/G$ không hề tầm thường, vì quotient space gặp hai trở ngại sau:
+\begin{enumerate}
+    \item Quotient space nói chung không phải là một đa tạp, nên ngay cả khái niệm số chiều và thể tích cũng cần được định nghĩa lại một cách cẩn thận thông qua phần chính của nó.
+    \item Ngay cả khi giới hạn ở phần là đa tạp, quotient vẫn có thể xuất hiện biên dù không gian gốc không có biên. Ví dụ vòng tròn ở trên cho quotient là nửa vòng tròn với hai điểm biên, sinh ra từ các điểm cố định của tác động nhóm.
+\end{enumerate}
+ 
+\textbf{Nhận xét:} Khi đã có biên thì một kết quả đếm chiều kiểu Weyl chỉ đúng nếu đi kèm điều kiện biên phù hợp, và các điều kiện biên khác nhau dẫn tới những không gian hàm hoàn toàn khác nhau. Đóng góp của chứng minh là chỉ ra rằng các hàm bất biến chiếu xuống quotient luôn thỏa mãn điều kiện biên Neumann, tức đạo hàm pháp tuyến triệt tiêu trên biên, chứ không phải điều kiện Dirichlet. Chính việc xác định đúng điều kiện biên này đã đặc trưng hóa chính xác không gian hàm bất biến. Cách lập luận bằng hình học vi phân và Laplace-Beltrami operator này tổng quát hơn hẳn chiến lược cổ điển dùng đa thức bất biến, vốn chỉ hoạt động trên mặt cầu \cite{bietti2021sample}.
+ 
+\subsubsection{Mở rộng và liên hệ với các kết quả khác}
+ 
+Khung lý thuyết trên không dừng lại ở hồi quy. Cùng nhóm tác giả đã mở rộng ý tưởng sang bài toán ước lượng các probability divergence dưới đối xứng \cite{tahmasebi2024divergences}, bao gồm cả optimal transport. Một quan sát thú vị là với kernel maximum mean discrepancy, mức lợi ích không còn chỉ phụ thuộc vào thể tích quotient mà còn phụ thuộc vào những tính chất hình học tinh tế hơn của đa tạp, chẳng hạn hàm zeta của nó. Kết quả tương tự về độ phức tạp mẫu của divergence dưới đối xứng nhóm cũng được Chen và cộng sự thiết lập một cách độc lập \cite{chen2023sample}.
+ 
+Trong bức tranh rộng hơn, đây là một mắt xích trong dòng nghiên cứu định lượng lợi ích của tính bất biến và đẳng biến. Elesedy chứng minh lợi ích tổng quát hóa nghiêm ngặt cho các phương pháp kernel bất biến \cite{elesedy2021kernel}, còn Mei, Misiakiewicz và Montanari phân tích trường hợp random features và kernel models trong một chế độ scaling khác \cite{mei2021learning}. So với các công trình này, đóng góp riêng của Tahmasebi và Jegelka là một kết quả minimax optimal đúng cho mọi đa tạp compact và mọi tác động nhóm Lie trơn, qua đó hợp nhất nhiều trường hợp riêng lẻ dưới một lý thuyết chung.
+ 
+\begin{table}[H]
+    \centering
+    \caption{Ánh xạ một số mô hình bất biến quen thuộc vào khung lý thuyết đa tạp và nhóm tác động.}
+    \label{tab:applications}
+    \vspace{2pt}
+    \textit{Ghi chú: Bảng do nhóm tổng hợp từ phần ứng dụng kernel hóa trong \cite{tahmasebi2023exact}.}
+    \vspace{4pt}
+    \begin{tabular}{lll}
+        \hline
+        \rowcolor{gray!20}
+        Mô hình & Nhóm tác động $G$ & Nguồn lợi ích chủ đạo \\
+        \hline
+        DeepSets & Hoán vị $S_n$ hữu hạn & Lợi ích nhân theo $|G| = n!$ \\
+        GNN & Hoán vị trên đỉnh đồ thị & Lợi ích nhân theo cỡ nhóm \\
+        PointNet & Hoán vị, tịnh tiến, quay & Cả lợi ích nhân và lợi ích mũ \\
+        SignNet & Đối xứng dấu của vector riêng & Lợi ích nhân theo nhóm dấu \\
+        \hline
+    \end{tabular}
+\end{table}
+ 
+Hình \ref{fig:error-curve} tổng kết bằng trực giác cuối cùng: ở cùng một mức sai số mục tiêu, mô hình bất biến cần ít mẫu hơn đáng kể, và khoảng cách này càng rõ khi nhóm đối xứng càng lớn. Đúng như lý thuyết dự đoán, lợi ích thể hiện mạnh nhất ở chế độ dữ liệu ít; khi dữ liệu trở nên dồi dào, khoảng cách giữa mô hình bất biến và mô hình thông thường thu hẹp dần.
+ 
+\begin{figure}[H]
+    \centering
+    \begin{tikzpicture}
+        \begin{axis}[
+            width=10cm, height=6.2cm,
+            xlabel={Số mẫu huấn luyện $n$},
+            ylabel={Sai số tổng quát hóa},
+            xmin=1, xmax=10, ymin=0, ymax=1.05,
+            xtick=\empty, ytick=\empty,
+            legend pos=north east,
+            legend cell align=left,
+            axis lines=left,
+            domain=1:10, samples=80,
+        ]
+            \addplot[thick, red!70!black] {1/(x^0.5)};
+            \addlegendentry{Không đối xứng}
+            \addplot[thick, blue!60!black] {1/(x^0.9)};
+            \addlegendentry{Bất biến (nhóm nhỏ)}
+            \addplot[thick, green!50!black, dashed] {1/(x^1.3)};
+            \addlegendentry{Bất biến (nhóm lớn)}
+        \end{axis}
+    \end{tikzpicture}
+    \caption{Cùng một mức sai số mục tiêu, mô hình bất biến đạt được với số mẫu nhỏ hơn, và nhóm đối xứng càng lớn thì đường cong càng dốc.}
+    \label{fig:error-curve}
+    \vspace{2mm}
+
+    \textit{Ghi chú: Hình do nhóm tự vẽ mang tính minh họa định tính cho Định lý 4.1 trong \cite{tahmasebi2023exact}, không phải kết quả thực nghiệm.}
+\end{figure}
+
+\subsection{Giải quyết chi phí tính toán bằng Expanders}
+\label{subsec:expanders}
+
+% Trình bày:
+%   - Vấn đề: |S_50| ≈ 3×10^64 > số atoms trên Trái Đất
+%     → group averaging/augmentation bùng nổ
+%   - Generating sets: S ⊆ G s.t. mọi g = s₁s₂...sₖ
+%     * f*(s·x)=f*(x) ∀s∈S ⟹ f*(g·x)=f*(x) ∀g∈G
+%     * Min size |S| ≤ log₂|G| (exponential saving!)
+%     * Tìm min-size: NP-hard
+%   - Random Cayley graphs (Expanders):
+%     Random subset S size ~2.67×log|G| là generating set w.h.p.
+
+% Ba ứng dụng cụ thể:
+%   1. Computational complexity: learning exact invariances
+%      in O_{n,d}((log|G|)³) time (Soleymani et al ICML 2025)
+%   2. Data augmentation: O(log|G|) random elements đủ
+%      full statistical gain (Tahmasebi et al 2025)
+%   3. Approximate group averaging:
+%      sup_f |avg_G f - avg_S f| ≤ O(log|G|/|S|)^{1/2}
+%      (uniform over all f, all epochs)
+%
+% Kết luận quan trọng (phân biệt rõ):
+%   - Exact symmetry via averaging: HARD (cần full group)
+%   - Approximate symmetry via averaging: EASY (O(log|G|))
+%   - Full statistical gain: EASY (O(log|G|))
+%   → Exponential separation!
+
+Các phương pháp khai thác tính đối xứng như \textit{group averaging} và \textit{data augmentation} có thể cải thiện khả năng tổng quát hóa của mô hình bằng cách buộc mô hình tôn trọng các phép biến đổi không làm thay đổi bản chất dữ liệu. Tuy nhiên, khi nhóm biến đổi có kích thước lớn, việc xét toàn bộ các phần tử của nhóm trở nên không khả thi về mặt tính toán. Một ví dụ điển hình là nhóm hoán vị $S_{50}$, có kích thước
+\begin{equation}
+    |S_{50}| = 50! \approx 3 \times 10^{64}.
+    \label{eq:s50-size}
+\end{equation}
+Đây là một con số vượt xa khả năng duyệt vét cạn trong mọi thiết lập thực nghiệm thông thường. Do đó, một câu hỏi quan trọng được đặt ra là liệu có thể thu được lợi ích của đối xứng mà không cần thao tác trực tiếp trên toàn bộ nhóm $G$ hay không.
+
+Một hướng tiếp cận hiện đại là khai thác tập sinh và đồ thị Cayley ngẫu nhiên. Thay vì duyệt qua tất cả phần tử của $G$, ta chỉ làm việc với một tập con nhỏ $\mathcal{S} \subseteq G$ nhưng vẫn giữ được thông tin quan trọng về cấu trúc nhóm. Khi đồ thị Cayley sinh bởi $\mathcal{S}$ có tính chất expander, thông tin có thể lan truyền hiệu quả trên toàn bộ nhóm, dù số cạnh của đồ thị tương đối nhỏ.
+
+\subsubsection{Tập sinh và tiết kiệm theo hàm mũ}
+
+Cho một nhóm hữu hạn $G$, một tập con $\mathcal{S} \subseteq G$ được gọi là tập sinh nếu mọi phần tử $g \in G$ đều có thể được biểu diễn dưới dạng tích hữu hạn của các phần tử trong $\mathcal{S}$:
+\begin{equation}
+    g = s_1 s_2 \cdots s_k,
+    \qquad s_i \in \mathcal{S}.
+    \label{eq:generating-set}
+\end{equation}
+Khi đó, thay vì kiểm tra tính bất biến trên toàn bộ nhóm $G$, ta có thể kiểm tra trên tập sinh $\mathcal{S}$. Cụ thể, nếu hàm mục tiêu $f_\star$ thỏa mãn
+\begin{equation}
+    f_\star(s \cdot x) = f_\star(x),
+    \qquad \forall s \in \mathcal{S},
+    \label{eq:invariance-on-generators}
+\end{equation}
+thì với mọi phần tử $g \in G$ có biểu diễn như trong phương trình \eqref{eq:generating-set}, ta suy ra
+\begin{equation}
+\begin{aligned}
+    f_\star(g \cdot x)
+    &= f_\star(s_1s_2\cdots s_k \cdot x) \\
+    &= f_\star(s_2\cdots s_k \cdot x) \\
+    &\cdots \\
+    &= f_\star(x).
+\end{aligned}
+    \label{eq:generator-invariance-implies-group-invariance}
+\end{equation}
+Do đó, tính bất biến trên tập sinh là điều kiện đủ để suy ra tính bất biến trên toàn bộ nhóm.
+
+Lợi ích tính toán của quan sát này đến từ việc tập sinh có thể nhỏ hơn rất nhiều so với toàn bộ nhóm. Với một nhóm hữu hạn $G$, luôn tồn tại một tập sinh có kích thước không vượt quá logarithm cơ số hai của kích thước nhóm:
+\begin{equation}
+    |\mathcal{S}| \leq \log_2 |G|.
+    \label{eq:generator-size-bound}
+\end{equation}
+Cận này cho thấy số phần tử cần kiểm soát có thể giảm từ $|G|$ xuống mức logarithmic theo $|G|$, tạo ra sự tiết kiệm theo hàm mũ. Tuy nhiên, bài toán tìm tập sinh có kích thước nhỏ nhất trong các thiết lập tổng quát là một bài toán khó về mặt tính toán, do đó cần các phương pháp xấp xỉ hoặc ngẫu nhiên hóa thay vì tìm kiếm tối ưu trực tiếp.
+
+\subsubsection{Đồ thị Cayley ngẫu nhiên và expander}
+
+Từ một tập con $\mathcal{S} \subseteq G$, đồ thị Cayley $\mathrm{Cay}(G,\mathcal{S})$ được xây dựng bằng cách lấy mỗi phần tử của nhóm $G$ làm một đỉnh. Hai đỉnh $g$ và $g'$ được nối với nhau nếu
+\begin{equation}
+    g^{-1}g' \in \mathcal{S}.
+    \label{eq:cayley-edge}
+\end{equation}
+Nếu $\mathcal{S}$ là tập sinh của $G$, đồ thị Cayley tương ứng là liên thông. Khi đồ thị này đồng thời có tính chất expander, nó là một đồ thị thưa nhưng có khả năng kết nối mạnh, nhờ đó các phép biến đổi trong nhóm có thể được bao phủ hiệu quả thông qua một số bước nhỏ.
+
+Các kết quả về đồ thị Cayley ngẫu nhiên cho thấy việc lấy mẫu một tập con ngẫu nhiên $\mathcal{S}$ với kích thước tỉ lệ với $\log |G|$ thường đủ để sinh ra toàn bộ nhóm với xác suất cao. Trong một số thiết lập, kích thước cỡ
+\begin{equation}
+    |\mathcal{S}| \approx 2.67 \log |G|
+    \label{eq:random-generator-size}
+\end{equation}
+có thể đủ để $\mathcal{S}$ trở thành tập sinh với xác suất cao. Ý nghĩa của kết quả này là ta không cần thiết kế thủ công tập sinh tối ưu; thay vào đó, lấy mẫu ngẫu nhiên một số lượng phần tử tỉ lệ logarithmic theo kích thước nhóm đã có thể tạo ra một cấu trúc đủ tốt cho nhiều thuật toán học có đối xứng.
+
+\begin{figure}[H]
+    \centering
+    \begin{tikzpicture}[
+        scale=1.2,
+        vertex/.style={draw, circle, minimum size=7mm, font=\small},
+        edge/.style={thick},
+        every node/.style={font=\small}
+    ]
+        \foreach \i/\label in {0/g_1, 1/g_2, 2/g_3, 3/g_4, 4/g_5, 5/g_6, 6/g_7, 7/g_8} {
+            \node[vertex] (\i) at ({360/8 * \i}:2cm) {$\label$};
+        }
+
+        \foreach \a/\b in {0/1, 1/2, 2/3, 3/0, 4/5, 5/6, 6/7, 7/4, 0/4, 2/6} {
+            \draw[edge] (\a) -- (\b);
+        }
+
+        \node[draw=none, align=center] at (0,-2.75)
+            {$\mathcal{S}$ nhỏ nhưng tạo liên thông trên toàn bộ cấu trúc nhóm};
+    \end{tikzpicture}
+    
+    \caption[Minh họa đồ thị Cayley sinh bởi một tập con $\mathcal{S}$]{Minh họa đồ thị Cayley sinh bởi một tập con $\mathcal{S}$.}
+    \label{fig:cayley-expander}
+    
+    \vspace{0.15cm}
+    \begin{minipage}{0.9\linewidth}
+        \centering
+        \small\textit{Ghi chú: Khi $\mathcal{S}$ là tập sinh, các cạnh tương ứng với phép nhân bởi phần tử sinh giúp kết nối toàn bộ các phần tử của nhóm. Hình chỉ mang tính minh họa định tính.}
+    \end{minipage}
+\end{figure}
+
+\subsubsection{Ứng dụng trong học máy hình học}
+
+Việc sử dụng expander và đồ thị Cayley ngẫu nhiên dẫn đến ba ứng dụng quan trọng trong học máy hình học.
+
+Thứ nhất, trong bài toán học các hàm bất biến chính xác, cấu trúc tập sinh cho phép thay thế việc kiểm tra toàn bộ nhóm bằng việc kiểm tra một số phần tử đại diện. Các kết quả gần đây cho thấy trong một số thiết lập, bài toán học exact invariance có thể được giải với độ phức tạp theo dạng đa thức của $\log |G|$, chẳng hạn
+\begin{equation}
+    \mathcal{O}_{n,d}\left((\log |G|)^3\right),
+    \label{eq:exact-invariance-complexity}
+\end{equation}
+thay vì phụ thuộc trực tiếp vào $|G|$ \cite{soleymani2025icml}. Đây là sự giảm chi phí đáng kể đối với các nhóm tổ hợp lớn như nhóm hoán vị.
+
+Thứ hai, trong \textit{data augmentation}, mục tiêu không nhất thiết là duyệt toàn bộ nhóm, mà là thu được lợi ích thống kê từ các phép biến đổi đại diện. Với các giả định phù hợp về phân phối dữ liệu và lớp hàm học, việc lấy mẫu ngẫu nhiên
+\begin{equation}
+    |\mathcal{S}| = \mathcal{O}(\log |G|)
+    \label{eq:augmentation-log-samples}
+\end{equation}
+phần tử từ nhóm có thể đủ để đạt được lợi ích thống kê tương đương về bậc với việc sử dụng toàn bộ nhóm \cite{tahmasebi2025aug}. Điều này cung cấp cơ sở lý thuyết cho thực hành phổ biến trong học sâu, nơi chỉ một số phép biến đổi được lấy mẫu ngẫu nhiên trong quá trình huấn luyện.
+
+Thứ ba, trong bài toán xấp xỉ \textit{group averaging}, ta thay trung bình đầy đủ trên nhóm
+\begin{equation}
+    A_G f(x)
+    =
+    \frac{1}{|G|}
+    \sum_{g \in G} f(g \cdot x)
+    \label{eq:full-group-average}
+\end{equation}
+bằng trung bình trên một tập con ngẫu nhiên $\mathcal{S}$:
+\begin{equation}
+    A_{\mathcal{S}} f(x)
+    =
+    \frac{1}{|\mathcal{S}|}
+    \sum_{s \in \mathcal{S}} f(s \cdot x).
+    \label{eq:sampled-group-average}
+\end{equation}
+Với một lớp hàm phù hợp và các giả định chặn chuẩn cần thiết, sai số xấp xỉ có thể được khống chế theo dạng
+\begin{equation}
+    \sup_{f \in \mathcal{F}}
+    \left|
+        A_G f(x) - A_{\mathcal{S}} f(x)
+    \right|
+    \leq
+    \mathcal{O}
+    \left(
+        \sqrt{
+            \frac{\log |G|}{|\mathcal{S}|}
+        }
+    \right),
+    \label{eq:approximate-group-averaging-bound}
+\end{equation}
+trong đó $\mathcal{F}$ là lớp hàm đang xét. Cách viết này nhấn mạnh rằng cận sai số phụ thuộc vào giả định của định lý, thay vì đúng cho mọi hàm không bị ràng buộc.
+
+\subsubsection{Phân biệt giữa bất biến chính xác và bất biến xấp xỉ}
+
+Các kết quả trên cho thấy cần phân biệt rõ giữa ba mục tiêu khác nhau. Nếu mục tiêu là xây dựng tính bất biến chính xác bằng \textit{group averaging} đầy đủ, chi phí vẫn có thể rất lớn vì trung bình đầy đủ yêu cầu thao tác trên toàn bộ nhóm. Nếu mục tiêu là xấp xỉ tính bất biến, việc lấy mẫu một tập con có kích thước logarithmic có thể đủ để kiểm soát sai số. Nếu mục tiêu là đạt được lợi ích thống kê trong \textit{data augmentation}, số phép biến đổi cần lấy mẫu cũng có thể chỉ tăng theo $\mathcal{O}(\log |G|)$ trong các thiết lập phù hợp.
+
+Do đó, expander cung cấp một sự phân tách quan trọng về mặt tính toán. Tính bất biến chính xác thông qua trung bình đầy đủ vẫn là một bài toán khó khi nhóm có kích thước lớn. Ngược lại, bất biến xấp xỉ và lợi ích thống kê của đối xứng có thể đạt được bằng một số lượng phần tử nhỏ hơn rất nhiều. Với những nhóm có kích thước thiên văn như $S_{50}$, sự phân tách này biến một bài toán không khả thi thành một chiến lược có thể triển khai trong thực nghiệm.
+
+\subsection{Kiểm định tính đối xứng trong dữ liệu (Symmetry Testing)}
+\label{subsec:symmetry-testing}
+
+% Trình bày:
+%   - Động lực: GeoML giả định data có symmetry, nhưng thực tế?
+%     (MRI images rotationally symmetric không?)
+%   - Formulation:
+%     H₀: μ ≡ g·μ ∀g∈G (invariant)
+%     H₁: sup_g D(g·μ, μ) ≥ ε (exists violating g)
+%   - Hardness: finding arg sup_g NP-hard (reduces from TSP)
+%   - Randomized solution:
+%     E_g[D(g·μ,μ)] ≤ sup_g D(g·μ,μ) ≤ 2·E_g[D(g·μ,μ)]
+%     → Random g ∈ G là sufficient certificate
+%   - Deterministic algorithms: dùng group structure
+%     D(g₁(g₂·μ),μ) ≤ D(g₁·μ,μ) + D(g₂·μ,μ)
+%     → Reduced covering size: O(d²/ε) thay vì O(ε^{-d²})
+%   (Soleymani et al AISTATS 2025 oral)
+Các mô hình học máy hình học thường được xây dựng dựa trên một giả định tiên nghiệm: phân bố dữ liệu tuân theo một nhóm đối xứng nhất định. Giả định này cho phép mã hóa trực tiếp tính bất biến hoặc tính tương biến vào kiến trúc mô hình, qua đó cải thiện hiệu quả dữ liệu và khả năng tổng quát hóa. Tuy nhiên, trong các bài toán thực tế, đối xứng của dữ liệu không phải lúc nào cũng hiển nhiên hoặc đúng tuyệt đối. Chẳng hạn, ảnh MRI có thực sự bất biến với mọi phép quay hay không còn phụ thuộc vào quy ước thu nhận ảnh, tư thế bệnh nhân và cấu trúc giải phẫu đang được khảo sát. Tương tự, một hệ phân tử có thể bất biến với phép tịnh tiến và phép quay toàn cục, nhưng không nhất thiết bất biến với mọi phép biến đổi rộng hơn nếu dữ liệu chứa ràng buộc môi trường hoặc điều kiện biên cụ thể.
+
+Vì vậy, trước khi mã hóa một đối xứng vào mô hình, cần có một cơ chế kiểm định xem phân bố dữ liệu có thực sự tôn trọng đối xứng đó hay không. Vấn đề này được nghiên cứu có hệ thống trong bài báo về \textit{Symmetry Testing} của Soleymani và cộng sự. Trọng tâm của hướng nghiên cứu này là chuyển câu hỏi ``dữ liệu có đối xứng hay không'' thành một bài toán kiểm định giả thuyết thống kê có thể phân tích được về mặt lý thuyết và triển khai được về mặt thuật toán.
+
+\subsubsection{Phát biểu bài toán kiểm định}
+
+Cho một phân bố dữ liệu $\mu$ trên không gian đầu vào $\mathcal{X}$ và một nhóm $G$ tác động lên $\mathcal{X}$. Với mỗi phần tử $g \in G$, ký hiệu $g \cdot \mu$ là phân bố thu được sau khi tác động phép biến đổi $g$ lên các mẫu được sinh từ $\mu$. Khi đó, bài toán kiểm định tính đối xứng được phát biểu dưới dạng hai giả thuyết:
+\begin{equation}
+    H_0: \mu \equiv g \cdot \mu, \quad \forall g \in G,
+    \label{eq:symmetry-testing-null}
+\end{equation}
+\begin{equation}
+    H_1: \sup_{g \in G} D(g \cdot \mu, \mu) \geq \varepsilon.
+    \label{eq:symmetry-testing-alternative}
+\end{equation}
+Trong đó, $D(\cdot,\cdot)$ là một độ đo khoảng cách giữa hai phân bố và $\varepsilon > 0$ là ngưỡng sai khác có ý nghĩa thống kê. Giả thuyết $H_0$ phát biểu rằng phân bố dữ liệu bất biến với toàn bộ nhóm $G$, trong khi $H_1$ phát biểu rằng tồn tại ít nhất một phép biến đổi trong $G$ làm thay đổi phân bố dữ liệu vượt quá ngưỡng $\varepsilon$.
+
+Về mặt thực nghiệm, $D$ có thể được chọn là \textit{maximum mean discrepancy}, \textit{total variation}, hoặc một độ đo xác suất khác tùy thuộc vào loại dữ liệu và giả định phân tích. Cách phát biểu này có ý nghĩa quan trọng vì nó không kiểm tra đối xứng trên từng mẫu riêng lẻ, mà kiểm tra đối xứng ở cấp độ phân bố dữ liệu.
+
+\begin{figure}[H]
+    \centering
+    \begin{tikzpicture}[
+        node distance=2.1cm,
+        box/.style={draw, rounded corners, align=center, minimum width=3.2cm, minimum height=1cm, font=\small},
+        arrow/.style={->, thick}
+    ]
+        \node[box] (data) {Phân bố dữ liệu\\$\mu$};
+        \node[box, right of=data, xshift=2.2cm] (group) {Lấy phép biến đổi\\$g \in G$};
+        \node[box, right of=group, xshift=2.2cm] (transformed) {Phân bố biến đổi\\$g \cdot \mu$};
+        \node[box, below of=group, yshift=-0.2cm] (distance) {Đo sai khác\\$D(g \cdot \mu, \mu)$};
+        \node[box, below of=distance, yshift=-0.2cm] (decision) {Quyết định\\$H_0$ hoặc $H_1$};
+
+        \draw[arrow] (data) -- (group);
+        \draw[arrow] (group) -- (transformed);
+        \draw[arrow] (data) |- (distance);
+        \draw[arrow] (transformed) |- (distance);
+        \draw[arrow] (distance) -- (decision);
+    \end{tikzpicture}
+    \caption[Quy trình kiểm định tính đối xứng ở cấp độ phân bố]{%
+      Quy trình kiểm định tính đối xứng ở cấp độ phân bố.\\[4pt]
+      \textit{Ghi chú: Dữ liệu ban đầu được so sánh với dữ liệu sau khi tác động bởi phần tử nhóm để đánh giá mức độ vi phạm tính bất biến.}%
+    }
+    \label{fig:symmetry-testing-pipeline}
+\end{figure}
+
+\subsubsection{Độ khó tính toán}
+
+Một cách trực tiếp để kiểm định $H_1$ là tìm phần tử nhóm gây vi phạm lớn nhất:
+\begin{equation}
+    g^\star \in \arg\sup_{g \in G} D(g \cdot \mu, \mu).
+    \label{eq:symmetry-testing-argmax}
+\end{equation}
+Tuy nhiên, bài toán này thường không khả thi trong các nhóm có cấu trúc tổ hợp lớn. Trong trường hợp tổng quát, việc tìm phần tử tối ưu $g^\star$ là một bài toán khó về mặt tính toán và có thể quy về các bài toán tối ưu tổ hợp như \textit{Travelling Salesman Problem}. Do đó, nếu kiểm định tính đối xứng được triển khai bằng cách duyệt toàn bộ nhóm hoặc tìm chính xác phần tử vi phạm lớn nhất, chi phí tính toán sẽ trở thành trở ngại chính.
+
+Khó khăn này đặc biệt rõ trong các nhóm hoán vị, nhóm quay rời rạc kích thước lớn, hoặc các nhóm biến đổi tổ hợp phát sinh trong dữ liệu đồ thị. Khi đó, số lượng phần tử của $G$ tăng rất nhanh theo kích thước đầu vào, khiến cách tiếp cận vét cạn không phù hợp với các hệ thống học máy hiện đại.
+
+\subsubsection{Giải pháp ngẫu nhiên hóa}
+
+Thay vì tìm trực tiếp phần tử vi phạm lớn nhất, Soleymani và cộng sự cho thấy có thể sử dụng một chiến lược ngẫu nhiên hóa dựa trên việc lấy mẫu phần tử $g$ từ nhóm $G$. Trong thiết lập lý thuyết của bài báo, kỳ vọng của độ lệch ngẫu nhiên có thể được dùng để khống chế đại lượng vi phạm cực đại:
+\begin{equation}
+    \mathbb{E}_{g \sim \mathrm{Unif}(G)}
+    \left[
+        D(g \cdot \mu, \mu)
+    \right]
+    \leq
+    \sup_{g \in G} D(g \cdot \mu, \mu)
+    \leq
+    2
+    \mathbb{E}_{g \sim \mathrm{Unif}(G)}
+    \left[
+        D(g \cdot \mu, \mu)
+    \right].
+    \label{eq:symmetry-testing-random-bound}
+\end{equation}
+Bất đẳng thức này cho thấy độ lệch trung bình dưới phép lấy mẫu ngẫu nhiên không chỉ là một đại lượng phụ trợ, mà còn có thể đóng vai trò như một chứng nhận thống kê cho mức độ vi phạm tính đối xứng. Nếu kỳ vọng trong phương trình \eqref{eq:symmetry-testing-random-bound} nhỏ, thì độ lệch cực đại cũng bị khống chế trong cùng bậc sai khác. Ngược lại, nếu các mẫu ngẫu nhiên thường xuyên tạo ra độ lệch lớn, điều đó cung cấp bằng chứng thực nghiệm chống lại giả thuyết bất biến.
+
+Về mặt thuật toán, cách tiếp cận này thay thế bài toán tối ưu khó trên toàn nhóm bằng bài toán lấy mẫu và ước lượng kỳ vọng. Điều này đặc biệt quan trọng khi nhóm $G$ có kích thước lớn nhưng việc sinh ngẫu nhiên một phần tử $g \in G$ lại tương đối đơn giản.
+
+\subsubsection{Thuật toán tất định khai thác cấu trúc nhóm}
+
+Bên cạnh giải pháp ngẫu nhiên hóa, cấu trúc đại số của nhóm còn cho phép xây dựng các thuật toán tất định hiệu quả hơn so với phương pháp phủ tập thông thường. Điểm then chốt là độ lệch theo tác động nhóm thỏa mãn một dạng bất đẳng thức tam giác:
+\begin{equation}
+    D\bigl(g_1(g_2 \cdot \mu), \mu\bigr)
+    \leq
+    D(g_1 \cdot \mu, \mu)
+    +
+    D(g_2 \cdot \mu, \mu).
+    \label{eq:symmetry-testing-triangle}
+\end{equation}
+Bất đẳng thức \eqref{eq:symmetry-testing-triangle} cho phép truyền sai số qua phép hợp thành nhóm. Nếu một phần tử phức tạp $g$ có thể được biểu diễn thông qua các phần tử đơn giản hơn, thì độ lệch của $g$ có thể được khống chế bằng tổng độ lệch của các thành phần cấu thành. Nhờ vậy, thay vì phải xây dựng một covering set dày đặc trên toàn bộ không gian nhóm, ta có thể khai thác cấu trúc sinh của nhóm để giảm mạnh số phần tử cần kiểm tra.
+
+Theo kết quả của Soleymani và cộng sự, với một số nhóm biến đổi quan trọng trong học máy hình học, kích thước covering set có thể được giảm xuống còn
+\begin{equation}
+    \mathcal{O}\left(\frac{d^2}{\varepsilon}\right),
+    \label{eq:symmetry-testing-covering-efficient}
+\end{equation}
+thay vì kích thước dạng
+\begin{equation}
+    \mathcal{O}\left(\varepsilon^{-d^2}\right)
+    \label{eq:symmetry-testing-covering-naive}
+\end{equation}
+của cách phủ tập không khai thác cấu trúc nhóm. Sự cải thiện này chuyển chi phí từ phụ thuộc hàm mũ theo số chiều sang phụ thuộc đa thức theo $d$ và $1/\varepsilon$, qua đó làm cho kiểm định tính đối xứng trở nên khả thi hơn trong các bài toán có chiều cao.
+
+\begin{figure}[H]
+    \centering
+    \begin{tikzpicture}[
+        node distance=1.8cm,
+        smallbox/.style={draw, rounded corners, align=center, minimum width=3.1cm, minimum height=0.9cm, font=\small},
+        arrow/.style={->, thick}
+    ]
+        \node[smallbox] (naive) {Phủ tập thông thường\\$\mathcal{O}(\varepsilon^{-d^2})$};
+        
+        % Tăng xshift lên 4.5cm để tạo đủ khoảng trống cho chữ trên mũi tên
+        \node[smallbox, right of=naive, xshift=4.5cm] (structure) {Khai thác cấu trúc nhóm\\$D(g_1g_2 \cdot \mu,\mu)$};
+        
+        \node[smallbox, right of=structure, xshift=4.5cm] (efficient) {Covering set rút gọn\\$\mathcal{O}(d^2/\varepsilon)$};
+
+        % Thêm above=0.1cm để chữ nhích lên một chút, không chạm sát vào đường mũi tên
+        \draw[arrow] (naive) -- node[above=0.1cm, draw=none, font=\small] {thay thế} (structure);
+        \draw[arrow] (structure) -- node[above=0.1cm, draw=none, font=\small] {suy ra} (efficient);
+    \end{tikzpicture}
+    
+    \caption[Minh họa lợi ích của việc khai thác cấu trúc nhóm]{Minh họa lợi ích của việc khai thác cấu trúc nhóm trong kiểm định tính đối xứng.}
+    \label{fig:symmetry-testing-covering}
+    
+    \vspace{0.15cm}
+    \begin{minipage}{0.9\linewidth}
+        \centering
+        \small\textit{Ghi chú: Thay vì phủ trực tiếp toàn bộ không gian biến đổi, thuật toán sử dụng quan hệ hợp thành nhóm để giảm kích thước tập kiểm định.}
+    \end{minipage}
+\end{figure}
+
+\subsubsection{Ý nghĩa đối với học máy hình học}
+
+Symmetry Testing cung cấp một lớp công cụ quan trọng cho học máy hình học vì nó kiểm tra tính đúng đắn của giả định đối xứng trước khi giả định đó được mã hóa vào mô hình. Nếu dữ liệu thực sự bất biến với nhóm $G$, việc sử dụng mô hình bất biến hoặc tương biến có thể giúp giảm độ phức tạp mẫu và cải thiện khả năng tổng quát hóa. Ngược lại, nếu dữ liệu chỉ xấp xỉ bất biến hoặc vi phạm đối xứng ở một số hướng nhất định, việc áp đặt đối xứng cứng có thể làm mất thông tin dự đoán quan trọng.
+
+Do đó, kiểm định tính đối xứng đóng vai trò như một bước trung gian giữa phân tích dữ liệu và thiết kế kiến trúc. Thay vì chọn nhóm đối xứng hoàn toàn dựa trên trực giác miền ứng dụng, nhà nghiên cứu có thể sử dụng kiểm định thống kê để đánh giá mức độ phù hợp của nhóm đó với phân bố dữ liệu quan sát được. Đây là một hướng nghiên cứu quan trọng vì nó làm cho quá trình thiết kế mô hình hình học trở nên có căn cứ hơn, đặc biệt trong các miền dữ liệu phức tạp như ảnh y sinh, phân tử, đồ thị xã hội và hệ thống vật lý nhiều hạt.
+
+
+% ─────────────────────────────────────────────────────────────
+% PHẦN B: ĐỐI XỨNG BÊN TRONG MẠNG NƠ-RON
+% ─────────────────────────────────────────────────────────────
+
+\subsection{Tính đối xứng tham số mạng nơ-ron (Neural Parameter Symmetries)}
+\label{subsec:parameter-symmetries}
+
+% Trình bày:
+%   - Khái niệm: f_θ = f_{g·θ} (same function, different weights)
+%   - Ví dụ 1 — MLPs:
+%     * Scale invariance (ReLU homogeneous):
+%       W₂σ(W₁x) = (1/α)W₂σ(αW₁x)
+%     * Permutation invariance (pointwise activation):
+%       W₂σ(W₁x) = W₂P^T σ(PW₁x)
+%   - Ví dụ 2 — Matrix products (LoRA, Attention):
+%     * UV^T = UR·R^{-1}V^T → GL(r)-invariance
+%   - Ví dụ 3 — Transformers (Theus et al 2025):
+%     * MLP symmetries + Attention head permutation
+%     * RMSNorm: orthogonal group
+%     * LoRA/Attention: GL(r)
+
+Góc nhìn của Geometric Machine Learning không chỉ dừng lại ở dữ liệu đầu vào mà còn được mở rộng vào sâu bên trong không gian tham số của chính mạng nơ-ron. Xét một mạng nơ-ron $f_\theta$ với tập tham số $\theta$. Ta nói $\theta$ và $\theta'$ là tương đương về mặt hàm nếu $f_\theta \equiv f_{\theta'}$, tức hai bộ tham số khác nhau xác định cùng một ánh xạ đầu vào-đầu ra. Tập hợp tất cả các phép biến đổi $g$ trên không gian tham số thỏa mãn $f_\theta = f_{g \cdot \theta}$ tạo thành một nhóm, gọi là nhóm đối xứng tham số  của mạng.
+
+\subsubsection{Các dạng đối xứng tham số phổ biến}
+
+Bản thân cấu trúc trọng số của các mạng học sâu chứa đựng nhiều dạng đối xứng nội tại:
+
+\begin{itemize}
+    \item \textit{Permutation invariance:} Hoán đổi hai nơ-ron ẩn trong cùng một lớp, kèm theo hoán vị tương ứng các hàng của ma trận trọng số lớp trên và các cột của ma trận lớp dưới, không thay đổi hàm tính toán. Với hàm kích hoạt theo điểm, đẳng thức tường minh là:
+    \begin{equation}
+        W_2\, \sigma(W_1 x) = W_2 P^\top \sigma(P W_1 x)
+    \end{equation}
+    với mọi ma trận hoán vị $P$.
+
+    \item \textit{Scale invariance:} Với hàm kích hoạt thuần nhất như ReLU thỏa mãn $\sigma(\alpha z) = \alpha \sigma(z)$ với $\alpha > 0$, nhân lớp trước với $\alpha$ và chia lớp sau cho $\alpha$ cho cùng kết quả:
+    \begin{equation}
+        W_2\, \sigma(W_1 x) = \tfrac{1}{\alpha} W_2\, \sigma(\alpha W_1 x).
+    \end{equation}
+
+    \item \textit{$GL(r)$-invariance trong Attention và LoRA:} Trong các phân rã hạng thấp dạng $UV^\top$, bất kỳ ma trận khả nghịch $R \in GL(r)$ nào cũng cho cùng tích:
+    \begin{equation}
+        UV^\top = (UR)(R^{-1}V^\top).
+    \end{equation}
+    Tương tự, trong cơ chế attention nhiều đầu, việc hoán vị các đầu attention không thay đổi đầu ra sau phép chiếu kết hợp.
+\end{itemize}
+
+Công trình của Theus và cộng sự \cite{theus2025transformers} đã hệ thống hóa đầy đủ các đối xứng tham số của Transformer, bao gồm đối xứng của các lớp MLP, hoán vị đầu attention, nhóm trực giao xuất hiện trong RMSNorm, cũng như đối xứng $GL(r)$ trong các tham số LoRA và attention.
+
+\subsubsection{Hệ quả thực tiễn}
+
+Nhận thức về đối xứng tham số có hệ quả quan trọng cho nhiều tác vụ: so sánh hai mô hình đã huấn luyện đòi hỏi phải căn chỉnh chúng về cùng một orbit trước khi tính khoảng cách; việc hợp nhất nhiều checkpoint không thể thực hiện trực tiếp bằng cách lấy trung bình số học mà phải căn chỉnh orbit trước; và các phương pháp tối ưu hóa nhận thức được đối xứng, chẳng hạn Path-SGD, có thể khai thác cấu trúc này để tăng tốc hội tụ.
+
+
+
+\subsection{Cảnh quan hàm mất mát và Gộp mô hình}
+\label{subsec:loss-landscape}
+
+% Trình bày:
+%   - Nếu θ là local minimum thì g·θ cũng là local minimum
+%   - Continuous symmetries (Lie groups):
+%     → Mode connectivity: minima nối bởi low-loss curves
+%     → Giải thích empirical observations (Garipov 2018, Draxler 2018)
+%   - Discrete symmetries (permutations):
+%     → Replicas of minima, not connected
+%     → Linear mode connectivity sau khi align
+%     → Model merging: cần align trước khi average
+%   - Ứng dụng: optimization (Path-SGD), Bayesian inference,
+%     model merging/ensembling
+
+
+Đối xứng tham số không chỉ làm xuất hiện nhiều biểu diễn tham số khác nhau cho cùng một hàm dự đoán, mà còn quyết định trực tiếp hình học của \textit{loss landscape}. Giả sử $\Theta$ là không gian tham số, $\mathcal{L}: \Theta \rightarrow \mathbb{R}$ là hàm mất mát và $G$ là nhóm đối xứng tác động lên tham số. Nếu tác động của $G$ không làm thay đổi hàm được biểu diễn bởi mạng nơ-ron, thì hàm mất mát thỏa mãn
+\begin{equation}
+    \mathcal{L}(g \cdot \theta) = \mathcal{L}(\theta),
+    \qquad \forall g \in G, \ \forall \theta \in \Theta.
+    \label{eq:loss-symmetry-invariance}
+\end{equation}
+Từ đó, nếu $\theta^\star$ là một local minimum của $\mathcal{L}$, thì mọi điểm trên orbit
+\begin{equation}
+    \operatorname{Orb}_{G}(\theta^\star)
+    =
+    \{g \cdot \theta^\star \mid g \in G\}
+    \label{eq:parameter-orbit-minima}
+\end{equation}
+cũng là local minimum với cùng giá trị hàm mất mát. Nói cách khác, một nghiệm tối ưu không tồn tại đơn lẻ trong không gian tham số, mà thường đi kèm với nhiều nghiệm tương đương do đối xứng sinh ra. Đây là nguyên nhân làm cho \textit{loss landscape} của mạng nơ-ron có cấu trúc suy biến và chứa nhiều nghiệm biểu diễn cùng một hàm.
+
+\subsubsection{Mode connectivity và đối xứng liên tục}
+
+Trường hợp đầu tiên là các đối xứng liên tục, thường được mô hình hóa bởi Lie groups. Khi $G$ là một nhóm liên tục, orbit của một local minimum dưới tác động của $G$ tạo thành một đa tạp liên tục trong không gian tham số. Với một đường liên tục $g(t) \in G$, $t \in [0,1]$, ta thu được một đường cong trong không gian tham số:
+\begin{equation}
+    \gamma(t) = g(t) \cdot \theta^\star.
+    \label{eq:continuous-symmetry-path}
+\end{equation}
+Do tính bất biến của hàm mất mát theo phương trình \eqref{eq:loss-symmetry-invariance}, ta có
+\begin{equation}
+    \mathcal{L}(\gamma(t))
+    =
+    \mathcal{L}(g(t) \cdot \theta^\star)
+    =
+    \mathcal{L}(\theta^\star),
+    \qquad \forall t \in [0,1].
+    \label{eq:constant-loss-path}
+\end{equation}
+Điều này cung cấp một cơ chế hình học để lý giải hiện tượng \textit{mode connectivity}: các nghiệm có mất mát thấp có thể được nối với nhau bằng những đường cong trong không gian tham số mà trên đó giá trị mất mát vẫn duy trì thấp. Các quan sát thực nghiệm của Garipov và cộng sự \cite{garipov2018loss} cũng như Draxler và cộng sự \cite{draxler2018essentially} cho thấy nhiều nghiệm độc lập của mạng nơ-ron có thể được nối bằng các đường cong mất mát thấp. Đối xứng liên tục cung cấp một trong những cơ chế lý thuyết giải thích vì sao hiện tượng này có thể xuất hiện.
+
+\subsubsection{Đối xứng rời rạc và các bản sao cực tiểu}
+
+Khác với đối xứng liên tục, đối xứng rời rạc thường tạo ra các bản sao cực tiểu tách rời trong không gian tham số. Ví dụ điển hình là đối xứng hoán vị nơ-ron trong các lớp ẩn. Nếu ta hoán vị thứ tự các nơ-ron trong một lớp và đồng thời hoán vị tương ứng các trọng số ở lớp kế tiếp, hàm được biểu diễn bởi mạng không thay đổi, nhưng vector tham số thu được có thể nằm ở một vị trí rất khác trong không gian tham số.
+
+Khi đó, hai mô hình $\theta_A$ và $\theta_B$ được huấn luyện độc lập có thể biểu diễn các hàm tương tự nhau nhưng nằm trên hai orbit hoán vị khác nhau. Nếu lấy trung bình tuyến tính trực tiếp:
+\begin{equation}
+    \theta_{\mathrm{avg}}
+    =
+    \frac{1}{2}(\theta_A + \theta_B),
+    \label{eq:naive-weight-averaging}
+\end{equation}
+mô hình thu được có thể có mất mát cao, vì đoạn thẳng nối $\theta_A$ và $\theta_B$ đi qua vùng tham số không tương ứng với một mô hình tốt. Đây là lý do việc trung bình trọng số trực tiếp giữa các mô hình được huấn luyện độc lập thường không ổn định.
+
+Hiện tượng này cũng giải thích vai trò của \textit{linear mode connectivity}. Nếu hai nghiệm đã được căn chỉnh vào cùng một orbit hoặc cùng một basin phù hợp, đoạn thẳng nội suy giữa chúng có thể duy trì mất mát thấp:
+\begin{equation}
+    \theta(t)
+    =
+    (1-t)\theta_A + t\theta_B,
+    \qquad t \in [0,1].
+    \label{eq:linear-interpolation}
+\end{equation}
+Trong trường hợp chưa căn chỉnh, đường nội suy tuyến tính có thể đi qua vùng mất mát cao; sau căn chỉnh, đường nội suy có thể trở thành một đường nối mất mát thấp.
+
+\begin{figure}[H]
+    \centering
+    \begin{tikzpicture}[
+        scale=1.0,
+        point/.style={circle, fill=black, inner sep=1.8pt},
+        every node/.style={font=\small}
+    ]
+        \draw[->] (-0.2,0) -- (11.2,0) node[right] {không gian tham số};
+        \draw[->] (0,-0.2) -- (0,4.2) node[above] {mất mát};
+
+        \draw[thick, smooth, domain=0.7:5.0, samples=100]
+            plot(\x,{0.5 + 2.2*exp(-((\x-1.4)^2)/0.35) + 2.1*exp(-((\x-4.2)^2)/0.35) - 1.7*exp(-((\x-2.8)^2)/0.6)});
+        \node[point] at (1.4,0.75) {};
+        \node[below] at (1.4,0.75) {$\theta_A$};
+        \node[point] at (4.2,0.78) {};
+        \node[below] at (4.2,0.78) {$\theta_B$};
+        \draw[dashed, thick] (1.4,0.75) .. controls (2.6,3.1) .. (4.2,0.78);
+        \node[align=center] at (2.8,3.45) {chưa căn chỉnh\\đường nối mất mát cao};
+
+        \draw[thick, smooth, domain=6.2:10.5, samples=100]
+            plot(\x,{0.65 + 0.15*sin(180*(\x-6.2)/4.3)});
+        \node[point] at (6.6,0.68) {};
+        \node[below] at (6.6,0.68) {$\theta_A$};
+        \node[point] at (10.1,0.68) {};
+        \node[below] at (10.1,0.68) {$P^\star \cdot \theta_B$};
+        \draw[dashed, thick] (6.6,0.68) -- (10.1,0.68);
+        \node[align=center] at (8.35,1.45) {sau căn chỉnh\\linear mode connectivity};
+    \end{tikzpicture}
+    
+    \caption[Minh họa ảnh hưởng của đối xứng hoán vị đối với gộp mô hình]{Minh họa ảnh hưởng của đối xứng hoán vị đối với gộp mô hình.}
+    \label{fig:loss-landscape-alignment}
+    
+    \vspace{0.15cm}
+    \begin{minipage}{0.9\linewidth}
+        \centering
+        \small\textit{Ghi chú: Khi hai nghiệm chưa được căn chỉnh, đoạn nối giữa chúng có thể đi qua vùng mất mát cao. Sau khi căn chỉnh orbit, nội suy tuyến tính giữa hai nghiệm có thể duy trì mất mát thấp.}
+    \end{minipage}
+\end{figure}
+
+\subsubsection{Gộp mô hình thông qua căn chỉnh orbit}
+
+Từ phân tích trên, yêu cầu cốt lõi của \textit{model merging} là phải căn chỉnh các nghiệm trước khi lấy trung bình. Với đối xứng hoán vị, điều này tương ứng với việc tìm một phép hoán vị $P^\star$ sao cho $\theta_A$ và $P^\star \cdot \theta_B$ nằm trong cùng một basin hoặc có đường nối mất mát thấp. Khi đó, mô hình gộp được xác định bởi
+\begin{equation}
+    \theta_{\mathrm{merged}}
+    =
+    \frac{1}{2}
+    \left(
+        \theta_A + P^\star \cdot \theta_B
+    \right).
+    \label{eq:aligned-model-merging}
+\end{equation}
+Phương pháp \textit{Git Re-Basin} của Ainsworth và cộng sự \cite{ainsworth2023git} đi theo hướng này: trước tiên căn chỉnh các nơ-ron giữa hai mạng thông qua đối xứng hoán vị, sau đó mới thực hiện trung bình trọng số. Cách tiếp cận này cho thấy nhiều mô hình tưởng như nằm ở các basin khác nhau thực chất có thể được đưa về cùng một cấu hình tương thích thông qua phép tái căn chỉnh tham số.
+
+Về mặt thực tiễn, điều này giải thích vì sao việc gộp mô hình không thể chỉ được xem như một phép trung bình số học đơn giản. Khi các mô hình có đối xứng tham số, trung bình trọng số chỉ có ý nghĩa sau khi các thành phần tương ứng giữa hai mạng đã được căn chỉnh. Nếu bỏ qua bước này, phép gộp có thể phá vỡ cấu trúc đặc trưng đã học và làm tăng mất mát.
+
+\subsubsection{Ứng dụng trong tối ưu hóa và suy luận}
+
+Đối xứng tham số và hình học của \textit{loss landscape} có nhiều hệ quả quan trọng ngoài bài toán gộp mô hình. Trong tối ưu hóa, nhận thức rằng nhiều nghiệm khác nhau có thể biểu diễn cùng một hàm giúp thiết kế các thuật toán bất biến với phép tái tham số hóa. Một ví dụ là \textit{Path-SGD}, trong đó bước cập nhật được xây dựng dựa trên chuẩn theo đường đi trong mạng nhằm giảm phụ thuộc vào cách tham số hóa cụ thể của mô hình \cite{neyshabur2015path}. Cách tiếp cận này phù hợp với quan điểm rằng thuật toán tối ưu không nên bị chi phối bởi những thay đổi tham số không làm thay đổi hàm dự đoán.
+
+Trong suy luận Bayesian, đối xứng tham số tạo ra nhiều mode tương đương trong phân bố hậu nghiệm. Nếu không xét đến các mode tương đương này, việc xấp xỉ hậu nghiệm có thể đánh giá sai độ bất định hoặc bỏ sót các vùng xác suất cao. Do đó, hiểu cấu trúc đối xứng của không gian tham số giúp diễn giải tốt hơn bản chất đa mode của hậu nghiệm trong mạng nơ-ron.
+
+Trong \textit{model merging} và \textit{ensembling}, đối xứng tham số cho thấy việc kết hợp nhiều mô hình cần được thực hiện ở cấp độ đã căn chỉnh. Đối với \textit{ensembling}, ta có thể kết hợp dự đoán ở không gian đầu ra mà không cần căn chỉnh tham số. Ngược lại, đối với \textit{model merging}, vì phép kết hợp diễn ra trực tiếp trong không gian tham số, bước căn chỉnh orbit là điều kiện quan trọng để tránh đi qua các vùng có mất mát cao.
+
+Tóm lại, đối xứng tham số cung cấp một lăng kính hình học để hiểu vì sao \textit{loss landscape} của mạng nơ-ron chứa nhiều nghiệm tương đương, vì sao các đường nối mất mát thấp có thể xuất hiện, và vì sao gộp mô hình cần đi kèm với căn chỉnh. Những kết quả này tạo nền tảng cho các hướng nghiên cứu hiện đại về tối ưu hóa bất biến, suy luận Bayesian trong không gian tham số và kết hợp mô hình sau huấn luyện.
+
+
+\subsection{Học trên không gian trọng số (Weight Space Learning)}
+\label{subsec:weight-space-learning}
+
+% Trình bày:
+%   - Động lực: >2M models trên Hugging Face, INRs, NeRFs
+%   - Mục tiêu: analyze, understand, edit model collections
+%   - Ứng dụng:
+%     1. Predict accuracy without evaluating (50,000x faster)
+%     2. Derive model info: training data, IP, bias estimation
+%     3. Edit: domain adaptation, pruning, compression
+%   - Kỹ thuật:
+%     * Deep Weight Space Networks: linear equivariant layers
+%     * Neural Functional Transformers: attention + equivariance
+%     * GNN on parameter graph (Lim et al 2023)
+%   - Thách thức: scale + symmetries (cần alignment trước)
+%   - Case study: LoRA metanetworks → symmetry-aware methods
+%     generally perform more robustly
+
+\subsubsection{Động lực: kho mô hình như dữ liệu}
+
+Học trên không gian trọng số là một hướng nghiên cứu mới trong bối cảnh các Foundation Models và kho mô hình mã nguồn mở phát triển mạnh. Thay vì chỉ xem dữ liệu huấn luyện là ảnh, văn bản, đồ thị hoặc phân tử, hướng nghiên cứu này xem chính bộ tham số của các mạng nơ-ron như một dạng dữ liệu có cấu trúc. Quan điểm này trở nên đặc biệt quan trọng khi số lượng mô hình được công bố công khai ngày càng lớn, đồng thời các biểu diễn ngầm định như implicit neural representations và NeRF cũng mã hóa đối tượng hoặc cảnh vật bằng chính tham số của một mạng nơ-ron.
+
+Câu hỏi trung tâm của hướng nghiên cứu này là liệu có thể xây dựng một mô hình học máy nhận đầu vào là trọng số của một mô hình khác, sau đó phân tích, dự đoán hoặc chỉnh sửa mô hình đó hay không. Nói cách khác, nếu trong học máy truyền thống ta học từ dữ liệu để thu được mô hình, thì trong học trên không gian trọng số, chính các mô hình đã huấn luyện trở thành đối tượng dữ liệu cần được học.
+\begin{figure}[H]
+    \centering
+    \begin{tikzpicture}[
+        node distance=2.2cm,
+        box/.style={draw, rounded corners, align=center, minimum width=3.1cm, minimum height=1cm, font=\small},
+        arrow/.style={->, thick}
+    ]
+        \node[box] (models) {Tập mô hình\\đã huấn luyện};
+        \node[box, right of=models, xshift=2.4cm] (weights) {Trích xuất\\trọng số};
+        \node[box, right of=weights, xshift=2.4cm] (meta) {Metanetwork\\trên không gian trọng số};
+        \node[box, below of=meta, yshift=-0.2cm] (tasks) {Dự đoán, phân tích\\hoặc chỉnh sửa mô hình};
+
+        \draw[arrow] (models) -- (weights);
+        \draw[arrow] (weights) -- (meta);
+        \draw[arrow] (meta) -- (tasks);
+    \end{tikzpicture}
+    
+    \caption[Khái quát học trên không gian trọng số]{Khái quát học trên không gian trọng số.}
+    \label{fig:weight-space-learning-pipeline}
+    
+    \vspace{0.15cm}
+    \begin{minipage}{0.9\linewidth}
+        \centering
+        \small\textit{Ghi chú: Thay vì học trực tiếp từ dữ liệu gốc, một metanetwork nhận tham số của các mạng nơ-ron đã huấn luyện làm đầu vào để thực hiện các tác vụ phân tích hoặc chỉnh sửa.}
+    \end{minipage}
+\end{figure}
+
+\subsubsection{Các tác vụ trên không gian trọng số}
+
+Các tác vụ của học trên không gian trọng số có thể được chia thành ba nhóm chính. Nhóm thứ nhất là dự đoán thuộc tính của mô hình. Thay vì đánh giá một mạng nơ-ron bằng cách chạy inference trên toàn bộ tập kiểm tra, metanetwork có thể dự đoán độ chính xác, khả năng tổng quát hóa hoặc mức độ hội tụ của mô hình trực tiếp từ bộ trọng số. Cách tiếp cận này có tiềm năng giảm đáng kể chi phí đánh giá, đặc biệt khi số lượng mô hình cần so sánh rất lớn.
+
+Nhóm thứ hai là suy diễn thông tin được mã hóa trong tham số. Bộ trọng số của một mạng nơ-ron có thể chứa dấu vết về dữ liệu huấn luyện, quy trình huấn luyện, hoặc các thiên vị mà mô hình đã học. Vì vậy, các mô hình trên không gian trọng số có thể được dùng để kiểm tra bản quyền mô hình, phát hiện nguồn gốc dữ liệu, hoặc ước lượng các dạng thiên vị tiềm ẩn trong mô hình.
+
+Nhóm thứ ba là chỉnh sửa mô hình. Thay vì tinh chỉnh mô hình bằng dữ liệu gốc, một metanetwork có thể dự đoán trực tiếp biến đổi cần áp dụng lên trọng số để thực hiện domain adaptation, pruning, nén mô hình hoặc cập nhật tham số. Đây là một hướng hấp dẫn trong bối cảnh dữ liệu gốc không luôn sẵn có, hoặc chi phí tinh chỉnh đầy đủ quá lớn.
+
+\subsubsection{Kiến trúc tương biến cho không gian trọng số}
+
+Thách thức cốt lõi của học trên không gian trọng số là không gian tham số của mạng nơ-ron không phải là một không gian Euclid thông thường. Hai bộ trọng số khác nhau có thể biểu diễn cùng một hàm nếu chúng liên hệ với nhau thông qua các đối xứng tham số như hoán vị nơ-ron, tái tỉ lệ trọng số, hoặc các biến đổi liên tục khác. Do đó, nếu chỉ vector hóa toàn bộ trọng số rồi đưa vào một mô hình học máy thông thường, mô hình đó có thể học các đặc trưng phụ thuộc vào cách đánh số nơ-ron hoặc cách tham số hóa, thay vì học các thuộc tính thực sự của hàm được biểu diễn.
+
+Để giải quyết vấn đề này, các kiến trúc metanetwork tương biến được thiết kế sao cho đầu ra biến đổi nhất quán khi trọng số đầu vào chịu tác động của nhóm đối xứng tham số. Nếu $\theta$ là bộ tham số của mạng đích và $g \cdot \theta$ là một tham số tương đương dưới tác động của nhóm đối xứng $G$, một metanetwork $\Phi$ cần thỏa mãn quan hệ tương biến:
+\begin{equation}
+    \Phi(g \cdot \theta)
+    =
+    \rho(g)\Phi(\theta),
+    \qquad \forall g \in G,
+    \label{eq:weight-space-equivariance}
+\end{equation}
+trong đó $\rho(g)$ là phép biến đổi tương ứng trên không gian đầu ra. Khi đầu ra là một đại lượng vô hướng như độ chính xác dự đoán, điều kiện này trở thành bất biến:
+\begin{equation}
+    \Phi(g \cdot \theta)
+    =
+    \Phi(\theta).
+    \label{eq:weight-space-invariance}
+\end{equation}
+
+Một số kiến trúc tiêu biểu đã được đề xuất theo hướng này. Deep Weight Space Networks sử dụng các lớp tuyến tính tương biến được xây dựng từ nhóm đối xứng tham số của mạng đích \cite{navon2023equivariant}. Neural Functional Transformers kết hợp attention với ràng buộc tương biến để xử lý bộ trọng số như một đối tượng có cấu trúc \cite{zhou2024neural}. Một hướng khác mô hình hóa mạng nơ-ron đích như một đồ thị tham số, trong đó nơ-ron và trọng số được biểu diễn bằng các nút và cạnh, sau đó áp dụng graph neural network lên đồ thị này \cite{lim2023graph}.
+
+\subsubsection{Thách thức về mở rộng và căn chỉnh}
+
+Mặc dù học trên không gian trọng số mở ra nhiều ứng dụng mới, hướng này vẫn đối mặt với hai thách thức lớn. Thách thức thứ nhất là khả năng mở rộng. Các mô hình hiện đại có thể chứa hàng triệu đến hàng tỷ tham số, khiến việc đưa toàn bộ trọng số vào một metanetwork trở nên tốn kém về bộ nhớ và tính toán. Do đó, các phương pháp thực tế thường cần biểu diễn nén, chia khối tham số, hoặc chỉ thao tác trên các thành phần thích ứng như LoRA.
+
+Thách thức thứ hai là đối xứng tham số. Trước khi so sánh hoặc kết hợp các bộ trọng số, cần xét đến khả năng chúng nằm trên các orbit khác nhau nhưng biểu diễn các hàm tương đương. Nếu không căn chỉnh, metanetwork có thể nhầm lẫn giữa khác biệt do đối xứng tham số và khác biệt thực sự về chức năng. Các nghiên cứu trường hợp với LoRA metanetworks cho thấy những phương pháp nhận thức được đối xứng thường ổn định hơn so với các phương pháp bỏ qua cấu trúc đối xứng, đặc biệt khi số lượng mô hình huấn luyện có sẵn còn hạn chế.
+
+
+% ─────────────────────────────────────────────────────────────
+% PHẦN C: HƯỚNG NGHIÊN CỨU MỚI
+% ─────────────────────────────────────────────────────────────
+
+\subsection{Đối xứng linh hoạt và Khám phá đối xứng}
+\label{subsec:flexible-symmetries}
+
+% Trình bày:
+%   - Vấn đề: hard-coding symmetries restrictive cho foundation models
+%   - Hướng Adaptivity:
+%     * Contextual World Models (Gupta et al 2024):
+%       in-context selection of symmetry subset
+%     * Any-subgroup equivariant networks (Goel et al 2025):
+%       f(x) = h(x,v), if g·v=v then f(g·x) = g·f(x)
+%   - Hướng Symmetry Discovery:
+%     * Learn augmentations/transformations từ data
+%     * Learn weight sharing patterns
+%     * Probe trained networks (post-hoc analysis)
+
+\subsubsection{Hạn chế của việc mã hóa cứng đối xứng}
+
+Các kiến trúc tương biến truyền thống thường giả định rằng nhóm đối xứng của dữ liệu đã được biết trước và được mã hóa trực tiếp vào mô hình trước khi huấn luyện. Cách tiếp cận này hiệu quả trong các miền có cấu trúc hình học rõ ràng, chẳng hạn ảnh với phép tịnh tiến, đồ thị với hoán vị đỉnh, hoặc phân tử với phép quay và tịnh tiến trong không gian ba chiều. Tuy nhiên, trong các hệ thống quy mô lớn được huấn luyện trên dữ liệu đa miền, một nhóm đối xứng cố định thường không đủ để mô tả toàn bộ cấu trúc dữ liệu.
+
+Vấn đề này đặc biệt rõ trong bối cảnh Foundation Models. Một mô hình có thể phải xử lý nhiều loại đầu vào khác nhau, mỗi loại chỉ tôn trọng một phần đối xứng nhất định. Nếu áp đặt một đối xứng quá mạnh, mô hình có thể mất thông tin quan trọng. Nếu áp đặt một đối xứng quá yếu, mô hình không tận dụng được cấu trúc hình học của dữ liệu. Do đó, các hướng nghiên cứu mới tập trung vào đối xứng thích nghi theo ngữ cảnh và tự động khám phá đối xứng từ dữ liệu.
+
+\subsubsection{Lựa chọn đối xứng theo ngữ cảnh}
+
+Hướng thích nghi giả định rằng đối xứng không phải là một thuộc tính cố định toàn cục, mà có thể thay đổi theo từng ngữ cảnh. Contextual World Models đề xuất cơ chế lựa chọn đối xứng trong ngữ cảnh, trong đó mô hình học cách chọn một nhóm con phù hợp của $G$ tùy theo đầu vào hoặc trạng thái môi trường \cite{gupta2024contextual}. Cách tiếp cận này phù hợp với các bài toán trong đó cùng một hệ thống có thể biểu hiện các đối xứng khác nhau ở các tình huống khác nhau.
+
+Một phát biểu hình thức hơn được đưa ra trong khung any-subgroup equivariant networks \cite{goel2025anysubgroup}. Mô hình nhận đầu vào chính $x$ và một biến ngữ cảnh $v$. Biến $v$ xác định nhóm con các phép biến đổi giữ nguyên ngữ cảnh đó. Nếu một phần tử nhóm $g$ thỏa mãn
+\begin{equation}
+    g \cdot v = v,
+    \label{eq:context-stabilizer}
+\end{equation}
+thì mô hình cần tương biến với phép biến đổi đó:
+\begin{equation}
+    f(g \cdot x, v)
+    =
+    g \cdot f(x, v).
+    \label{eq:any-subgroup-equivariance}
+\end{equation}
+Nhóm con
+\begin{equation}
+    G_v
+    =
+    \{g \in G \mid g \cdot v = v\}
+    \label{eq:context-dependent-subgroup}
+\end{equation}
+được gọi là nhóm ổn định của $v$. Như vậy, cùng một kiến trúc có thể hành xử tương biến với các nhóm con khác nhau tùy thuộc vào ngữ cảnh đầu vào.
+
+\begin{figure}[H]
+    \centering
+    \begin{tikzpicture}[
+        node distance=2.0cm,
+        box/.style={draw, rounded corners, align=center, minimum width=3.2cm, minimum height=1cm, font=\small},
+        arrow/.style={->, thick}
+    ]
+        \node[box] (input) {Dữ liệu đầu vào\\$x$};
+        \node[box, below of=input, yshift=-0.5cm] (context) {Ngữ cảnh\\$v$};
+        
+        % Tăng xshift lên 2cm để tạo khoảng trống vừa phải (khoảng 0.8cm) cho mũi tên
+        \node[box, right of=input, xshift=2.0cm] (select) {Xác định nhóm con\\$G_v$};
+        \node[box, right of=select, xshift=2.0cm] (model) {Mô hình tương biến\\theo $G_v$};
+        \node[box, right of=model, xshift=2.0cm] (output) {Đầu ra\\$f(x,v)$};
+
+        \draw[arrow] (context) -- (select);
+        \draw[arrow] (input) -- (select); 
+        \draw[arrow] (select) -- (model);
+        \draw[arrow] (model) -- (output);
+    \end{tikzpicture}
+    \caption{Minh họa đối xứng phụ thuộc ngữ cảnh. Biến ngữ cảnh xác định nhóm con phù hợp, sau đó mô hình chỉ cần tương biến với nhóm con đó thay vì toàn bộ nhóm ban đầu.}
+    \label{fig:context-dependent-symmetry}
+\end{figure}
+
+\subsubsection{Khám phá đối xứng từ dữ liệu}
+
+Một hướng bổ sung là không giả định trước nhóm đối xứng, mà học hoặc suy diễn nhóm đó từ dữ liệu. Khám phá đối xứng có thể được triển khai theo ba cấp độ. Ở cấp độ dữ liệu, mô hình học trực tiếp các phép biến đổi hoặc phép tăng cường dữ liệu làm thay đổi biểu diễn nhưng giữ nguyên thuộc tính cần dự đoán. Cách tiếp cận này giúp thay thế việc thiết kế thủ công các phép biến đổi bằng một quy trình học từ dữ liệu.
+
+Ở cấp độ kiến trúc, mô hình có thể học các mẫu chia sẻ tham số. Nếu một số trọng số cần được ràng buộc giống nhau để đạt hiệu quả tổng quát hóa tốt hơn, cấu trúc chia sẻ đó có thể phản ánh một đối xứng tiềm ẩn của bài toán. Khi đó, đối xứng không được áp đặt trước mà được suy ra từ quá trình tối ưu hóa.
+
+Ở cấp độ hậu nghiệm, ta có thể phân tích các mạng đã được huấn luyện để xác định những đối xứng mà mô hình đã học ngầm định. Việc kiểm tra biểu diễn nội bộ, phản ứng của mô hình trước các phép biến đổi đầu vào, hoặc cấu trúc của không gian đặc trưng có thể cung cấp bằng chứng về các đối xứng tiềm ẩn. Hướng này có vai trò quan trọng trong việc diễn giải mô hình và kiểm chứng xem mạng nơ-ron có thực sự học được cấu trúc hình học mong muốn hay không.
+
+
+\subsection{Mô hình không phụ thuộc số chiều}
+\label{subsec:any-dimensional}
+
+
+% Trình bày:
+%   - Ý tưởng: fixed parameters, varying input sizes
+%   - Nền tảng lý thuyết: Representation Stability (Farb 2014)
+%     * Permutation-invariant linear f → 1 parameter (thay vì d)
+%     * Quadratic perm-inv → 2 parameters
+%     * k-th degree → p(k) ≈ exp(Ck) parameters (dimension-free!)
+%   - Ứng dụng: GNNs train trên small graphs, test trên large graphs
+%   - Câu hỏi mở: universality, evaluation across sizes
+
+Một hạn chế thực tiễn của nhiều mạng tương biến là kiến trúc thường được thiết kế cho một kích thước đầu vào cố định. Ví dụ, một mạng tương biến với nhóm hoán vị $S_n$ được xây dựng cho tập hợp gồm $n$ phần tử thường không thể áp dụng trực tiếp cho tập hợp gồm $m \neq n$ phần tử nếu kiến trúc phụ thuộc tường minh vào $n$. Hướng nghiên cứu mô hình không phụ thuộc số chiều nhằm xây dựng các mô hình có tham số cố định nhưng vẫn hoạt động trên đầu vào có kích thước thay đổi.
+
+\subsubsection{Nền tảng lý thuyết}
+
+Cơ sở lý thuyết quan trọng của hướng này là Representation Stability \cite{farb2014representation}. Lý thuyết này nghiên cứu dãy các biểu diễn của nhóm hoán vị $S_n$ khi $n$ thay đổi và đặc trưng hóa các điều kiện để cấu trúc biểu diễn trở nên ổn định khi $n$ tăng. Trong học máy, ý tưởng này cho thấy một số lớp hàm bất biến với hoán vị có thể được tham số hóa bằng số tham số không phụ thuộc vào kích thước đầu vào.
+
+Chẳng hạn, một hàm tuyến tính bất biến với hoán vị từ $\mathbb{R}^n$ sang $\mathbb{R}$ có dạng
+\begin{equation}
+    f(x)
+    =
+    \alpha \sum_{i=1}^{n} x_i,
+    \label{eq:dimension-free-linear}
+\end{equation}
+trong đó chỉ cần một tham số $\alpha$, thay vì cần $n$ tham số độc lập. Với hàm bậc hai bất biến với hoán vị, các đặc trưng cơ bản có thể được viết theo hai dạng tổng:
+\begin{equation}
+    f(x)
+    =
+    \alpha \sum_{i=1}^{n} x_i^2
+    +
+    \beta \sum_{i \neq j} x_i x_j.
+    \label{eq:dimension-free-quadratic}
+\end{equation}
+Do đó, hàm bậc hai chỉ cần hai tham số chính, bất kể $n$ lớn đến đâu. Tổng quát hơn, các hàm đa thức bậc $k$ bất biến với hoán vị có thể được mô tả bằng số tham số phụ thuộc vào số phân hoạch của $k$, ký hiệu $p(k)$:
+\begin{equation}
+    \#\mathrm{parameters}
+    =
+    p(k),
+    \qquad
+    p(k) \approx \exp(C\sqrt{k}),
+    \label{eq:partition-parameter-count}
+\end{equation}
+với một hằng số $C > 0$. Điểm quan trọng là số tham số này phụ thuộc vào bậc $k$ nhưng không phụ thuộc vào kích thước đầu vào $n$.
+
+\subsubsection{Ý nghĩa đối với khả năng ngoại suy kích thước}
+
+Kết quả trên cung cấp cơ sở lý thuyết cho việc huấn luyện mô hình trên các đối tượng nhỏ và kiểm tra trên các đối tượng lớn hơn. Trong dữ liệu đồ thị, điều này tương ứng với việc huấn luyện trên các đồ thị có ít đỉnh nhưng kiểm tra trên các đồ thị có nhiều đỉnh. Nếu kiến trúc được thiết kế sao cho tham số không phụ thuộc vào $n$, mô hình có khả năng duy trì cùng quy tắc xử lý khi kích thước đầu vào thay đổi.
+
+Ý tưởng này đặc biệt quan trọng đối với graph neural networks, nơi số lượng nút và cạnh thay đổi tự nhiên giữa các mẫu dữ liệu. Một mô hình không phụ thuộc số chiều không nên học các quy luật gắn chặt với một kích thước cụ thể, mà cần học các phép toán cục bộ hoặc bất biến có thể mở rộng sang kích thước lớn hơn.
+
+\subsubsection{Câu hỏi mở}
+
+Mặc dù nền tảng lý thuyết đã cung cấp động lực rõ ràng, hướng mô hình không phụ thuộc số chiều vẫn còn nhiều câu hỏi mở. Trước hết, cần xác định điều kiện đủ để các kiến trúc này đạt tính phổ quát trên nhiều kích thước đầu vào khác nhau. Tiếp theo, cần xây dựng phương pháp đánh giá nhất quán khi tập huấn luyện và tập kiểm tra có kích thước khác nhau đáng kể. Cuối cùng, vẫn cần mở rộng các kết quả từ nhóm hoán vị sang những nhóm đối xứng khác, chẳng hạn nhóm quay, nhóm Euclidean hoặc các nhóm gauge trong dữ liệu hình học phức tạp.
+
+
+\subsection{Hình học vượt đối xứng: Topology và Curvature}
+\label{subsec:beyond-symmetry}
+
+% Trình bày:
+%   - Topological Deep Learning:
+%     * Leverages topological structure (3D shapes, molecules)
+%     * Simplicial/cell/combinatorial complexes
+%     * Higher-order message passing (HOMP)
+%     * Multi-cellular networks (MCN) cho các features
+%       mà HOMP không capture được (diameter, orientability)
+%   - Learning theory và Curvature:
+%     * Manifold hypothesis + curse of dimensionality
+%     * Positive Ricci curvature → efficiently learnable
+%     * Bounded curvature + unbounded volume → provably hard
+%     * Real-world data: heterogeneous regime
+
+Các phương pháp học máy hình học đã trình bày ở các phần trước chủ yếu khai thác đối xứng được mô tả bởi nhóm. Tuy nhiên, dữ liệu hình học trong thực tế còn mang nhiều đặc trưng quan trọng không được nắm bắt đầy đủ bởi đối xứng nhóm. Hai lớp cấu trúc tiêu biểu là topo học và độ cong. Topo học mô tả các quan hệ kết nối và tương tác bậc cao không thay đổi dưới biến dạng liên tục, trong khi độ cong mô tả hình học cục bộ của không gian dữ liệu và ảnh hưởng trực tiếp đến độ khó của bài toán học.
+
+\subsubsection{Topological Deep Learning}
+
+Topological Deep Learning khai thác cấu trúc topo học của dữ liệu như hình dạng ba chiều, phân tử hoặc mạng sinh học. Thay vì chỉ biểu diễn dữ liệu bằng đồ thị gồm nút và cạnh, hướng này sử dụng các phức đơn hình, phức tế bào và phức tổ hợp. Những cấu trúc này cho phép biểu diễn các tương tác bậc cao hơn, chẳng hạn tam giác, tứ diện hoặc các quan hệ nhiều phần tử mà đồ thị thông thường không mô tả trực tiếp.
+
+Cơ chế truyền thông tin trong các cấu trúc topo học được thực hiện qua Higher-Order Message Passing, tổng quát hóa message passing trên đồ thị sang các tế bào bậc cao. Tuy nhiên, các kết quả gần đây cho thấy Higher-Order Message Passing vẫn chưa đủ để nắm bắt một số đặc trưng topo học toàn cục như đường kính của phức hoặc tính định hướng được. Vì vậy, các kiến trúc multi-cellular networks được đề xuất để kết hợp thông tin từ nhiều loại tế bào khác nhau, qua đó cải thiện khả năng biểu diễn các đặc trưng topo học phức tạp.
+
+\begin{figure}[H]
+    \centering
+    \begin{tikzpicture}[
+        scale=1.1,
+        vertex/.style={circle, draw, fill=white, minimum size=6mm, font=\small},
+        every node/.style={font=\small}
+    ]
+        \node[vertex] (a) at (0,0) {$v_1$};
+        \node[vertex] (b) at (2,0) {$v_2$};
+        \node[vertex] (c) at (1,1.6) {$v_3$};
+        \node[vertex] (d) at (4,0) {$v_4$};
+        \node[vertex] (e) at (6,0) {$v_5$};
+        \node[vertex] (f) at (5,1.6) {$v_6$};
+
+        \draw[thick] (a) -- (b) -- (c) -- (a);
+        \draw[fill=gray!20, opacity=0.7] (a.center) -- (b.center) -- (c.center) -- cycle;
+
+        \draw[thick] (d) -- (e) -- (f) -- (d);
+        \draw[thick] (b) -- (d);
+
+        \node[draw=none] at (1,-0.7) {tương tác bậc hai và bậc ba};
+        \node[draw=none] at (5,-0.7) {cấu trúc tế bào};
+    \end{tikzpicture}
+    
+    \caption[Minh họa cấu trúc topo học bậc cao]{Minh họa cấu trúc topo học bậc cao.}
+    \label{fig:topological-complex}
+    
+    \vspace{0.15cm}
+    \begin{minipage}{0.9\linewidth}
+        \centering
+        \small\textit{Ghi chú: Ngoài nút và cạnh như trong đồ thị, phức đơn hình hoặc phức tế bào có thể biểu diễn các tương tác nhiều phần tử thông qua tam giác và các tế bào bậc cao.}
+    \end{minipage}
+\end{figure}
+
+\subsubsection{Lý thuyết học và độ cong}
+
+Từ góc độ lý thuyết học, giả thuyết đa tạp cho rằng dữ liệu thực thường nằm gần một đa tạp có số chiều nội tại thấp hơn nhiều so với không gian quan sát. Giả thuyết này giúp lý giải vì sao học sâu có thể hoạt động hiệu quả trên dữ liệu thực tế mặc dù không gian đầu vào có số chiều rất lớn. Tuy nhiên, số chiều nội tại không phải yếu tố duy nhất quyết định độ khó của bài toán học; hình học của đa tạp, đặc biệt là độ cong, cũng đóng vai trò quan trọng.
+
+Đa tạp có Ricci curvature dương thường có các tính chất compact mạnh hơn, giúp kiểm soát tốt hơn sự phân tán của dữ liệu và hỗ trợ xây dựng các cận độ phức tạp mẫu thuận lợi. Ngược lại, các không gian có độ cong bị chặn nhưng thể tích không bị chặn có thể tạo ra các bài toán học khó, trong đó không tồn tại bảo đảm hội tụ với số mẫu đa thức trong các thiết lập tổng quát.
+
+Dữ liệu thực tế thường nằm trong một chế độ bất đồng nhất, nơi các vùng có độ cong cao xen kẽ với các vùng tương đối phẳng. Điều này cho thấy một giả định hình học duy nhất hiếm khi đủ để mô tả toàn bộ không gian dữ liệu. Vì vậy, các phương pháp học máy hình học hiện đại cần kết hợp nhiều dạng tiên nghiệm hình học khác nhau, bao gồm đối xứng, topo học và độ cong, thay vì chỉ dựa vào một nhóm biến đổi cố định.
+
+
+\clearpage
