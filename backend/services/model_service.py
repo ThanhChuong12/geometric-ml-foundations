@@ -21,8 +21,18 @@ DEBUG_DIR = os.path.join(BASE_DIR, '..', '..', 'storage', 'debug_images')
 if DEBUG_MODE:
     os.makedirs(DEBUG_DIR, exist_ok=True)
 
+def get_device():
+    try:
+        if torch.cuda.is_available():
+            torch.zeros(1).cuda()
+            return torch.device("cuda")
+    except Exception:
+        pass
+
+    return torch.device("cpu")
+
 # 2. Khởi tạo và Load Mô hình
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+device = get_device()
 baseline_model = SimpleCNN().to(device)
 augmented_model = SimpleCNN().to(device)
 

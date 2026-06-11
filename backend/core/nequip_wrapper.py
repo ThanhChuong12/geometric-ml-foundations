@@ -3,6 +3,7 @@
 import logging
 import threading
 from typing import Optional, List
+from xml.parsers.expat import model
 import torch
 from nequip.utils.global_state import set_global_state
 from nequip.model import ModelFromCheckpoint
@@ -56,23 +57,24 @@ class NequIPPredictor:
 
                 # 2. Restore model from checkpoint using NequIP's ModelFromCheckpoint API
                 model = ModelFromCheckpoint(self.checkpoint_path)
+                if isinstance(model, torch.nn.ModuleDict):
+                    model = model["sole_model"]
+
                 model.to(self.device)
                 model.eval()
 
                 # 3. Extract metadata parameters for preprocessing
-                if hasattr(model, "type_names") and model.type_names:
-                    type_names = model.type_names
-                elif "type_names" in model.metadata:
-                    type_names = model.metadata["type_names"].split(" ")
+                if hasattr(model, "type_names"):
+                    type_names = list(model.type_names)
                 else:
-                    raise KeyError("Model does not have type_names metadata")
+                    raise KeyError("type_names not found")
 
-                if "r_max" in model.metadata:
+                if hasattr(model, "metadata") and "r_max" in model.metadata:
                     r_max = float(model.metadata["r_max"])
                 elif hasattr(model, "r_max"):
                     r_max = float(model.r_max)
                 else:
-                    raise KeyError("Model does not have r_max metadata")
+                    raise KeyError("r_max not found")
 
                 self._model = model
                 self._type_names = [str(t) for t in type_names]
