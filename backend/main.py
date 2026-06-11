@@ -1,5 +1,9 @@
 # backend/main.py
 
+import os
+# Force CPU only (hide GPU to prevent CUDA driver mismatch/initialization errors)
+os.environ["CUDA_VISIBLE_DEVICES"] = ""
+
 import logging
 from contextlib import asynccontextmanager
 from pathlib import Path

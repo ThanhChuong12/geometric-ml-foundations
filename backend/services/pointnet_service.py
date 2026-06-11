@@ -12,6 +12,9 @@ Không ảnh hưởng đến Part 1 (model_service.py).
 """
 
 import os
+# Force CPU only (hide GPU to prevent CUDA initialization error)
+os.environ["CUDA_VISIBLE_DEVICES"] = ""
+
 import json
 import time
 import numpy as np

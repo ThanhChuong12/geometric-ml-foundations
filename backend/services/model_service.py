@@ -1,3 +1,7 @@
+import os
+# Force CPU only (hide GPU to prevent CUDA initialization error)
+os.environ["CUDA_VISIBLE_DEVICES"] = ""
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -6,7 +10,6 @@ from PIL import Image, ImageOps
 import numpy as np
 import base64
 import io
-import os
 import random
 from models.schemas import PredictionResponse, PredictionResult
 from core.frame_averaging import SimpleCNN, FrameAveragingCNN

@@ -1,5 +1,9 @@
 # backend/core/nequip_wrapper.py
 
+import os
+# Force CPU only (hide GPU to prevent CUDA initialization error)
+os.environ["CUDA_VISIBLE_DEVICES"] = ""
+
 import logging
 import threading
 from typing import Optional, List
