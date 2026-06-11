@@ -33,11 +33,11 @@ def get_device():
 
 # 2. Khởi tạo và Load Mô hình
 device = get_device()
-baseline_model = SimpleCNN().to(device)
-augmented_model = SimpleCNN().to(device)
+baseline_model = SimpleCNN().float().to(device)
+augmented_model = SimpleCNN().float().to(device)
 
-backbone_fa = SimpleCNN()
-frame_model = FrameAveragingCNN(backbone_fa).to(device)
+backbone_fa = SimpleCNN().float()
+frame_model = FrameAveragingCNN(backbone_fa).float().to(device)
 
 models_loaded = False
 def load_models_if_needed():
@@ -121,7 +121,8 @@ def image_to_tensor(img: Image.Image) -> torch.Tensor:
         transforms.ToTensor(),
         transforms.Normalize((0.1307,), (0.3081,))
     ])
-    return tensor_transform(img).unsqueeze(0).to(device)
+    # Ép kiểu rõ ràng về float32 để tránh lỗi do NequIP set default dtype thành float64
+    return tensor_transform(img).unsqueeze(0).float().to(device)
 
 def predict_single_tensor(model: nn.Module, tensor: torch.Tensor):
     with torch.no_grad():

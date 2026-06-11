@@ -235,3 +235,5 @@ frontend/.next/
 # Ignore debug outputs
 storage/debug_images/*
 !storage/debug_images/.gitkeep
+
+/explain
