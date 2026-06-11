@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo } from 'react';
+import { AlertTriangle } from 'lucide-react';
 import { Atom } from '@/types/molecule';
 import { AtomTable } from './AtomTable';
 
@@ -78,8 +79,9 @@ export function MoleculeEditor({ atoms, onChangeAtoms }: MoleculeEditorProps) {
 
       {/* Validation warning */}
       {validationError && (
-        <div className="mb-4 bg-rose-100 border-2 border-rose-900 p-3 text-rose-950 text-xs font-bold font-sans shadow-[2px_2px_0px_0px_rgba(225,29,72,0.2)]">
-          ⚠ {validationError}
+        <div className="mb-4 bg-rose-100 border-2 border-rose-900 p-3 text-rose-950 text-xs font-bold font-sans shadow-[2px_2px_0px_0px_rgba(225,29,72,0.2)] flex items-start gap-2">
+          <AlertTriangle className="w-4 h-4 flex-shrink-0 mt-0.5" />
+          <span>{validationError}</span>
         </div>
       )}
 

@@ -5,7 +5,7 @@ import { RotationSlider } from '@/components/RotationSlider';
 import { PredictionCard } from '@/components/PredictionCard';
 import { predictDigit } from '@/services/predictionService';
 import { ApiResponse } from '@/types';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Plane, Car, Lamp, Sofa, LayoutGrid, Circle, Box, FlaskConical } from 'lucide-react';
 // ── Part 2: PointNet imports ──
 import { PointCloudViewer } from '@/components/PointCloudViewer';
 import { PointNetResultCard } from '@/components/PointNetResultCard';
@@ -21,6 +21,9 @@ import { EnergyResultCard } from '@/components/EnergyResultCard';
 import { ExampleMolecules } from '@/components/ExampleMolecules';
 import { predictEnergy } from '@/services/nequipService';
 import { Atom } from '@/types/molecule';
+import { MathTerm } from '@/components/MathTerm';
+import { UsageGuide } from '@/components/UsageGuide';
+import { HeaderDecorator } from '@/components/HeaderDecorator';
 
 export default function Home() {
   const [activeTab, setActiveTab] = useState<'part1' | 'part2' | 'part3'>('part1');
@@ -49,9 +52,16 @@ export default function Home() {
   const [p3Error, setP3Error] = useState<string | null>(null);
   const [latencyMs, setLatencyMs] = useState<number | undefined>(undefined);
 
-  // Chặn SSR render → tránh hydration mismatch từ browser extension
+  // Prevent SSR render to avoid hydration mismatches caused by browser extensions
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
+
+  // Pre-fetch the airplane point cloud on mount so Part 2 is not empty on first render
+  useEffect(() => {
+    getSampleCloud('airplane')
+      .then(data => setRawPoints(data.points))
+      .catch(() => {});
+  }, []);
 
   const handlePredictEnergy = async () => {
     if (atoms.length === 0) {
@@ -157,20 +167,32 @@ export default function Home() {
       <header className="w-full px-4 md:px-8 pt-6 pb-4">
         <div className="bg-stone-50 border-2 border-stone-900 p-6 shadow-[6px_6px_0px_0px_rgba(28,25,23,1)] flex flex-col md:flex-row gap-6 md:items-start">
           {/* Left: Title */}
-          <div className="flex-1">
-            <div className="inline-block mb-3 px-2 py-1 bg-blue-600 border-2 border-stone-900 shadow-[2px_2px_0px_0px_rgba(28,25,23,1)]">
-              <span className="text-white text-[10px] font-bold uppercase tracking-widest font-sans">Geometric Deep Learning</span>
+          <div className={`flex-1 border-l-4 pl-4 ${activeTab === 'part1' ? 'border-rose-400' : activeTab === 'part2' ? 'border-emerald-400' : 'border-cyan-400'}`}>
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 mb-3 flex-wrap">
+                  <div className="inline-block px-2 py-1 bg-blue-600 border-2 border-stone-900 shadow-[2px_2px_0px_0px_rgba(28,25,23,1)]">
+                    <span className="text-white text-[10px] font-bold uppercase tracking-widest font-sans">Geometric Deep Learning</span>
+                  </div>
+                  <div className="inline-block px-2 py-1 bg-stone-900 border-2 border-stone-900">
+                    <span className="text-[10px] font-bold uppercase tracking-widest font-sans text-white">
+                      {activeTab === 'part1' ? 'Hướng 01' : activeTab === 'part2' ? 'Hướng 02' : 'Hướng 03'} / 03
+                    </span>
+                  </div>
+                </div>
+                <h1 className="text-3xl md:text-4xl font-black text-stone-900 mb-2 uppercase tracking-tight">
+                  {activeTab === 'part1' ? <>Demo MNIST<br />Bất Biến Xoay</> : activeTab === 'part2' ? <>Phân Loại 3D<br />với PointNet</> : <>Dự đoán Năng lượng<br />với NequIP</>}
+                </h1>
+                <p className="text-sm text-stone-700 mt-3 border-t-2 border-stone-200 pt-3">
+                  {activeTab === 'part1'
+                    ? 'Thử nghiệm nhận diện chữ số bất biến với góc xoay.'
+                    : activeTab === 'part2'
+                      ? 'Phân loại vật thể 3D từ đám mây điểm — Qi et al., CVPR 2017.'
+                      : 'Dự đoán năng lượng cơ học lượng tử của phân tử bằng mạng thần kinh đồ thị đẳng biến E(3).'}
+                </p>
+              </div>
+              <HeaderDecorator tab={activeTab} />
             </div>
-            <h1 className="text-3xl md:text-4xl font-black text-stone-900 mb-2 uppercase tracking-tight">
-              {activeTab === 'part1' ? <>Demo MNIST<br />Bất Biến Xoay</> : activeTab === 'part2' ? <>Phân Loại 3D<br />với PointNet</> : <>Dự đoán Năng lượng<br />với NequIP</>}
-            </h1>
-            <p className="text-sm text-stone-700 mt-3 border-t-2 border-stone-200 pt-3">
-              {activeTab === 'part1'
-                ? 'Thử nghiệm nhận diện chữ số bất biến với góc xoay.'
-                : activeTab === 'part2'
-                  ? 'Phân loại vật thể 3D từ đám mây điểm — Qi et al., CVPR 2017.'
-                  : 'Dự đoán năng lượng cơ học lượng tử của phân tử bằng mạng thần kinh đồ thị đẳng biến E(3).'}
-            </p>
           </div>
 
           {/* Right: Methods */}
@@ -181,10 +203,19 @@ export default function Home() {
                 <p className="text-stone-800 text-sm leading-relaxed font-sans mb-3 hidden lg:block">
                   So sánh 3 cách tiếp cận bất biến xoay:
                 </p>
-                <ul className="text-stone-800 text-sm leading-relaxed font-sans space-y-3">
-                  <li><strong className="text-stone-900 bg-red-400 px-1.5 py-0.5 border-2 border-stone-900 shadow-[2px_2px_0px_0px_rgba(28,25,23,1)] mr-2 inline-block">(1) Baseline CNN:</strong>Chỉ huấn luyện bằng ảnh chữ số thẳng đứng gốc.</li>
-                  <li><strong className="text-stone-900 bg-amber-400 px-1.5 py-0.5 border-2 border-stone-900 shadow-[2px_2px_0px_0px_rgba(28,25,23,1)] mr-2 inline-block">(2) Data Augmentation:</strong>Đưa thêm các ảnh đã bị xoay ngẫu nhiên vào lúc train.</li>
-                  <li><strong className="text-stone-900 bg-emerald-400 px-1.5 py-0.5 border-2 border-stone-900 shadow-[2px_2px_0px_0px_rgba(28,25,23,1)] mr-2 inline-block">(3) Frame Averaging:</strong>Xoay ảnh thành 4 góc vuông rồi lấy trung bình dự đoán.</li>
+                <ul className="font-sans space-y-2.5">
+                  <li className="flex items-start gap-2 text-sm text-stone-700">
+                    <strong className="text-stone-900 bg-red-400 px-1.5 py-0.5 border-2 border-stone-900 shadow-[2px_2px_0px_0px_rgba(28,25,23,1)] inline-block flex-shrink-0 text-xs">(1) Baseline CNN:</strong>
+                    Chỉ huấn luyện bằng ảnh chữ số thẳng đứng gốc.
+                  </li>
+                  <li className="flex items-start gap-2 text-sm text-stone-700">
+                    <strong className="text-stone-900 bg-amber-400 px-1.5 py-0.5 border-2 border-stone-900 shadow-[2px_2px_0px_0px_rgba(28,25,23,1)] inline-block flex-shrink-0 text-xs">(2) Data Augmentation:</strong>
+                    Đưa thêm các ảnh đã bị xoay ngẫu nhiên vào lúc train.
+                  </li>
+                  <li className="flex items-start gap-2 text-sm text-stone-700">
+                    <strong className="text-stone-900 bg-emerald-400 px-1.5 py-0.5 border-2 border-stone-900 shadow-[2px_2px_0px_0px_rgba(28,25,23,1)] inline-block flex-shrink-0 text-xs">(3) Frame Averaging:</strong>
+                    Xoay ảnh thành 4 góc vuông rồi lấy trung bình dự đoán — đảm bảo bất biến với nhóm <MathTerm term="SO(2)" definition="Special Orthogonal group in 2D: tập hợp tất cả phép xoay trong mặt phẳng. Mô hình đẳng biến với SO(2) cho kết quả giống nhau dù ảnh xoay bất kỳ góc nào." />.
+                  </li>
                 </ul>
               </>
             ) : activeTab === 'part2' ? (
@@ -192,10 +223,19 @@ export default function Home() {
                 <p className="text-stone-800 text-sm leading-relaxed font-sans mb-3 hidden lg:block">
                   Phân loại vật thể 3D từ đám mây điểm (Qi et al., CVPR 2017):
                 </p>
-                <ul className="text-stone-800 text-sm leading-relaxed font-sans space-y-3">
-                  <li><strong className="text-stone-900 bg-red-400 px-1.5 py-0.5 border-2 border-stone-900 shadow-[2px_2px_0px_0px_rgba(28,25,23,1)] mr-2 inline-block">(1) PointNet Basic:</strong>Shared MLP + Max Pooling, không có T-Net.</li>
-                  <li><strong className="text-stone-900 bg-emerald-400 px-1.5 py-0.5 border-2 border-stone-900 shadow-[2px_2px_0px_0px_rgba(28,25,23,1)] mr-2 inline-block">(2) PointNet Full:</strong>Có Input & Feature Transform (T-Net) và regularization loss.</li>
-                  <li><strong className="text-stone-900 bg-violet-400 px-1.5 py-0.5 border-2 border-stone-900 shadow-[2px_2px_0px_0px_rgba(28,25,23,1)] mr-2 inline-block">(3) Critical Points:</strong>Visualize tập điểm quyết định kết quả (Theorem 2).</li>
+                <ul className="font-sans space-y-2.5">
+                  <li className="flex items-start gap-2 text-sm text-stone-700">
+                    <strong className="text-stone-900 bg-red-400 px-1.5 py-0.5 border-2 border-stone-900 shadow-[2px_2px_0px_0px_rgba(28,25,23,1)] inline-block flex-shrink-0 text-xs">(1) PointNet Basic:</strong>
+                    Shared MLP + Max Pooling, không có T-Net.
+                  </li>
+                  <li className="flex items-start gap-2 text-sm text-stone-700">
+                    <strong className="text-stone-900 bg-emerald-400 px-1.5 py-0.5 border-2 border-stone-900 shadow-[2px_2px_0px_0px_rgba(28,25,23,1)] inline-block flex-shrink-0 text-xs">(2) PointNet Full:</strong>
+                    Có Input &amp; Feature Transform (<MathTerm term="T-Net" definition="Transformation Network: mạng con dự đoán ma trận xoáy 3×3 để đưa điểm về chuẩn, giúp PointNet bất biến với phép xoáy đầu vào." />) và regularization loss.
+                  </li>
+                  <li className="flex items-start gap-2 text-sm text-stone-700">
+                    <strong className="text-stone-900 bg-violet-400 px-1.5 py-0.5 border-2 border-stone-900 shadow-[2px_2px_0px_0px_rgba(28,25,23,1)] inline-block flex-shrink-0 text-xs">(3) Critical Points:</strong>
+                    Visualize tập điểm quyết định kết quả (Theorem 2).
+                  </li>
                 </ul>
               </>
             ) : (
@@ -203,10 +243,19 @@ export default function Home() {
                 <p className="text-stone-800 text-sm leading-relaxed font-sans mb-3 hidden lg:block">
                   Dự đoán năng lượng QM9 bằng GNN đẳng biến E(3) (Batzner et al.):
                 </p>
-                <ul className="text-stone-800 text-sm leading-relaxed font-sans space-y-3">
-                  <li><strong className="text-stone-900 bg-cyan-400 px-1.5 py-0.5 border-2 border-stone-900 shadow-[2px_2px_0px_0px_rgba(28,25,23,1)] mr-2 inline-block">(1) Đồ thị Nguyên tử:</strong>Các nguyên tử là nút đồ thị, liên kết cách nhau r &le; r_max là cạnh.</li>
-                  <li><strong className="text-stone-900 bg-emerald-400 px-1.5 py-0.5 border-2 border-stone-900 shadow-[2px_2px_0px_0px_rgba(28,25,23,1)] mr-2 inline-block">(2) E(3) Message Passing:</strong>Mạng GNN sử dụng cơ chế truyền thông điệp đẳng biến theo chuẩn E(3).</li>
-                  <li><strong className="text-stone-900 bg-indigo-400 text-white px-1.5 py-0.5 border-2 border-stone-900 shadow-[2px_2px_0px_0px_rgba(28,25,23,1)] mr-2 inline-block">(3) Global Pooling:</strong>Cộng tổng năng lượng của tất cả nguyên tử để dự đoán mức năng lượng chung.</li>
+                <ul className="font-sans space-y-2.5">
+                  <li className="flex items-start gap-2 text-sm text-stone-700">
+                    <strong className="text-stone-900 bg-cyan-400 px-1.5 py-0.5 border-2 border-stone-900 shadow-[2px_2px_0px_0px_rgba(28,25,23,1)] inline-block flex-shrink-0 text-xs">(1) Đồ thị Nguyên tử:</strong>
+                    Các nguyên tử là nút đồ thị, liên kết cách nhau r ≤ r_max là cạnh.
+                  </li>
+                  <li className="flex items-start gap-2 text-sm text-stone-700">
+                    <strong className="text-stone-900 bg-emerald-400 px-1.5 py-0.5 border-2 border-stone-900 shadow-[2px_2px_0px_0px_rgba(28,25,23,1)] inline-block flex-shrink-0 text-xs">(2) <MathTerm term="E(3)" definition="Euclidean group in 3D: gồm tất cả phép dịch, xoáy và phản chiếu trong không gian 3D. Mô hình đẳng biến với E(3) cho cùng năng lượng dù phân tử được xoáy hay dịch." /> Message Passing:</strong>
+                    Mạng GNN sử dụng cơ chế truyền thông điệp đẳng biến theo chuẩn E(3).
+                  </li>
+                  <li className="flex items-start gap-2 text-sm text-stone-700">
+                    <strong className="text-stone-900 bg-indigo-400 text-white px-1.5 py-0.5 border-2 border-stone-900 shadow-[2px_2px_0px_0px_rgba(28,25,23,1)] inline-block flex-shrink-0 text-xs">(3) Global Pooling:</strong>
+                    Cộng tổng năng lượng của tất cả nguyên tử để dự đoán mức năng lượng chung.
+                  </li>
                 </ul>
               </>
             )}
@@ -215,37 +264,43 @@ export default function Home() {
       </header>
 
       {/* TAB SWITCHER */}
-      <div className="w-full px-4 md:px-8 mb-6 flex flex-wrap gap-4">
+      <div className="w-full px-4 md:px-8 mb-6 flex flex-wrap gap-4 justify-center">
         <button
           onClick={() => setActiveTab('part1')}
-          className={`px-6 py-3 font-black text-sm md:text-base uppercase tracking-widest border-2 border-stone-900 transition-all ${activeTab === 'part1'
+          className={`flex items-center gap-2 px-6 py-3 font-black text-sm md:text-base uppercase tracking-widest border-2 border-stone-900 transition-all ${activeTab === 'part1'
             ? 'bg-rose-400 shadow-[4px_4px_0px_0px_rgba(28,25,23,1)] translate-y-0 translate-x-0'
             : 'bg-white shadow-none translate-y-1 translate-x-1 hover:bg-stone-50'
             }`}
         >
+          <Circle className="w-4 h-4 flex-shrink-0" />
           Nhận diện MNIST (SO(2))
         </button>
         <button
           onClick={() => setActiveTab('part2')}
-          className={`px-6 py-3 font-black text-sm md:text-base uppercase tracking-widest border-2 border-stone-900 transition-all ${activeTab === 'part2'
+          className={`flex items-center gap-2 px-6 py-3 font-black text-sm md:text-base uppercase tracking-widest border-2 border-stone-900 transition-all ${activeTab === 'part2'
             ? 'bg-emerald-400 shadow-[4px_4px_0px_0px_rgba(28,25,23,1)] translate-y-0 translate-x-0'
             : 'bg-white shadow-none translate-y-1 translate-x-1 hover:bg-stone-50'
             }`}
         >
+          <Box className="w-4 h-4 flex-shrink-0" />
           Phân loại 3D (PointNet)
         </button>
         <button
           onClick={() => setActiveTab('part3')}
-          className={`px-6 py-3 font-black text-sm md:text-base uppercase tracking-widest border-2 border-stone-900 transition-all ${activeTab === 'part3'
+          className={`flex items-center gap-2 px-6 py-3 font-black text-sm md:text-base uppercase tracking-widest border-2 border-stone-900 transition-all ${activeTab === 'part3'
             ? 'bg-cyan-400 shadow-[4px_4px_0px_0px_rgba(28,25,23,1)] translate-y-0 translate-x-0'
             : 'bg-white shadow-none translate-y-1 translate-x-1 hover:bg-stone-50'
             }`}
         >
+          <FlaskConical className="w-4 h-4 flex-shrink-0" />
           Dự đoán Năng lượng (NequIP)
         </button>
       </div>
 
-      <main className="w-full px-4 md:px-8 pb-8">
+      <UsageGuide tab={activeTab} />
+
+      <main className="w-full px-4 md:px-8 pb-4">
+        <div key={activeTab} className="tab-enter">
         {activeTab === 'part1' && (
           <>
             {/* Part 1: Frame Averaging */}
@@ -257,6 +312,11 @@ export default function Home() {
                 </div>
                 <div className="flex-1 flex flex-col justify-center">
                   <DigitCanvas onImageChange={setImageData} rotation={rotation} />
+                  {!imageData && (
+                    <p className="mt-4 text-center text-[10px] font-black font-sans uppercase tracking-widest text-stone-400 animate-pulse">
+                      Vẽ chữ số vào canvas để bắt đầu
+                    </p>
+                  )}
                 </div>
               </div>
 
@@ -364,14 +424,20 @@ export default function Home() {
                           : 'bg-white shadow-none hover:bg-stone-50 translate-y-0.5 translate-x-0.5'
                           }`}
                       >
-                        <span className="text-xl">{cls === 'airplane' ? '✈' : cls === 'chair' ? '🪑' : cls === 'car' ? '🚗' : cls === 'lamp' ? '💡' : '🪵'}</span>
+                        <span className="text-stone-800">
+                          {cls === 'airplane' ? <Plane      className="w-5 h-5" /> :
+                           cls === 'chair'    ? <Sofa       className="w-5 h-5" /> :
+                           cls === 'car'      ? <Car        className="w-5 h-5" /> :
+                           cls === 'lamp'     ? <Lamp       className="w-5 h-5" /> :
+                                               <LayoutGrid  className="w-5 h-5" />}
+                        </span>
                         <span className="truncate w-full text-center" style={{ fontSize: '9px' }}>{cls === 'airplane' ? 'Máy bay' : cls === 'chair' ? 'Ghế' : cls === 'car' ? 'Ô tô' : cls === 'lamp' ? 'Đèn' : 'Bàn'}</span>
                       </button>
                     ))}
                   </div>
                   {rawPoints.length > 0 && (
                     <p className="text-xs text-stone-500 font-sans border-t border-stone-200 pt-2">
-                      Đã tải: <span className="font-bold text-stone-900">{selectedClass}</span> — {rawPoints.length} điểm
+                      Đã tải: <span className="font-bold text-stone-900">{selectedClass}</span> ({rawPoints.length} điểm)
                     </p>
                   )}
                 </div>
@@ -496,6 +562,7 @@ export default function Home() {
             />
           </div>
         )}
+        </div>
       </main>
     </div>
   );

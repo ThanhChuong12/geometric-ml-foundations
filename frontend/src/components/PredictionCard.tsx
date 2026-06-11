@@ -1,4 +1,5 @@
 "use client";
+import { CircleHelp } from 'lucide-react';
 import { PredictionResult } from '@/types';
 
 interface PredictionCardProps {
@@ -66,8 +67,8 @@ export function PredictionCard({ title, description, result, variant }: Predicti
             </div>
           </>
         ) : (
-          <div className="text-stone-400 text-sm text-center py-12 font-sans font-medium uppercase tracking-widest">
-            <div className="text-6xl mb-6 font-serif opacity-30 font-light">?</div>
+          <div className="text-stone-400 text-sm text-center py-12 font-sans font-medium uppercase tracking-widest flex flex-col items-center">
+            <CircleHelp className="w-12 h-12 mb-6 opacity-30 text-stone-500" />
             <div>Chờ phân loại</div>
           </div>
         )}

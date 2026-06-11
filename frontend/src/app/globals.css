@@ -10,6 +10,7 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+  --font-serif: var(--font-playfair);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -24,3 +25,57 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+@keyframes tabEnter {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.tab-enter {
+  animation: tabEnter 0.22s ease-out;
+}
+
+/* ── SO(2) Header Decorator ── */
+@keyframes rotateSO2 {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+@keyframes rotateSO2Reverse {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(-360deg); }
+}
+
+/* ── Atom Electron Orbit ── */
+@keyframes electronOrbit {
+  from { transform: rotate(0deg)   translateX(24px) rotate(0deg); }
+  to   { transform: rotate(360deg) translateX(24px) rotate(-360deg); }
+}
+@keyframes electronOrbitFast {
+  from { transform: rotate(180deg) translateX(18px) rotate(-180deg); }
+  to   { transform: rotate(540deg) translateX(18px) rotate(-540deg); }
+}
+
+/* ── Floating Point Cloud Particles ── */
+@keyframes floatParticle {
+  0%, 100% { transform: translateY(0)    translateX(0);   opacity: 0.25; }
+  40%       { transform: translateY(-9px) translateX(3px); opacity: 0.7;  }
+  70%       { transform: translateY(-5px) translateX(-3px);opacity: 0.5;  }
+}
+
+
+/* Hide native number input spinners for a cleaner coordinate table appearance */
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+input[type="number"] {
+  -moz-appearance: textfield;
+}
+

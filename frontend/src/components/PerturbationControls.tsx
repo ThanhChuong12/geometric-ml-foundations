@@ -1,5 +1,6 @@
 "use client";
 import * as Slider from '@radix-ui/react-slider';
+import { RotateCcw, Wind, Layers, FlaskConical, AlertTriangle } from 'lucide-react';
 
 export interface PerturbationState {
   rotation_x: number;
@@ -64,7 +65,7 @@ export function PerturbationControls({ value, onChange, onReset }: PerturbationC
       <div className="bg-violet-400 border-b-2 border-stone-900 px-6 py-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 bg-stone-900 flex items-center justify-center text-violet-400 font-black font-serif text-lg">⚗</div>
+            <div className="w-8 h-8 bg-stone-900 flex items-center justify-center text-violet-400"><FlaskConical className="w-4 h-4" /></div>
             <div>
               <h3 className="font-black text-stone-900 uppercase tracking-tight font-sans text-base">
                 Kiểm Chứng Robustness
@@ -87,12 +88,12 @@ export function PerturbationControls({ value, onChange, onReset }: PerturbationC
         {/* Rotation Group */}
         <div className="space-y-3">
           <div className="flex items-center gap-2 mb-2">
-            <span className="text-base">🔄</span>
+            <RotateCcw className="w-4 h-4 text-stone-700 flex-shrink-0" />
             <span className="text-xs font-black font-sans uppercase tracking-widest text-stone-900">
               Xoay 3D
             </span>
             <span className="text-[10px] font-sans text-stone-500 ml-1">
-              → Kiểm tra T-Net có giúp Full model bất biến với xoay không?
+              Kiểm tra T-Net có giúp Full model bất biến với xoay không?
             </span>
           </div>
           <SliderRow label="Xoay trục X" value={value.rotation_x} min={0} max={360} step={5}
@@ -114,12 +115,12 @@ export function PerturbationControls({ value, onChange, onReset }: PerturbationC
         {/* Noise */}
         <div className="space-y-3">
           <div className="flex items-center gap-2 mb-2">
-            <span className="text-base">🌫️</span>
+            <Wind className="w-4 h-4 text-stone-700 flex-shrink-0" />
             <span className="text-xs font-black font-sans uppercase tracking-widest text-stone-900">
               Thêm nhiễu Gaussian
             </span>
             <span className="text-[10px] font-sans text-stone-500 ml-1">
-              → PointNet có robust với nhiễu không?
+              PointNet có robust với nhiễu không?
             </span>
           </div>
           <SliderRow label="Mức nhiễu σ" value={value.noise_level} min={0} max={0.15} step={0.005}
@@ -133,12 +134,12 @@ export function PerturbationControls({ value, onChange, onReset }: PerturbationC
         {/* Drop ratio */}
         <div className="space-y-3">
           <div className="flex items-center gap-2 mb-2">
-            <span className="text-base">🔻</span>
+            <Layers className="w-4 h-4 text-stone-700 flex-shrink-0" />
             <span className="text-xs font-black font-sans uppercase tracking-widest text-stone-900">
               Bỏ điểm ngẫu nhiên
             </span>
             <span className="text-[10px] font-sans text-stone-500 ml-1">
-              → Theorem 2: critical points quyết định kết quả
+              Theorem 2: critical points quyết định kết quả
             </span>
           </div>
           <SliderRow label="Tỷ lệ bỏ điểm" value={Math.round(value.drop_ratio * 100)} min={0} max={75} step={5}
@@ -149,9 +150,10 @@ export function PerturbationControls({ value, onChange, onReset }: PerturbationC
 
         {/* Active indicator */}
         {isActive && (
-          <div className="bg-violet-100 border border-violet-400 px-4 py-2">
+          <div className="bg-violet-100 border border-violet-400 px-4 py-2 flex items-center gap-2">
+            <AlertTriangle className="w-3.5 h-3.5 text-violet-800 flex-shrink-0" />
             <p className="text-xs font-bold font-sans text-violet-800">
-              ⚠ Đang áp dụng biến đổi — nhấn <strong>Run Classification</strong> để xem tác động
+              Đang áp dụng biến đổi. Nhấn <strong>Chạy Phân Loại</strong> để xem tác động.
             </p>
           </div>
         )}
