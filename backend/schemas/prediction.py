@@ -56,5 +56,5 @@ class EnergyResponse(BaseModel):
     """Response schema for molecular energy prediction."""
     energy: float = Field(
         ..., 
-        description="Predicted internal molecular energy (U0) in eV/Hartree."
+        description="Predicted internal molecular energy (U0) in eV."
     )

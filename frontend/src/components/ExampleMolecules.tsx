@@ -1,5 +1,6 @@
 "use client";
 
+import { Droplets, Flame, FlaskConical, Wind, Circle, Zap } from 'lucide-react';
 import { Atom } from '@/types/molecule';
 
 interface ExampleMoleculesProps {
@@ -10,16 +11,25 @@ interface ExampleMoleculesProps {
 interface MoleculePreset {
   name: string;
   chemicalFormula: string;
-  emoji: string;
   description: string;
   atoms: Atom[];
 }
+
+// Maps each preset name to a representative lucide-react icon node
+const PRESET_ICONS: Record<string, React.ReactNode> = {
+  'Nước':           <Droplets     className="w-6 h-6" />,
+  'Methane':        <Flame        className="w-6 h-6" />,
+  'Ammonia':        <FlaskConical className="w-6 h-6" />,
+  'Carbon Dioxide': <Wind         className="w-6 h-6" />,
+  'Ethanol':        <Droplets     className="w-6 h-6" />,
+  'Formaldehyde':   <FlaskConical className="w-6 h-6" />,
+  'Fluoromethane':  <Zap          className="w-6 h-6" />,
+};
 
 const PRESETS: MoleculePreset[] = [
   {
     name: 'Nước',
     chemicalFormula: 'H₂O',
-    emoji: '💧',
     description: 'Phân tử phân cực gấp khúc với góc liên kết ~104.5 độ.',
     atoms: [
       { atomicNumber: 8, x: 0.0, y: 0.0, z: 0.1163 },
@@ -30,7 +40,6 @@ const PRESETS: MoleculePreset[] = [
   {
     name: 'Methane',
     chemicalFormula: 'CH₄',
-    emoji: '🔥',
     description: 'Phân tử hữu cơ hydrocacbon đơn giản nhất dạng tứ diện đều.',
     atoms: [
       { atomicNumber: 6, x: 0.0, y: 0.0, z: 0.0 },
@@ -43,7 +52,6 @@ const PRESETS: MoleculePreset[] = [
   {
     name: 'Ammonia',
     chemicalFormula: 'NH₃',
-    emoji: '🧪',
     description: 'Phân tử dạng tháp tam giác với cặp electron tự do phân cực.',
     atoms: [
       { atomicNumber: 7, x: 0.0, y: 0.0, z: 0.116 },
@@ -55,12 +63,50 @@ const PRESETS: MoleculePreset[] = [
   {
     name: 'Carbon Dioxide',
     chemicalFormula: 'CO₂',
-    emoji: '💨',
     description: 'Phân tử tuyến tính đối xứng, không phân cực.',
     atoms: [
       { atomicNumber: 6, x: 0.0, y: 0.0, z: 0.0 },
       { atomicNumber: 8, x: 0.0, y: 0.0, z: 1.16 },
       { atomicNumber: 8, x: 0.0, y: 0.0, z: -1.16 }
+    ]
+  },
+  {
+    name: 'Ethanol',
+    chemicalFormula: 'C₂H₅OH',
+    description: 'Rượu etylic — phân tử hữu cơ 9 nguyên tử, nhóm hydroxyl -OH phân cực.',
+    atoms: [
+      { atomicNumber: 6, x:  0.000, y:  0.000, z:  0.000 },
+      { atomicNumber: 6, x:  1.520, y:  0.000, z:  0.000 },
+      { atomicNumber: 8, x:  2.080, y:  1.185, z:  0.000 },
+      { atomicNumber: 1, x:  2.000, y:  1.736, z:  0.773 },
+      { atomicNumber: 1, x: -0.390, y:  1.025, z:  0.000 },
+      { atomicNumber: 1, x: -0.390, y: -0.513, z:  0.889 },
+      { atomicNumber: 1, x: -0.390, y: -0.513, z: -0.889 },
+      { atomicNumber: 1, x:  1.910, y: -0.513, z:  0.889 },
+      { atomicNumber: 1, x:  1.910, y: -0.513, z: -0.889 }
+    ]
+  },
+  {
+    name: 'Formaldehyde',
+    chemicalFormula: 'CH₂O',
+    description: 'Aldehyde đơn giản nhất — phân tử phẳng với liên kết đôi C=O.',
+    atoms: [
+      { atomicNumber: 6, x:  0.000, y: 0.0, z:  0.000 },
+      { atomicNumber: 8, x:  0.000, y: 0.0, z:  1.208 },
+      { atomicNumber: 1, x:  0.924, y: 0.0, z: -0.541 },
+      { atomicNumber: 1, x: -0.924, y: 0.0, z: -0.541 }
+    ]
+  },
+  {
+    name: 'Fluoromethane',
+    chemicalFormula: 'CH₃F',
+    description: 'Methane thay H bằng F — kiểm tra nguyên tố Fluorine (Z=9) trong model.',
+    atoms: [
+      { atomicNumber: 6, x:  0.000, y:  0.000, z:  0.000 },
+      { atomicNumber: 9, x:  0.000, y:  0.000, z:  1.382 },
+      { atomicNumber: 1, x:  1.027, y:  0.000, z: -0.371 },
+      { atomicNumber: 1, x: -0.513, y:  0.889, z: -0.371 },
+      { atomicNumber: 1, x: -0.513, y: -0.889, z: -0.371 }
     ]
   }
 ];
@@ -82,7 +128,7 @@ export function ExampleMolecules({
       </div>
 
       {/* Grid selector */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3">
         {PRESETS.map((preset) => {
           const isSelected = selectedMoleculeName === preset.name;
           return (
@@ -96,18 +142,20 @@ export function ExampleMolecules({
               }`}
             >
               <div className="flex items-center gap-2 mb-2">
-                <span className="text-2xl">{preset.emoji}</span>
-                <span className="font-black text-stone-900 text-sm uppercase tracking-wide">
+                <span className="text-stone-700">
+                  {PRESET_ICONS[preset.name] ?? <Circle className="w-6 h-6" />}
+                </span>
+                <span className="font-black text-stone-900 text-sm uppercase tracking-wide font-sans">
                   {preset.name}
                 </span>
                 <span className="ml-auto text-xs font-mono font-bold bg-stone-900 text-white px-2 py-0.5">
                   {preset.chemicalFormula}
                 </span>
               </div>
-              <p className="text-xs text-stone-600 font-medium leading-relaxed">
+              <p className="text-xs text-stone-600 font-medium leading-relaxed font-sans">
                 {preset.description}
               </p>
-              <div className="mt-auto pt-3 text-[10px] font-bold text-stone-500 uppercase tracking-widest">
+              <div className="mt-auto pt-3 text-[10px] font-bold text-stone-500 uppercase tracking-widest font-sans">
                 {preset.atoms.length} Nguyên tử
               </div>
             </button>

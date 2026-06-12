@@ -58,8 +58,8 @@ function computeBonds(centeredAtoms: Atom[]): Bond[] {
       const dist = p1.distanceTo(p2);
       
       // A chemical bond exists if distance is within logical boundaries
-      // min distance 0.5 (prevent overlap bugs), max distance (covalent sum * 1.3)
-      const maxBondDist = (r1 + r2) * 2.2; 
+      // min distance 0.6 (prevent overlap bugs), max distance (covalent radii sum * 1.3)
+      const maxBondDist = (r1 + r2) * 1.3;
       if (dist >= 0.6 && dist <= maxBondDist) {
         const v = new THREE.Vector3().subVectors(p2, p1);
         const length = v.length();

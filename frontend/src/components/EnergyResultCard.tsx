@@ -1,6 +1,7 @@
 "use client";
 
-import { Loader2 } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Loader2, CircleHelp } from 'lucide-react';
 
 interface EnergyResultCardProps {
   energy: number | null;
@@ -15,6 +16,26 @@ export function EnergyResultCard({
   error,
   durationMs
 }: EnergyResultCardProps) {
+  const [displayEnergy, setDisplayEnergy] = useState<number | null>(null);
+
+  // Animate the energy value from zero to the actual result on each new prediction
+  useEffect(() => {
+    if (energy === null) { setDisplayEnergy(null); return; }
+    const target = energy;
+    const duration = 900;
+    const startTime = performance.now();
+
+    const tick = (now: number) => {
+      const progress = Math.min((now - startTime) / duration, 1);
+      const eased = 1 - Math.pow(1 - progress, 3); // ease-out cubic
+      setDisplayEnergy(target * eased);
+      if (progress < 1) requestAnimationFrame(tick);
+      else setDisplayEnergy(target);
+    };
+
+    requestAnimationFrame(tick);
+  }, [energy]);
+
   return (
     <div className="flex flex-col border-2 border-stone-900 shadow-[4px_4px_0px_0px_rgba(28,25,23,1)] bg-stone-50 h-full">
       {/* Header */}
@@ -54,10 +75,10 @@ export function EnergyResultCard({
             {/* Energy value card */}
             <div className="flex flex-col items-center gap-3 w-full border-2 border-stone-900 p-6 bg-stone-100 shadow-[2px_2px_0px_0px_rgba(28,25,23,1)]">
               <span className="text-xs font-bold text-stone-600 uppercase tracking-widest font-sans">
-                Internal Energy (U0)
+                Năng lượng nội tại U₀ (eV)
               </span>
-              <div className="text-4xl md:text-5xl font-black text-stone-900 font-serif tracking-tight text-center">
-                {energy.toFixed(6)} <span className="text-2xl font-sans font-bold">eV</span>
+              <div className="text-4xl md:text-5xl font-black text-stone-900 font-serif tracking-tight text-center tabular-nums">
+                {displayEnergy !== null ? displayEnergy.toFixed(4) : '...'}
               </div>
             </div>
 
@@ -75,8 +96,8 @@ export function EnergyResultCard({
             </div>
           </div>
         ) : (
-          <div className="text-stone-400 text-sm text-center py-12 font-sans font-medium uppercase tracking-widest">
-            <div className="text-6xl mb-6 font-serif opacity-30 font-light">?</div>
+          <div className="text-stone-400 text-sm text-center py-12 font-sans font-medium uppercase tracking-widest flex flex-col items-center">
+            <CircleHelp className="w-12 h-12 mb-6 opacity-30 text-stone-500" />
             <div>Chờ chạy dự đoán</div>
           </div>
         )}

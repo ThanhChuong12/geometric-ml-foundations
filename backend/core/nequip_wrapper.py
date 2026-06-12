@@ -1,9 +1,12 @@
 # backend/core/nequip_wrapper.py
 
+import os
+# Force CPU only (hide GPU to prevent CUDA initialization error)
+os.environ["CUDA_VISIBLE_DEVICES"] = ""
+
 import logging
 import threading
 from typing import Optional, List
-from xml.parsers.expat import model
 import torch
 from nequip.utils.global_state import set_global_state
 from nequip.model import ModelFromCheckpoint
@@ -35,7 +38,8 @@ class NequIPPredictor:
 
     def __init__(self, checkpoint_path: str, device: str = "cpu"):
         self.checkpoint_path = checkpoint_path
-        self.device = torch.device(device)
+        # Force CPU device for NequIP molecular energy prediction
+        self.device = torch.device("cpu")
         self._model: Optional[torch.nn.Module] = None
         self._type_names: Optional[List[str]] = None
         self._r_max: Optional[float] = None

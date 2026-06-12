@@ -32,18 +32,18 @@ export function AtomRow({ atom, index, onUpdate, onDelete }: AtomRowProps) {
   };
 
   return (
-    <tr className="border-b-2 border-stone-900 font-sans hover:bg-stone-50">
+    <tr className="border-b border-stone-200 font-sans odd:bg-white even:bg-stone-50 hover:bg-amber-50 transition-colors">
       {/* Index */}
-      <td className="px-3 py-2 text-center font-bold text-stone-600 border-r-2 border-stone-900 text-xs">
+      <td className="px-3 py-2.5 text-center font-black text-stone-400 border-r border-stone-200 text-xs">
         {index + 1}
       </td>
 
       {/* Element Selector */}
-      <td className="px-3 py-2 border-r-2 border-stone-900">
+      <td className="px-2 py-2 border-r border-stone-200">
         <select
           value={atom.atomicNumber}
           onChange={handleElementChange}
-          className="w-full bg-white border-2 border-stone-900 px-2 py-1 text-xs font-bold font-sans rounded-none shadow-[2px_2px_0px_0px_rgba(28,25,23,1)] focus:outline-none focus:bg-stone-50"
+          className="w-full bg-white border border-stone-300 px-2 py-1.5 text-xs font-bold font-sans focus:outline-none focus:border-stone-900 hover:border-stone-600 transition-colors"
         >
           {COMMON_ELEMENTS.map(el => (
             <option key={el.value} value={el.value}>
@@ -59,47 +59,47 @@ export function AtomRow({ atom, index, onUpdate, onDelete }: AtomRowProps) {
       </td>
 
       {/* X Coordinate */}
-      <td className="px-3 py-2 border-r-2 border-stone-900">
+      <td className="px-2 py-2 border-r border-stone-200">
         <input
           type="number"
           step="0.01"
           defaultValue={atom.x}
           key={`x-${index}-${atom.x}`}
           onBlur={(e) => handleCoordinateChange('x', e.target.value)}
-          className="w-full bg-white border-2 border-stone-900 px-2 py-1 text-xs font-mono font-bold rounded-none shadow-[2px_2px_0px_0px_rgba(28,25,23,1)] focus:outline-none"
+          className="w-full bg-white border border-stone-300 px-2 py-1.5 text-xs font-mono text-center font-bold focus:outline-none focus:border-stone-900 hover:border-stone-600 transition-colors"
         />
       </td>
 
       {/* Y Coordinate */}
-      <td className="px-3 py-2 border-r-2 border-stone-900">
+      <td className="px-2 py-2 border-r border-stone-200">
         <input
           type="number"
           step="0.01"
           defaultValue={atom.y}
           key={`y-${index}-${atom.y}`}
           onBlur={(e) => handleCoordinateChange('y', e.target.value)}
-          className="w-full bg-white border-2 border-stone-900 px-2 py-1 text-xs font-mono font-bold rounded-none shadow-[2px_2px_0px_0px_rgba(28,25,23,1)] focus:outline-none"
+          className="w-full bg-white border border-stone-300 px-2 py-1.5 text-xs font-mono text-center font-bold focus:outline-none focus:border-stone-900 hover:border-stone-600 transition-colors"
         />
       </td>
 
       {/* Z Coordinate */}
-      <td className="px-3 py-2 border-r-2 border-stone-900">
+      <td className="px-2 py-2 border-r border-stone-200">
         <input
           type="number"
           step="0.01"
           defaultValue={atom.z}
           key={`z-${index}-${atom.z}`}
           onBlur={(e) => handleCoordinateChange('z', e.target.value)}
-          className="w-full bg-white border-2 border-stone-900 px-2 py-1 text-xs font-mono font-bold rounded-none shadow-[2px_2px_0px_0px_rgba(28,25,23,1)] focus:outline-none"
+          className="w-full bg-white border border-stone-300 px-2 py-1.5 text-xs font-mono text-center font-bold focus:outline-none focus:border-stone-900 hover:border-stone-600 transition-colors"
         />
       </td>
 
       {/* Actions */}
-      <td className="px-3 py-2 text-center">
+      <td className="px-2 py-2 text-center">
         <button
           type="button"
           onClick={() => onDelete(index)}
-          className="bg-rose-400 hover:bg-rose-500 border-2 border-stone-900 text-stone-900 font-bold px-3 py-1 text-[10px] uppercase tracking-widest shadow-[2px_2px_0px_0px_rgba(28,25,23,1)] active:shadow-none active:translate-y-0.5 active:translate-x-0.5 transition-all"
+          className="bg-rose-400 hover:bg-rose-500 border border-stone-900 text-stone-900 font-black px-2.5 py-1 text-[10px] uppercase tracking-widest shadow-[2px_2px_0px_0px_rgba(28,25,23,1)] active:shadow-none active:translate-y-0.5 active:translate-x-0.5 transition-all"
         >
           Xóa
         </button>
@@ -107,3 +107,4 @@ export function AtomRow({ atom, index, onUpdate, onDelete }: AtomRowProps) {
     </tr>
   );
 }
+

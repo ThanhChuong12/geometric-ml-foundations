@@ -24,7 +24,7 @@ export function NumPointsSlider({ value, onChange }: NumPointsSliderProps) {
     <div className="flex flex-col gap-6">
       <div className="flex justify-between items-end border-b-2 border-stone-900 pb-2">
         <label className="text-sm font-bold text-stone-900 uppercase tracking-widest font-sans">
-          So diem N
+          Số điểm N
         </label>
         <div className="flex items-baseline gap-1">
           {/* Big number display — same as RotationSlider */}
@@ -67,8 +67,8 @@ export function NumPointsSlider({ value, onChange }: NumPointsSliderProps) {
 
       {/* Context hint */}
       <p className="text-xs text-stone-500 font-sans leading-relaxed border-t border-stone-200 pt-3">
-        <span className="font-bold text-stone-700">Thi nghiem mo rong:</span>{' '}
-        Thay doi so luong diem de xem do ben cua PointNet (Theorem 2).
+        <span className="font-bold text-stone-700">Thí nghiệm mở rộng:</span>{' '}
+        Thay đổi số lượng điểm để xem độ bền của PointNet (Theorem 2).
       </p>
     </div>
   );

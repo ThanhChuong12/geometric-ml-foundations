@@ -1,5 +1,6 @@
 "use client";
 import { PointNetModelResult } from '@/types/pointnet';
+import { Plane, Car, Lamp, Sofa, LayoutGrid, Box, CircleHelp } from 'lucide-react';
 
 interface PointNetResultCardProps {
   title: string;
@@ -24,16 +25,13 @@ const variantStyles = {
   },
 };
 
-// Emoji icons cho 40 class ModelNet40 (top common)
-const CLASS_EMOJI: Record<string, string> = {
-  airplane: '✈', bathtub: '🛁', bed: '🛏', bench: '🪑', bookshelf: '📚',
-  bottle: '🍶', bowl: '🥣', car: '🚗', chair: '🪑', cone: '📐',
-  cup: '☕', curtain: '🪟', desk: '🪑', door: '🚪', dresser: '🗄',
-  flower_pot: '🌺', glass_box: '📦', guitar: '🎸', keyboard: '⌨', lamp: '💡',
-  laptop: '💻', mantel: '🏛', monitor: '🖥', night_stand: '🗄', person: '🧍',
-  piano: '🎹', plant: '🌿', radio: '📻', range_hood: '🍳', sink: '🚿',
-  sofa: '🛋', stairs: '🪜', stool: '🪑', table: '🪵', tent: '⛺',
-  toilet: '🚽', tv_stand: '📺', vase: '🏺', wardrobe: '🚪', xbox: '🎮',
+// Icon map cho 5 class demo — dùng lucide-react thay thế emoji
+const CLASS_ICON: Record<string, React.ReactNode> = {
+  airplane: <Plane      className="w-10 h-10" />,
+  car:      <Car        className="w-10 h-10" />,
+  lamp:     <Lamp       className="w-10 h-10" />,
+  chair:    <Sofa       className="w-10 h-10" />,
+  table:    <LayoutGrid className="w-10 h-10" />,
 };
 
 export function PointNetResultCard({
@@ -66,8 +64,8 @@ export function PointNetResultCard({
               <span className="text-xs font-bold text-stone-900 uppercase tracking-widest font-sans">
                 Lớp dự đoán
               </span>
-              <div className="text-5xl font-black text-stone-900 font-serif">
-                {CLASS_EMOJI[result.label] ?? '?'}
+              <div className="text-stone-700">
+                {CLASS_ICON[result.label] ?? <Box className="w-10 h-10" />}
               </div>
               <div className="text-xl font-black text-stone-900 font-sans uppercase tracking-wider">
                 {result.label}
@@ -78,7 +76,7 @@ export function PointNetResultCard({
             <div className="w-full space-y-3">
               <div className="flex justify-between items-baseline border-b-2 border-stone-900 pb-1">
                 <span className="text-sm font-bold text-stone-900 uppercase tracking-wider font-sans">
-                  Do tu tin
+                  Độ tự tin
                 </span>
                 <span className="text-2xl font-black text-stone-900 font-sans">
                   {(result.confidence * 100).toFixed(1)}%
@@ -129,9 +127,9 @@ export function PointNetResultCard({
           </>
         ) : (
           // Same empty state as PredictionCard
-          <div className="text-stone-400 text-sm text-center py-12 font-sans font-medium uppercase tracking-widest">
-            <div className="text-6xl mb-6 font-serif opacity-30 font-light">?</div>
-            <div>Cho phan loai</div>
+          <div className="text-stone-400 text-sm text-center py-12 font-sans font-medium uppercase tracking-widest flex flex-col items-center">
+            <CircleHelp className="w-12 h-12 mb-6 opacity-30 text-stone-500" />
+            <div>Chờ phân loại</div>
           </div>
         )}
       </div>

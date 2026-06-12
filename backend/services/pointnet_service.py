@@ -12,6 +12,9 @@ Không ảnh hưởng đến Part 1 (model_service.py).
 """
 
 import os
+# Force CPU only (hide GPU to prevent CUDA initialization error)
+os.environ["CUDA_VISIBLE_DEVICES"] = ""
+
 import json
 import time
 import numpy as np
@@ -107,6 +110,13 @@ def load_models_if_needed() -> bool:
             print(f"[PointNet WARNING] Could not load Basic weights: {e}")
     else:
         print(f"[PointNet WARNING] Basic weights not found: {WEIGHTS_BASIC}")
+
+    # ── Ép về float32 để tránh dtype mismatch khi NequIP đổi global dtype ──
+    # NequIP's set_global_state() gọi torch.set_default_dtype(float64) globally.
+    # Nếu không ép kiểu tường minh, bias/weight của model sẽ là float64
+    # trong khi input tensor là float32 → crash khi inference.
+    _basic_model.float()
+    _full_model.float()
 
     # ── Set eval mode ──
     _basic_model.eval()
@@ -271,8 +281,9 @@ def classify(
     # ── Áp dụng perturbation TRƯỚC khi normalize/sample ──
     pts_raw = apply_perturbation(pts_raw, rotation_x, rotation_y, rotation_z, noise_level, drop_ratio)
 
-    pts_np = preprocess_point_cloud(pts_raw, num_points)   # (1, num_points, 3)
-    pts_tensor = torch.from_numpy(pts_np).float()          # tensor (1, num_points, 3)
+    pts_np = preprocess_point_cloud(pts_raw, num_points)       # (1, num_points, 3)
+    # Ép float32 tường minh — phòng trường hợp NequIP đã đổi default dtype thành float64
+    pts_tensor = torch.from_numpy(pts_np).to(torch.float32)    # tensor (1, num_points, 3)
 
     # ── Basic model inference ──
     basic_probs, basic_crit_idx = _run_inference(_basic_model, pts_tensor, is_full=False)
