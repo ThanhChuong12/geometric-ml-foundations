@@ -11,9 +11,7 @@ import random
 from models.schemas import PredictionResponse, PredictionResult
 from core.frame_averaging import SimpleCNN, FrameAveragingCNN
 
-# ─────────────────────────────────────────────────────────────
 # Paths & Constants
-# ─────────────────────────────────────────────────────────────
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 DEBUG_MODE = True
@@ -31,7 +29,7 @@ def get_device():
 
     return torch.device("cpu")
 
-# 2. Khởi tạo và Load Mô hình
+# Initialize and load models
 device = get_device()
 baseline_model = SimpleCNN().float().to(device)
 augmented_model = SimpleCNN().float().to(device)
@@ -60,18 +58,15 @@ def load_models_if_needed():
         augmented_model.eval()
         frame_model.eval()
         models_loaded = True
-        print("✅ Đã load thành công các mô hình AI!")
+        print("Loaded AI models successfully!")
         return True
     except Exception as e:
-        print(f"⚠️ Lỗi khi load weights: {e}")
+        print(f"Error loading weights: {e}")
         return False
 
 load_models_if_needed()
 
-# ==============================================================
-# QUY TRÌNH TIỀN XỬ LÝ ẢNH MỚI VÀ HOÀN HẢO TỪNG GÓC ĐỘ
-# ==============================================================
-
+# Image preprocessing pipeline
 def get_raw_pil_image(base64_str: str) -> Image.Image:
     if ',' in base64_str:
         base64_str = base64_str.split(',')[1]
@@ -121,7 +116,7 @@ def image_to_tensor(img: Image.Image) -> torch.Tensor:
         transforms.ToTensor(),
         transforms.Normalize((0.1307,), (0.3081,))
     ])
-    # Ép kiểu rõ ràng về float32 để tránh lỗi do NequIP set default dtype thành float64
+    # Explicitly cast to float32 to avoid NequIP setting default dtype to float64
     return tensor_transform(img).unsqueeze(0).float().to(device)
 
 def predict_single_tensor(model: nn.Module, tensor: torch.Tensor):
@@ -131,10 +126,7 @@ def predict_single_tensor(model: nn.Module, tensor: torch.Tensor):
         conf, pred = torch.max(probs, 1)
         return pred.item(), conf.item(), probs
 
-# ==============================================================
-# HÀM CHẠY DỰ ĐOÁN CHÍNH (INFERENCE)
-# ==============================================================
-
+# Generate predictions
 def generate_mock_prediction() -> PredictionResponse:
     return PredictionResponse(
         baseline=PredictionResult(digit=3, confidence=random.uniform(0.1, 0.4)),
@@ -156,15 +148,13 @@ def generate_prediction(image_base64: str) -> PredictionResponse:
         
     input_tensor = image_to_tensor(cropped_raw_img)
 
-    # HƯỚNG 1: BASELINE CNN
+    # Baseline CNN
     base_pred, base_conf, _ = predict_single_tensor(baseline_model, input_tensor)
 
-    # HƯỚNG 2: DATA AUGMENTATION CNN
+    # Data Augmentation CNN
     aug_pred, aug_conf, _ = predict_single_tensor(augmented_model, input_tensor)
 
-    # HƯỚNG 3: FRAME AVERAGING END-TO-END
-    # Chỉ cần đưa tensor thẳng vào frame_model, mọi logic PCA và Averaging 
-    # đã nằm gọn bên trong và hoàn toàn khớp với lúc huấn luyện!
+    # FRAME AVERAGING END-TO-END
     avg_pred, avg_conf, avg_probs = predict_single_tensor(frame_model, input_tensor)
     
     if DEBUG_MODE:

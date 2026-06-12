@@ -6,14 +6,14 @@ import { PredictionCard } from '@/components/PredictionCard';
 import { predictDigit } from '@/services/predictionService';
 import { ApiResponse } from '@/types';
 import { Loader2 } from 'lucide-react';
-// ── Part 2: PointNet imports ──
+// PointNet imports
 import { PointCloudViewer } from '@/components/PointCloudViewer';
 import { PointNetResultCard } from '@/components/PointNetResultCard';
 import { NumPointsSlider } from '@/components/NumPointsSlider';
 import { PerturbationControls, PerturbationState, DEFAULT_PERTURBATION } from '@/components/PerturbationControls';
 import { classifyPointCloud, getSampleCloud } from '@/services/pointnetService';
 import { PointNetApiResponse, DEMO_CLASSES, DemoClass } from '@/types/pointnet';
-// ── Part 3: NequIP imports ──
+// NequIP imports
 import { MoleculeViewer3D } from '@/components/MoleculeViewer3D';
 import { MoleculeEditor } from '@/components/MoleculeEditor';
 import { PredictionPanel } from '@/components/PredictionPanel';
@@ -24,12 +24,12 @@ import { Atom } from '@/types/molecule';
 
 export default function Home() {
   const [activeTab, setActiveTab] = useState<'part1' | 'part2' | 'part3'>('part1');
-  // ── Part 1 state ──
+  // Part 1 state
   const [rotation, setRotation] = useState(0);
   const [imageData, setImageData] = useState('');
   const [predictions, setPredictions] = useState<ApiResponse | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  // ── Part 2 state ──
+  // Part 2 state
   const [selectedClass, setSelectedClass] = useState<DemoClass>('airplane');
   const [numPoints, setNumPoints] = useState(1024);
   const [p2Loading, setP2Loading] = useState(false);
@@ -37,7 +37,7 @@ export default function Home() {
   const [rawPoints, setRawPoints] = useState<number[][]>([]);
   const [showCritical, setShowCritical] = useState(false);
   const [perturbation, setPerturbation] = useState<PerturbationState>(DEFAULT_PERTURBATION);
-  // ── Part 3 state ──
+  // Part 3 state
   const [atoms, setAtoms] = useState<Atom[]>([
     { atomicNumber: 8, x: 0.0, y: 0.0, z: 0.1163 },
     { atomicNumber: 1, x: 0.0, y: 0.7583, z: -0.4654 },
@@ -49,7 +49,7 @@ export default function Home() {
   const [p3Error, setP3Error] = useState<string | null>(null);
   const [latencyMs, setLatencyMs] = useState<number | undefined>(undefined);
 
-  // Chặn SSR render → tránh hydration mismatch từ browser extension
+  // Prevent SSR render → avoid hydration mismatch from browser extension
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
 
@@ -117,19 +117,19 @@ export default function Home() {
       const result = await classifyPointCloud(rawPoints, numPoints, perturbation);
       setP2Result(result);
       // Backend đã apply rotation vào data trả về
-      // → reset visual rotation về 0 để không bị double-rotation
+      // reset visual rotation về 0 để không bị double-rotation
       setPerturbation(prev => ({ ...prev, rotation_x: 0, rotation_y: 0, rotation_z: 0 }));
     } catch (e) {
-      alert('Lỗi: ' + e);
+      alert('Error: ' + e);
     } finally { setP2Loading(false); }
   };
 
-  // Cập nhật slider X/Y khi drag trên viewer
+  // Update X/Y slider when dragging on viewer
   const handleRotationChange = (x: number, y: number) => {
     setPerturbation(prev => ({ ...prev, rotation_x: x, rotation_y: y }));
   };
 
-  // Cập nhật slider Z khi scroll trên viewer
+  // Update Z slider when scrolling on viewer
   const handleRotationChangeZ = (z: number) => {
     setPerturbation(prev => ({ ...prev, rotation_z: z }));
   };
@@ -308,9 +308,7 @@ export default function Home() {
         )}
 
         {activeTab === 'part2' && (
-          // ────────────────────────────────────────────
           // PART 2: PointNet 3D Demo
-          // ────────────────────────────────────────────
           <div className="space-y-8">
             {/* Row 1: Viewer + Controls */}
             <div className="grid lg:grid-cols-5 gap-8">
@@ -443,9 +441,7 @@ export default function Home() {
         )}
 
         {activeTab === 'part3' && (
-          // ────────────────────────────────────────────
           // PART 3: NequIP Molecular Energy Prediction
-          // ────────────────────────────────────────────
           <div className="space-y-8">
             {/* Row 1: Viewer + Editor */}
             <div className="grid lg:grid-cols-5 gap-8">
