@@ -31,7 +31,7 @@ CHECKPOINT_PATH = REPO_ROOT / "ai_core" / "outputs" / "nequip_l1_1000" / "best.c
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Lifespan context manager handling startup and shutdown tasks."""
-    # --- Startup Lifecycle ---
+    # Startup Lifecycle
     checkpoint_path = str(CHECKPOINT_PATH)
     logger.info(f"Starting server. Checking NequIP checkpoint at '{checkpoint_path}'...")
     
@@ -58,7 +58,7 @@ async def lifespan(app: FastAPI):
         app.state.graph_service = None
 
     yield
-    # --- Shutdown Lifecycle ---
+    # Shutdown Lifecycle
     logger.info("Shutting down molecular energy prediction API server.")
 
 
