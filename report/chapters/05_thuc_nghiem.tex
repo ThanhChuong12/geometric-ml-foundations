@@ -1,303 +1,119 @@
-\section{Thực nghiệm và demo minh họa}
+% ==============================================================================
+% CHƯƠNG 5: THỰC NGHIỆM VÀ KẾT QUẢ
+% File: chapters/05_thuc_nghiem.tex
+% ==============================================================================
+
+\section{Thực nghiệm và kết quả}
 \label{sec:thuc-nghiem}
 
 \subsection{Tổng quan thực nghiệm}
 \label{subsec:tong-quan-thuc-nghiem}
 
-Chương này trình bày hai demo tương tác được xây dựng để minh chứng thực nghiệm cho các phân tích lý thuyết ở Chương~\ref{sec:phuong-phap}. Hai demo lần lượt đại diện cho hai kiểu dữ liệu hình học khác nhau: ảnh hai chiều chịu tác động của phép xoay và đám mây điểm ba chiều chịu tác động của phép hoán vị thứ tự điểm. Mục tiêu chính không chỉ là báo cáo độ chính xác, mà còn là quan sát cách mô hình thay đổi hành vi khi ta đưa trực tiếp inductive bias hình học vào dữ liệu hoặc kiến trúc.
+Các kết quả thực nghiệm được trình bày trong chương này không tập trung vào việc giải quyết một bài toán đơn lẻ hay cạnh tranh điểm số cao nhất trên một bộ dữ liệu cụ thể. Thay vào đó, chuỗi thực nghiệm được thiết kế trải dài trên nhiều khía cạnh khác nhau của lĩnh vực học máy hình học. Mục tiêu cốt lõi là cung cấp các minh chứng thực tiễn cho những đặc tính lý thuyết đã được xây dựng ở các chương trước, bao gồm hiệu quả sử dụng dữ liệu, khả năng xấp xỉ toán học, cấu trúc của cảnh quan tối ưu và tính khả thi của việc học trên không gian trọng số.
 
+\subsection{Hiệu quả dữ liệu và định luật tỷ lệ}
+\label{subsec:hieu-qua-du-lieu}
+
+Thực nghiệm đầu tiên được thiết kế nhằm kiểm chứng giả thuyết cho rằng việc tích hợp tính tương biến vào kiến trúc mô hình sẽ giúp tiết kiệm đáng kể lượng dữ liệu huấn luyện và chi phí tính toán.
+
+Bài toán đặt ra là dự đoán các đặc tính vật lý của hệ thống nguyên tử, cụ thể là năng lượng và lực tương tác. Quá trình đánh giá được thực hiện trên các bộ dữ liệu mô phỏng hệ thống phân tử chuẩn mực như tập dữ liệu phân tử nhỏ QM9, tập dữ liệu động lực học phân tử rMD17 và tập dữ liệu chất xúc tác OC20. Kiến trúc được đưa vào thử nghiệm là mạng nơ-ron tương biến NequIP, một mô hình sử dụng cơ chế truyền thông điệp trên đồ thị trong không gian Euclid. Mô hình cơ sở được dùng để đối chiếu là các mạng nơ-ron tiêu chuẩn không tích hợp tính đối xứng.
+
+Về mặt quy trình, thay vì chỉ đo lường hiệu suất tại một mức dữ liệu cố định, thực nghiệm tiến hành thay đổi linh hoạt lượng tài nguyên tính toán huấn luyện và số lượng mẫu để xây dựng đường cong học tập. Kết quả thu được cho thấy sự chênh lệch rất lớn. Để đạt được cùng một mức độ chính xác như nhau, mô hình NequIP cần lượng dữ liệu huấn luyện ít hơn mô hình cơ sở tới ba bậc độ lớn \cite{batzner2022nequip}. 
+
+Khi phân tích trên biểu đồ so sánh giữa hàm mất mát và số phép toán dấu phẩy động, tại bất kỳ một mức chi phí tính toán nào, kiến trúc tương biến luôn đạt được mức lỗi thấp hơn đáng kể so với kiến trúc thông thường. Điều này xác nhận sức mạnh của việc sử dụng tiên nghiệm hình học trong việc cải thiện định luật tỷ lệ \cite{brehmer2025scaling}.
+
+\begin{center}
+    \includegraphics[width=0.7\textwidth, keepaspectratio]{graphics/scaling-laws.png}
+    \vspace{0.2cm}
+    \captionof{figure}{Đường cong định luật tỷ lệ so sánh giữa mô hình cơ sở và mô hình tương biến}
+    \label{fig:scaling-laws}
+\end{center}
+\noindent\textit{Ghi chú: Biểu đồ log-log thể hiện sự tương quan giữa Hàm mất mát (Loss) và Chi phí huấn luyện (Training compute). Mô hình Equivariant (đường nét liền đỏ) hội tụ nhanh và đạt mức lỗi thấp hơn nhiều so với Baseline (đường đứt nét xanh). Nguồn: Brehmer et al., 2025.}
+
+\subsection{Thực nghiệm về xấp xỉ lấy trung bình nhóm}
+\label{subsec:xap-xi-trung-binh-nhom}
+
+Phương pháp lấy trung bình nhóm thường vấp phải rào cản lớn về mặt tính toán khi kích thước của nhóm đối xứng quá lớn. Một thực nghiệm mô phỏng đã được thiết kế để kiểm chứng xem lý thuyết lấy mẫu ngẫu nhiên dựa trên đồ thị có thể giải quyết được vấn đề này trong thực tế hay không.
+
+Nhiệm vụ của mạng nơ-ron ba lớp sử dụng hàm kích hoạt ReLU là dự đoán giá trị tuyệt đối, một bài toán đòi hỏi hệ thống phải duy trì tính bất biến lật dấu. Mốc so sánh lý tưởng trong trường hợp này là việc tính toán trung bình qua toàn bộ nhóm đối xứng $\mathcal{G}$, vốn có kích thước lên tới một triệu phần tử.
+
+Quy trình thực nghiệm thay đổi chiến lược tính toán bằng cách không duyệt qua toàn bộ không gian biến đổi. Thay vào đó, hệ thống chỉ lấy mẫu ngẫu nhiên một tập con $\mathcal{S}$ gồm 32 phần tử \cite{tahmasebi2025aug}. Điểm mấu chốt của giao thức này là tập con 32 phần tử chỉ được lấy mẫu đúng một lần duy nhất trước khi bắt đầu và được sử dụng cố định cho tất cả các vòng lặp huấn luyện.
+
+Kết quả ghi nhận trên tập kiểm tra cho thấy chỉ với 32 phần tử, mức cải thiện của hàm mất mát đã đạt trạng thái bão hòa. Hiệu suất thu được tương đương với việc phải thực hiện phép tính cồng kềnh trên toàn bộ một triệu phần tử của mô hình cơ sở. Sự hội tụ này diễn ra ổn định qua từng vòng lặp, minh chứng cho khả năng giảm thiểu độ phức tạp tính toán theo cấp số nhân mà không làm suy giảm chất lượng dự đoán.
+
+\subsection{Học không gian trọng số thông qua mạng meta}
+\label{subsec:hoc-khong-gian-trong-so}
+
+Thực nghiệm này mở rộng ranh giới của học máy truyền thống bằng cách đánh giá hiệu suất của mô hình ngôn ngữ lớn mà không cần chạy suy luận trực tiếp trên văn bản. Thay vào đó, thực nghiệm tiến hành dự đoán dựa trên ma trận trọng số.
+
+Dữ liệu đầu vào là các bản tinh chỉnh trọng số của mô hình ngôn ngữ lớn. Mạng meta được huấn luyện để dự đoán các chỉ số như thành viên dữ liệu, hàm mất mát kiểm định và độ chính xác suy luận logic. Các mô hình ngây thơ được dùng làm cơ sở xử lý ma trận trọng số như các mảng dữ liệu phẳng một chiều, bỏ qua cấu trúc toán học ẩn bên trong. Ngược lại, kiến trúc đề xuất được thiết kế nhằm nhận thức được các đặc tính bất biến của phép nhân ma trận.
+
+Kết quả thu được phản ánh rõ rệt tầm quan trọng của việc duy trì tính đối xứng. Các mô hình cơ sở xử lý dữ liệu phẳng tỏ ra thiếu ổn định, đưa ra dự đoán kém chính xác và đặc biệt thường xuyên gặp lỗi tràn bộ nhớ (Out of Memory - OOM) khi phải xử lý các bộ trọng số khổng lồ. Trong khi đó, các mạng meta nhận thức được đối xứng hoạt động trơn tru mà không tiêu tốn quá nhiều tài nguyên RAM. 
+
+Về mặt định lượng, phương pháp mới mang lại hệ số xác định $R^2$ cao hơn, cung cấp các dự đoán bám sát hiệu suất thực tế. Đáng chú ý nhất, việc dùng mạng meta để đánh giá chất lượng bộ trọng số cho tốc độ phản hồi nhanh hơn từ năm mươi nghìn đến một trăm nghìn lần so với việc khởi chạy toàn bộ mô hình ngôn ngữ lớn ban đầu \cite{putterman2025lora}.
+
+% --- Bảng: Kết quả học không gian trọng số ---
 \begin{table}[H]
-\centering
-\small
-\renewcommand{\arraystretch}{1.2}
-\begin{tabularx}{\textwidth}{p{0.22\textwidth}>{\raggedright\arraybackslash}X>{\raggedright\arraybackslash}X}
-\toprule
-& \textbf{Demo Part 1} & \textbf{Demo Part 2} \\
-\midrule
-Bài toán       & Phân loại chữ số viết tay    & Phân loại đám mây điểm 3D \\
-Dữ liệu       & MNIST ($28\times28$, 10 lớp) & 5 lớp trích từ ModelNet40, 1024 điểm/mẫu \\
-Nhóm đối xứng  & $SO(2)$, phép xoay trong mặt phẳng & $S_n$, phép hoán vị thứ tự điểm \\
-Số mô hình     & 3 mô hình CNN & 2 biến thể PointNet \\
-Phương pháp    & Baseline, Data Augmentation, Frame Averaging & Shared MLP, max pooling, T-Net \\
-Liên kết lý thuyết & Mục~\ref{subsec:off-the-shelf} & Mục~\ref{sec:pointnet-paper} \\
-\bottomrule
-\end{tabularx}
-\caption{Tổng quan hai demo thực nghiệm và liên kết với các phân tích lý thuyết trong đồ án.}
-\label{tab:demo-overview}
+    \centering
+    \renewcommand{\arraystretch}{1.3}
+    \begin{tabular}{cl c c c c}
+        \toprule
+        & & \multicolumn{2}{c}{\textbf{Qwen2-ARC-LoRA}} & & \textbf{Llama3.2-ARC-LoRA} \\
+        \cmidrule{3-4} \cmidrule{6-6}
+        & \textbf{LoL Model} & \textbf{Val Loss ($R^2$)} & \textbf{ARC-C Acc ($R^2$)} & & \textbf{Val Loss ($R^2$)} \\
+        \midrule
+        \multirow{3}{*}{\rotatebox{90}{\textbf{Naive}}} 
+        & MLP($[U, V]$) & .113 $\pm$ .059 & .107 $\pm$ .035 & & .091 $\pm$ .030 \\
+        & Transformer($[U, V]$) & .856 $\pm$ .061 & .630 $\pm$ .045 & & .828 $\pm$ .120 \\
+        & \cellcolor{blue!10}MLP($UV^\top$) & \cellcolor{blue!10}.987 $\pm$ .003 & \cellcolor{blue!10}.981 $\pm$ .002 & & \cellcolor{blue!10}\textbf{OOM} \\
+        \midrule
+        \multirow{3}{*}{\rotatebox{90}{\textbf{Invariant}}}
+        & \cellcolor{green!10}MLP(O-Align($[U, V]$)) & \cellcolor{green!10}.821 $\pm$ .078 & \cellcolor{green!10}.965 $\pm$ .004 & & \cellcolor{green!10}.562 $\pm$ .103 \\
+        & \cellcolor{teal!15}MLP($\sigma(UV^\top)$) & \cellcolor{teal!15}\textbf{.999 $\pm$ .000} & \cellcolor{teal!15}.983 $\pm$ .002 & & \cellcolor{teal!15}\textbf{.998 $\pm$ .000} \\
+        & \cellcolor{purple!10}GL-net & \cellcolor{purple!10}.998 $\pm$ .000 & \cellcolor{purple!10}\textbf{.987 $\pm$ .001} & & \cellcolor{purple!10}.995 $\pm$ .000 \\
+        \bottomrule
+    \end{tabular}
+    \caption{Hiệu suất dự đoán của mạng meta trên không gian trọng số LoRA. Các mô hình nhận thức đối xứng (Invariant) hoạt động ổn định, trong khi mô hình Naive dễ gặp lỗi OOM.}
+    \label{tab:lora_metanetworks}
 \end{table}
 
-\subsubsection{Môi trường thực nghiệm}
+\subsection{Cảnh quan hàm mất mát và kỹ thuật gộp mô hình}
+\label{subsec:canh-quan-ham-mat-mat}
 
-Hệ thống demo được triển khai dưới dạng ứng dụng web gồm hai thành phần chính. \textit{Frontend} sử dụng Next.js, TypeScript, Tailwind CSS và Three.js để cung cấp giao diện vẽ chữ số, thanh trượt góc xoay, bộ chọn lớp vật thể và trình quan sát point cloud 3D. \textit{Backend} sử dụng FastAPI và PyTorch để phục vụ inference cho cả hai bài toán. Các mô hình được nạp một lần khi server khởi động và được giữ trong bộ nhớ trong suốt phiên chạy.
+Việc gộp các mô hình nơ-ron là một thách thức lớn do đặc thù phức tạp của không gian tham số. Thực nghiệm thứ tư được triển khai để khảo sát hành vi của cảnh quan hàm mất mát khi kết hợp hai mô hình được huấn luyện hoàn toàn độc lập từ hai điểm khởi tạo ngẫu nhiên khác nhau.
 
-Cấu trúc thư mục thực tế trong repository được sử dụng như sau:
+Nếu áp dụng phương pháp nội suy tiêu chuẩn, tức là lấy trung bình trực tiếp các giá trị trọng số của hai mô hình, biểu đồ hàm mất mát trên tập kiểm tra sẽ xuất hiện một rào cản cực kỳ cao ở vùng giữa đường nội suy. Điều này cho thấy hai mô hình đã rơi vào hai cực tiểu cục bộ tách biệt.
 
-\begin{itemize}
-    \item \texttt{frontend/}: mã nguồn giao diện web.
-    \item \texttt{backend/services/model\_service.py}: logic inference cho demo MNIST xoay.
-    \item \texttt{backend/services/pointnet\_service.py}: logic inference cho demo PointNet.
-    \item \texttt{backend/core/}: định nghĩa kiến trúc \texttt{SimpleCNN}, \texttt{FrameAveragingCNN}, \texttt{PointNetBasic} và \texttt{PointNetFull}.
-    \item \texttt{storage/weights/}: các file trọng số \texttt{model\_baseline.pth}, \texttt{model\_augmented.pth}, \texttt{model\_frame.pth}, \texttt{pointnet\_basic.pth} và \texttt{pointnet\_cls.pth}.
-    \item \texttt{storage/data/sample\_clouds/}: năm point cloud mẫu gồm \texttt{airplane}, \texttt{car}, \texttt{chair}, \texttt{lamp} và \texttt{table}.
-    \item \texttt{ai\_core/notebooks/}: notebook huấn luyện và phân tích, bao gồm \texttt{train\_models.ipynb} và \texttt{pointnet\_classification.ipynb}.
-\end{itemize}
+Tuy nhiên, quy trình thực nghiệm đề xuất sử dụng đối xứng hoán vị để xử lý vấn đề này. Trước khi thực hiện nội suy, các nơ-ron ẩn của mô hình thứ hai được nhân với một ma trận hoán vị để căn chỉnh thứ tự sao cho khớp với cấu trúc của mô hình thứ nhất, một phương pháp được gọi là Git Re-Basin \cite{ainsworth2023git}. Kết quả của bước căn chỉnh này làm thay đổi hoàn toàn hình dạng của cảnh quan tối ưu. Rào cản ở giữa biến mất, thay vào đó là một đường thẳng có mức lỗi thấp kết nối hai điểm cực tiểu. Sự xuất hiện của kết nối cực tiểu tuyến tính này cho phép gộp các trọng số mô hình một cách mượt mà mà không gây ra bất kỳ sự suy giảm hiệu suất dự đoán nào.
 
-Các thí nghiệm được thiết kế để có thể chạy trên CPU. Với quy mô demo hiện tại, việc dùng CPU giúp quá trình cài đặt và trình diễn đơn giản hơn, trong khi vẫn đủ để minh họa tác động của đối xứng lên hành vi mô hình. Các thư viện chính gồm PyTorch, torchvision, NumPy, Matplotlib, FastAPI và các thư viện frontend được khai báo trong \texttt{backend/requirements.txt} và \texttt{frontend/package.json}.
+\begin{center}
+    \includegraphics[width=0.7\textwidth, keepaspectratio]{graphics/git-rebasin.png}
+    \vspace{0.2cm}
+    \captionof{figure}{Khắc phục rào cản hàm mất mát thông qua căn chỉnh hoán vị Git Re-Basin}
+    \label{fig:git-rebasin}
+\end{center}
+\noindent\textit{Ghi chú: Căn chỉnh hoán vị giúp tạo ra một đường kết nối tuyến tính có mức lỗi thấp (đường đứt nét màu trắng) giữa hai điểm cực tiểu cục bộ $\Theta_A$ và $\Theta_B$. Nguồn: Ainsworth et al., 2023.}
 
-\subsection{Demo thực nghiệm Part 1: Nhận diện chữ số viết tay bất biến với phép xoay}
-\label{subsec:demo-part1}
+\subsection{Kiểm định tính đối xứng của dữ liệu và quan sát trên tập QM9}
+\label{subsec:kiem-dinh-doi-xung}
 
-Demo đầu tiên hiện thực hóa bài toán phân loại chữ số viết tay trên giao diện web tương tác. Người dùng vẽ một chữ số trên canvas, điều chỉnh góc xoay, sau đó backend trả về đồng thời kết quả của ba mô hình: Baseline CNN, Augmented CNN và Frame Averaging CNN. Thiết kế này cho phép quan sát trực tiếp khác biệt giữa mô hình không có inductive bias hình học, mô hình học tính bất biến bằng data augmentation và mô hình ép tính bất biến bằng cơ chế frame averaging.
+Bên cạnh việc thiết kế các kiến trúc mạng nơ-ron phức tạp, một khía cạnh mang tính quyết định nhưng thường bị bỏ qua là việc xác minh xem bản thân phân phối dữ liệu có thực sự mang các đặc tính hình học như kỳ vọng hay không. Theo nghiên cứu của Soleymani và cộng sự (2025) \cite{soleymani2025symmetrytesting}, quy trình \textit{symmetry testing} đóng vai trò như một bước đánh giá nền tảng trước khi áp dụng bất kỳ mô hình học máy hình học nào.
 
-\subsubsection{Kiến trúc nền chung}
+Về mặt phương pháp luận, bài toán này được công thức hóa thông qua khung kiểm định thống kê với hai giả thuyết rõ ràng. Giả thuyết không $H_0$ định đề rằng phân phối dữ liệu $\mu$ là bất biến dưới tác động của toàn bộ nhóm đối xứng $G$. Trái ngược với điều đó, giả thuyết đối $H_1$ cho rằng tồn tại ít nhất một phần tử $g$ thuộc nhóm $G$ làm phá vỡ cấu trúc đối xứng của phân phối này.
 
-Ba mô hình dùng cùng một backbone CNN đơn giản để việc so sánh tập trung vào cách xử lý đối xứng thay vì sức mạnh kiến trúc:
-\begin{equation}
-\begin{aligned}
-    &\mathrm{Conv}(1{\to}16, k=5) \to \mathrm{MaxPool}(2) \to
-    \mathrm{Conv}(16{\to}32, k=5) \to \mathrm{MaxPool}(2) \\
-    &\hspace{2.4cm}\to \mathrm{FC}(1568{\to}128) \to \mathrm{FC}(128{\to}10).
-\end{aligned}
-\label{eq:simplecnn-demo}
-\end{equation}
+Việc giải quyết bài toán kiểm định này đối mặt với một rào cản tính toán lớn. Quá trình quét qua toàn bộ không gian nhóm $G$ để tìm kiếm chính xác phần tử $g$ phá vỡ đối xứng đã được chứng minh là một bài toán NP-hard. Tuy nhiên, các phân tích toán học trong tutorial đã cung cấp một hướng tiếp cận khả thi. Thay vì phải tính toán trên toàn bộ nhóm, việc lấy mẫu ngẫu nhiên một tập con các phép biến đổi là đủ để ước lượng divergence giữa các phân phối. Phương pháp xấp xỉ này cho phép kiểm định tính đối xứng với sai số tiệm cận chỉ chênh lệch một hằng số bằng 2 so với kết quả tính toán đầy đủ.
 
-Ảnh đầu vào được chuẩn hóa theo thống kê MNIST với $\mu=0.1307$ và $\sigma=0.3081$. Ở bước inference, backend cắt bounding box của nét vẽ, resize cạnh dài về 20 pixel bằng nội suy Lanczos, rồi căn \textit{center of mass} vào tâm ảnh $28\times28$. Quy trình này giúp dữ liệu do người dùng vẽ trên web gần hơn với phân phối MNIST gốc.
+Chính nhờ nền tảng phương pháp luận kiểm định thống kê này, các nhà nghiên cứu đã tiến hành đánh giá lại các bộ dữ liệu tiêu chuẩn trong lĩnh vực hóa học tính toán. Một quan sát thực địa đáng chú ý đã được Lawrence và cộng sự (2025) báo cáo khi phân tích tập dữ liệu QM9 \cite{lawrence2025qm9}. Kết quả đánh giá phân bố không gian cho thấy một tỷ trọng lớn các phân tử trong QM9 thực chất đã ở trạng thái canonicalized. Tọa độ không gian ba chiều của các nguyên tử đã được căn chỉnh theo một hệ quy chiếu chung ngay từ khâu xây dựng bộ dữ liệu.
 
-\subsubsection{Baseline CNN}
+\begin{center}
+    \includegraphics[width=0.7\textwidth, keepaspectratio]{graphics/qm9-canonical.png}
+    
+    \vspace{0.2cm}
+    \captionof{figure}{Quan sát thực nghiệm cho thấy các phân tử trong tập QM9 và rMD17 phần lớn đã được chuẩn hóa hệ tọa độ ngầm định}
+    \label{fig:qm9-canonical}
+\end{center}
+\noindent\textit{Ghi chú: Việc các phân tử được định hướng gọn gàng trong hệ quy chiếu chung ảnh hưởng trực tiếp đến hiệu quả của các mô hình tương biến. Nguồn: Lawrence et al., 2025.}
 
-Mô hình Baseline được huấn luyện trên MNIST gốc, không áp dụng phép xoay trong quá trình load batch. Notebook \texttt{train\_models.ipynb} huấn luyện mô hình này trong 3 epoch, batch size 64. Loss trung bình in ra trong quá trình huấn luyện giảm từ khoảng 0.315 ở các batch đầu của epoch 1 xuống khoảng 0.034 ở cuối epoch 3. Điều này cho thấy mô hình học tốt phân phối MNIST thẳng đứng, nhưng không đồng nghĩa với việc mô hình đã học được tính bất biến với phép xoay.
-
-Khi ảnh đầu vào bị xoay khỏi phân phối gốc, đặc biệt ở các góc lớn như $90^\circ$ hoặc $180^\circ$, dự đoán của Baseline dễ thay đổi mạnh. Đây là biểu hiện của việc mô hình phụ thuộc vào hướng xuất hiện trong dữ liệu huấn luyện. Nói cách khác, nếu không có inductive bias hình học, CNN thông thường không tự động suy ra rằng một chữ số sau khi xoay vẫn phải được xử lý theo một quy luật nhất quán.
-
-\subsubsection{Augmented CNN}
-
-Mô hình Augmented giữ nguyên kiến trúc ở phương trình~\eqref{eq:simplecnn-demo}, nhưng dữ liệu huấn luyện được biến đổi bằng phép xoay ngẫu nhiên:
-\begin{equation}
-    \texttt{RandomRotation}(180) \to \texttt{ToTensor}() \to \texttt{Normalize}(0.1307, 0.3081).
-    \label{eq:mnist-augmentation-transform}
-\end{equation}
-
-Trong notebook, mô hình Augmented cũng được huấn luyện 3 epoch. Loss giảm từ khoảng 0.960 ở các batch đầu epoch 1 xuống khoảng 0.162 ở cuối epoch 3. So với Baseline, loss ban đầu cao hơn vì bài toán khó hơn: mô hình phải học chữ số trong nhiều tư thế khác nhau. Đổi lại, mô hình có khả năng ổn định hơn khi người dùng xoay ảnh đầu vào.
-
-Tuy nhiên, data augmentation chỉ tạo ra tính bất biến ở mức xấp xỉ. Với một số cặp chữ số có hình dạng gần nhau sau khi xoay, chẳng hạn 6 và 9 ở góc $180^\circ$, bản thân nhãn trở nên mơ hồ. Trong trường hợp này, việc bổ sung thêm ảnh xoay không giải quyết triệt để vấn đề, vì cùng một hình dạng quan sát được có thể tương ứng với hai nhãn khác nhau tùy theo quy ước hướng ban đầu.
-
-\subsubsection{Frame Averaging CNN}
-
-Mô hình Frame Averaging sử dụng cùng backbone CNN, nhưng bọc bên ngoài bằng lớp \texttt{FrameAveragingCNN}. Cơ chế này dựa trên ý tưởng đã trình bày ở Mục~\ref{subsubsec:frame-averaging}: thay vì yêu cầu backbone tự học mọi góc xoay, ta xây dựng một tập khung gồm nhiều phiên bản đã căn chỉnh của đầu vào, đưa từng phiên bản qua backbone, sau đó lấy trung bình logits.
-
-Bước đầu tiên là ước lượng hướng chính của nét chữ bằng PCA trên các điểm ảnh có giá trị lớn hơn ngưỡng:
-\begin{equation}
-    \Sigma = \frac{1}{|P|-1} \sum_{(x,y)\in P}
-    \begin{pmatrix}x-\bar{x}\\y-\bar{y}\end{pmatrix}
-    \begin{pmatrix}x-\bar{x}\\y-\bar{y}\end{pmatrix}^{\!\top},
-    \qquad
-    P = \{(x,y): I(x,y) > 0.2\}.
-    \label{eq:mnist-pca-covariance}
-\end{equation}
-
-Sau đó, mô hình tạo bốn bản sao xoay lệch nhau $90^\circ$:
-\begin{equation}
-    \mathcal{F}(I) = \{\mathrm{Rot}(I,-\theta_{\mathrm{PCA}} + k\cdot90^\circ) \mid k=0,1,2,3\}.
-    \label{eq:mnist-frame-set}
-\end{equation}
-
-Logits cuối cùng được tính bằng trung bình cộng:
-\begin{equation}
-    \hat{y} = \frac{1}{4}\sum_{k=0}^{3} f_{\theta}\!\left(\mathrm{Rot}(I,-\theta_{\mathrm{PCA}} + k\cdot90^\circ)\right).
-    \label{eq:mnist-frame-average-logits}
-\end{equation}
-
-Trong notebook, loss của mô hình Frame Averaging giảm từ khoảng 0.769 ở các batch đầu epoch 1 xuống khoảng 0.076 ở cuối epoch 3. Kết quả này cho thấy mô hình vẫn học ổn định dù phải xử lý nhiều phiên bản xoay của cùng một ảnh. So với Augmented CNN, điểm khác biệt quan trọng là tính bất biến được đưa vào quy trình suy luận bằng phép lấy trung bình trên frame, thay vì chỉ được hy vọng học thông qua dữ liệu xoay.
-\begin{figure}[H]
-\centering
-\begin{tikzpicture}[>=Stealth, thick,
-    % Tăng minimum width và thêm inner sep để tạo khoảng đệm
-    box/.style={draw, rounded corners, minimum width=3.6cm, minimum height=1cm, font=\small, align=center, inner sep=6pt}]
-
-    % Điều chỉnh tọa độ X (0, 4.5, 9) để các ô không bị sát nhau
-    \node[box, fill=red!10]    (bl) at (0,0) {Baseline\\ \footnotesize Phụ thuộc hướng gốc};
-    \node[box, fill=yellow!20] (au) at (4.5,0) {Augmentation\\ \footnotesize Bất biến xấp xỉ};
-    \node[box, fill=green!15]  (fa) at (9,0) {Frame Averaging\\ \footnotesize Bất biến theo frame};
-
-    % Tăng size chữ và làm màu đậm hơn để tránh bị mờ
-    \node[below=0.5cm of bl, font=\footnotesize, text=red!80!black] {$\theta$ lớn $\Rightarrow$ dễ sai};
-    \node[below=0.5cm of au, font=\footnotesize, text=orange!90!black] {ổn định hơn, còn ambiguity};
-    \node[below=0.5cm of fa, font=\footnotesize, text=green!70!black] {ổn định hơn khi xoay};
-
-    \draw[->, dashed, gray!90!black] (bl.east) -- (au.west) node[midway, above, font=\footnotesize]{+data};
-    \draw[->, dashed, gray!90!black] (au.east) -- (fa.west) node[midway, above, font=\footnotesize]{+frame};
-\end{tikzpicture}
-\caption{So sánh trực giác giữa ba hướng xử lý phép xoay trong demo MNIST.}
-\label{fig:demo-part1-compare}
-\end{figure}
-\begin{table}[H]
-\centering
-\small
-\renewcommand{\arraystretch}{1.3} % Tăng giãn dòng một chút để bảng thoáng hơn
-% Sử dụng p{...} cho hai cột cuối để văn bản tự động ngắt dòng
-\begin{tabular}{l c p{4cm} p{4.5cm}}
-\toprule
-\textbf{Phương pháp} & \textbf{Thay đổi kiến trúc} & \textbf{Cách xử lý xoay} & \textbf{Ghi nhận chính} \\
-\midrule
-Baseline CNN & Không & Không xử lý trực tiếp & Tốt trên ảnh thẳng, yếu khi OOD theo góc \\
-Augmented CNN & Không & Học từ ảnh xoay ngẫu nhiên & Ổn định hơn, nhưng chỉ là bất biến xấp xỉ \\
-Frame Averaging CNN & Có wrapper & Trung bình trên 4 frame & Đưa đối xứng vào bước suy luận \\
-\bottomrule
-\end{tabular}
-\caption{Tổng hợp đặc tính của ba mô hình trong demo Part 1.}
-\label{tab:demo-part1-summary}
-\end{table}
-\subsection{Demo thực nghiệm Part 2: Phân loại đám mây điểm ba chiều với PointNet}
-\label{subsec:demo-part2}
-
-Demo thứ hai minh họa bài toán phân loại point cloud 3D. Người dùng chọn một trong năm lớp vật thể gồm \texttt{airplane}, \texttt{car}, \texttt{chair}, \texttt{lamp} và \texttt{table}; sau đó có thể thay đổi số điểm đầu vào, thêm nhiễu Gaussian, xoay point cloud hoặc bỏ ngẫu nhiên một tỉ lệ điểm. Backend chạy đồng thời \texttt{PointNetBasic} và \texttt{PointNetFull}, sau đó trả về nhãn dự đoán, top-3 xác suất và tập critical points.
-
-\subsubsection{Dữ liệu và tiền xử lý}
-
-Demo hiện tại sử dụng 5 lớp đại diện từ ModelNet40 thay vì toàn bộ 40 lớp. Đây là lựa chọn phù hợp với mục tiêu minh họa vì năm lớp này có hình dạng tương đối khác nhau, giúp người dùng quan sát rõ cơ chế hoạt động của PointNet mà không cần tải toàn bộ dataset lớn. Các point cloud mẫu được lưu tại \texttt{storage/data/sample\_clouds/} dưới định dạng \texttt{.npy}.
-
-Trong notebook \texttt{pointnet\_classification.ipynb}, tập huấn luyện gồm 1000 mẫu, tương ứng 200 mẫu cho mỗi lớp; tập validation gồm 250 mẫu, tương ứng 50 mẫu cho mỗi lớp. Mỗi mẫu có 1024 điểm trong không gian ba chiều. Trước khi đưa vào mạng, point cloud được chuẩn hóa về hình cầu đơn vị:
-\begin{equation}
-    \tilde{P}_i = \frac{P_i - \bar{P}}{\max_j \|P_j - \bar{P}\|},
-    \qquad
-    \bar{P}=\frac{1}{n}\sum_{i=1}^{n}P_i.
-    \label{eq:normalize-unit-sphere-demo}
-\end{equation}
-
-Phép chuẩn hóa này loại bỏ ảnh hưởng của tịnh tiến bằng cách trừ centroid và giảm ảnh hưởng của thang đo bằng cách chia cho khoảng cách cực đại. Do đó, mô hình tập trung hơn vào hình dạng tương đối của vật thể thay vì vị trí hoặc kích thước tuyệt đối.
-
-\begin{figure}[H]
-\centering
-\includegraphics[width=0.78\textwidth]{graphics/figures/point_clouds_5class.png}
-\caption{Năm lớp point cloud được sử dụng trong demo Part 2.}
-\label{fig:demo-point-clouds-5class}
-\end{figure}
-
-\subsubsection{Hai biến thể PointNet được so sánh}
-
-\texttt{PointNetBasic} triển khai ý tưởng cốt lõi của PointNet: áp dụng shared MLP lên từng điểm độc lập, sau đó dùng global max pooling để gom toàn bộ tập điểm thành một vector đặc trưng toàn cục. Công thức tổng quát có thể viết dưới dạng:
-\begin{equation}
-    f(\{x_1,\ldots,x_n\}) \approx \gamma\!\left(\max_{i=1}^{n} h(x_i)\right),
-    \label{eq:pointnet-approx-demo}
-\end{equation}
-trong đó $h$ là shared MLP xử lý từng điểm, $\max$ là phép gộp đối xứng theo trục điểm, và $\gamma$ là mạng phân loại phía sau. Vì phép max không phụ thuộc vào thứ tự các điểm, đầu ra của mô hình bất biến với mọi hoán vị của point cloud.
-
-\texttt{PointNetFull} bổ sung hai T-Net. Input T-Net dự đoán ma trận $3\times3$ để căn chỉnh tọa độ đầu vào, còn Feature T-Net dự đoán ma trận $64\times64$ để căn chỉnh không gian đặc trưng. Khi huấn luyện, mô hình sử dụng thêm ràng buộc trực giao:
-\begin{equation}
-    \mathcal{L}=\mathcal{L}_{\mathrm{CE}} + \lambda\|I-AA^\top\|_F^2,
-    \qquad \lambda=10^{-3},
-    \label{eq:pointnet-full-loss-demo}
-\end{equation}
-trong đó $A$ là ma trận biến đổi do Feature T-Net dự đoán. Trong thiết lập demo, T-Net được giữ ổn định để tránh hiện tượng học không ổn định trên tập nhỏ.
-
-Notebook ghi nhận số tham số của hai mô hình như sau: \texttt{PointNetBasic} có 810,629 tham số, còn \texttt{PointNetFull} có 3,471,054 tham số. Phần chênh lệch 2,660,425 tham số chủ yếu đến từ hai mạng T-Net.
-
-\subsubsection{Thiết lập huấn luyện và kết quả}
-
-Hai mô hình được huấn luyện trong 30 epoch trên tập 5 lớp. \texttt{PointNetBasic} đạt validation accuracy tốt nhất 100.0\% từ epoch 5 và duy trì ổn định trong các lần đánh giá sau. \texttt{PointNetFull} cũng đạt validation accuracy tốt nhất 100.0\%, nhưng đường huấn luyện dao động mạnh hơn ở một vài epoch giữa, ví dụ validation accuracy giảm xuống 80.0\% tại epoch 15 trước khi phục hồi. Điều này phù hợp với trực giác rằng mô hình lớn hơn không nhất thiết ổn định hơn trên tập dữ liệu nhỏ.
-
-\begin{figure}[H]
-\centering
-\includegraphics[width=0.82\textwidth]{graphics/figures/training_curves.png}
-\caption{Đường cong huấn luyện của hai biến thể PointNet trên tập 5 lớp.}
-\label{fig:demo-pointnet-training-curves}
-\end{figure}
-
-\begin{table}[H]
-\centering
-\small
-\renewcommand{\arraystretch}{1.3} % Tăng lên 1.3 để các dòng có khoảng cách thoáng hơn
-% Thay c cuối cùng bằng p{6.5cm} để cột Nhận xét tự động xuống dòng
-\begin{tabular}{l c c p{6.5cm}}
-\toprule
-\textbf{Mô hình} & \textbf{Số tham số} & \textbf{Best validation accuracy} & \textbf{Nhận xét} \\
-\midrule
-PointNetBasic & 810,629 & 100.0\% & Nhẹ hơn, hội tụ nhanh và ổn định trên tập nhỏ \\
-PointNetFull & 3,471,054 & 100.0\% & Nhiều tham số hơn, có T-Net, dao động lớn hơn ở giữa quá trình train \\
-\bottomrule
-\end{tabular}
-\caption{Kết quả huấn luyện hai biến thể PointNet.}
-\label{tab:demo-part2-results}
-\end{table}
-
-Kết quả 100.0\% cần được hiểu đúng trong phạm vi demo: tập dữ liệu chỉ gồm 5 lớp có hình dạng khác biệt rõ và được tạo ra nhằm phục vụ minh họa tương tác. Vì vậy, con số này không nên được diễn giải như kết quả đại diện cho toàn bộ ModelNet40. Điểm quan trọng của demo nằm ở việc kiểm chứng tính bất biến hoán vị, cơ chế critical points và khả năng bền vững trước perturbation.
-
-\subsubsection{Kiểm tra tính bất biến hoán vị}
-
-Một kiểm tra trực tiếp được thực hiện trong notebook là xáo trộn thứ tự điểm đầu vào 10 lần liên tiếp và so sánh logits của \texttt{PointNetFull}. Kết quả cho thấy cả 10 lần shuffle đều cho logits giống nhau trong sai số tính toán. Đây là minh chứng thực nghiệm cho bất biến hoán vị: thứ tự lưu trữ point cloud không làm thay đổi dự đoán, vì kiến trúc chỉ dùng shared MLP và max pooling trên tập điểm.
-
-\begin{table}[H]
-\centering
-\small
-\begin{tabular}{lc}
-\toprule
-\textbf{Kiểm tra} & \textbf{Kết quả} \\
-\midrule
-Số lần shuffle thứ tự điểm & 10 \\
-Logits giữ nguyên sau mỗi lần shuffle & True \\
-Kết luận & Mô hình bất biến với hoán vị điểm \\
-\bottomrule
-\end{tabular}
-\caption{Kết quả kiểm tra tính bất biến hoán vị của PointNetFull.}
-\label{tab:pointnet-permutation-test}
-\end{table}
-
-\subsubsection{Robustness và critical points}
-
-Demo hỗ trợ ba dạng perturbation: thay đổi số điểm đầu vào, thêm nhiễu Gaussian và bỏ ngẫu nhiên một tỉ lệ điểm. Các phép thử này giúp quan sát cơ chế mà PointNet sử dụng để tóm tắt hình dạng. Do global max pooling chỉ giữ lại điểm tạo giá trị cực đại ở từng chiều đặc trưng, mô hình thường phụ thuộc vào một tập con nhỏ gồm các điểm có vai trò quyết định, gọi là critical point set.
-
-\begin{figure}[H]
-\centering
-\includegraphics[width=0.82\textwidth]{graphics/figures/critical_points.png}
-\caption{Minh họa critical points được trích xuất từ PointNet trên point cloud mẫu.}
-\label{fig:demo-critical-points}
-\end{figure}
-
-Khi người dùng giảm số điểm hoặc bỏ ngẫu nhiên một phần point cloud, mô hình vẫn có thể dự đoán đúng nếu các critical points quan trọng còn được giữ lại. Ngược lại, khi tỉ lệ bỏ điểm quá cao hoặc nhiễu Gaussian làm biến dạng mạnh các vùng biên, đặc trưng toàn cục bị thay đổi và dự đoán bắt đầu kém ổn định. Quan sát này phù hợp với phân tích ở Mục~\ref{sec:pointnet-paper}, trong đó PointNet không ghi nhớ toàn bộ bề mặt vật thể mà học một biểu diễn thưa nhưng có khả năng phân biệt.
-
-\begin{figure}[H]
-\centering
-\includegraphics[width=0.82\textwidth]{graphics/figures/robustness.png}
-\caption{Minh họa xu hướng robustness của PointNet khi point cloud chịu perturbation.}
-\label{fig:demo-pointnet-robustness}
-\end{figure}
-
-\subsection{Thảo luận chung và liên kết lý thuyết}
-\label{subsec:thao-luan-thuc-nghiem}
-
-\subsubsection{Tính bất biến xấp xỉ và tính bất biến do kiến trúc}
-
-Hai demo cho thấy sự khác biệt giữa việc học đối xứng từ dữ liệu và việc mã hóa đối xứng vào mô hình. Trong Part 1, Augmented CNN được tiếp xúc với nhiều ảnh xoay nên có thể tổng quát hóa tốt hơn Baseline CNN, nhưng tính bất biến vẫn là kết quả học được từ dữ liệu và có thể thất bại ở các trường hợp nhãn mơ hồ. Frame Averaging CNN đưa cấu trúc frame vào bước suy luận, nhờ đó mô hình có cơ chế xử lý xoay rõ ràng hơn.
-
-Trong Part 2, tính bất biến với hoán vị không cần học từ dữ liệu. Nó xuất hiện trực tiếp từ thiết kế shared MLP và max pooling. Vì vậy, dù thứ tự các điểm bị xáo trộn, vector đặc trưng toàn cục vẫn không thay đổi. Đây là ví dụ điển hình cho hướng xây dựng kiến trúc từ đầu dựa trên tính chất hình học của dữ liệu.
-
-\subsubsection{Hiệu quả dữ liệu và giới hạn của demo}
-
-Các kết quả trong chương này cần được hiểu như minh họa thực nghiệm cho lý thuyết, không phải benchmark đầy đủ trên quy mô lớn. Part 1 dùng MNIST để làm rõ ảnh hưởng của phép xoay trong một môi trường dễ quan sát. Part 2 dùng 5 lớp trích từ ModelNet40 để giao diện demo nhẹ và phản hồi nhanh. Vì vậy, các con số như validation accuracy 100.0\% của PointNet phản ánh thiết lập demo nhỏ, không thay thế cho đánh giá trên toàn bộ ModelNet40.
-
-Dù vậy, xu hướng chung vẫn nhất quán với lý thuyết ở Chương~\ref{sec:phuong-phap}: khi cấu trúc đối xứng được đưa vào mô hình, mô hình cần ít dữ liệu hơn để học cùng một quy luật và có hành vi ổn định hơn trước các biến đổi không làm thay đổi bản chất đối tượng.
-
-\subsubsection{Đối chiếu hai hướng tiếp cận}
-
-\begin{table}[H]
-\centering
-\small
-\renewcommand{\arraystretch}{1.3}
-\begin{tabularx}{\textwidth}{p{0.17\textwidth}>{\raggedright\arraybackslash}X>{\raggedright\arraybackslash}X}
-\toprule
-\textbf{Tiêu chí} & \textbf{Part 1: MNIST xoay} & \textbf{Part 2: PointNet} \\
-\midrule
-Đối tượng dữ liệu & Ảnh $28\times28$ trên lưới 2D & Tập điểm không có thứ tự trong không gian 3D \\
-Nhóm đối xứng & $SO(2)$, phép xoay liên tục & $S_n$, phép hoán vị hữu hạn \\
-Cách đưa đối xứng vào mô hình & Data augmentation hoặc frame averaging & Shared MLP và max pooling \\
-Loại bất biến & Xấp xỉ với augmentation, rõ ràng hơn với frame averaging & Bất biến hoán vị ngay từ kiến trúc \\
-Giới hạn chính & Ambiguity nhãn khi xoay một số chữ số & Demo chỉ dùng 5 lớp, chưa đại diện toàn bộ ModelNet40 \\
-\bottomrule
-\end{tabularx}
-\caption{Đối chiếu hai demo thực nghiệm qua lăng kính hai hướng tiếp cận geometric machine learning.}
-\label{tab:demo-lien-ket}
-\end{table}
-
-Từ hai demo, có thể rút ra kết luận rằng inductive bias hình học không chỉ giúp tăng độ chính xác trong một số thiết lập, mà quan trọng hơn là làm cho hành vi của mô hình nhất quán hơn với cấu trúc của dữ liệu. Với ảnh xoay, mô hình cần hiểu quan hệ giữa các góc; với point cloud, mô hình cần bỏ qua thứ tự lưu trữ điểm. Đây chính là vai trò trung tâm của geometric machine learning: thiết kế mô hình không chỉ dựa trên dữ liệu đầu vào, mà còn dựa trên những phép biến đổi mà bài toán cho phép hoặc cần bất biến theo.
+Phát hiện thống kê này mang lại một góc nhìn phản biện đối với xu hướng phát triển mô hình hiện tại. Khi dữ liệu huấn luyện đã được căn chỉnh định hướng từ trước, mạng nơ-ron sẽ hiếm khi quan sát được các phép biến đổi xoay vô hướng đa dạng. Trong điều kiện môi trường dữ liệu như vậy, việc bắt buộc áp dụng các kiến trúc equivariant với chi phí huấn luyện đắt đỏ có thể không mang lại sự khác biệt đáng kể về hiệu suất so với các mô hình baseline thông thường. Quan sát này tái khẳng định tầm quan trọng của bước symmetry testing, giúp các nhà nghiên cứu đưa ra quyết định kiến trúc phù hợp và tránh lãng phí tài nguyên tính toán.
 
 \clearpage
