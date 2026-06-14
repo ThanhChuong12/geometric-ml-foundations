@@ -1,10 +1,7 @@
-# backend/schemas/prediction.py
-
 from pydantic import BaseModel, Field, field_validator, model_validator
 from typing import List
 
 class MoleculeInput(BaseModel):
-    """Request schema for molecular structure input."""
     atomic_numbers: List[int] = Field(
         ..., 
         description="List of atomic numbers (elements) of the atoms in the molecule."
@@ -53,7 +50,6 @@ class MoleculeInput(BaseModel):
 
 
 class EnergyResponse(BaseModel):
-    """Response schema for molecular energy prediction."""
     energy: float = Field(
         ..., 
         description="Predicted internal molecular energy (U0) in eV."

@@ -1,5 +1,3 @@
-# backend/main.py
-
 import os
 # Force CPU only (hide GPU to prevent CUDA driver mismatch/initialization errors)
 os.environ["CUDA_VISIBLE_DEVICES"] = ""
@@ -30,7 +28,6 @@ CHECKPOINT_PATH = REPO_ROOT / "ai_core" / "outputs" / "nequip_l1_1000" / "best.c
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """Lifespan context manager handling startup and shutdown tasks."""
     # Startup Lifecycle
     checkpoint_path = str(CHECKPOINT_PATH)
     logger.info(f"Starting server. Checking NequIP checkpoint at '{checkpoint_path}'...")
@@ -86,7 +83,6 @@ app.include_router(part3_router, prefix="/api/part3")
 
 @app.get("/health", summary="Health check endpoint")
 def health_check():
-    """Returns the health status of the application and its model dependencies."""
     predictor = getattr(app.state, "predictor", None)
     if predictor is None or predictor._model is None:
         return {"status": "degraded", "detail": "NequIP predictor not loaded"}

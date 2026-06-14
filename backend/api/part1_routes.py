@@ -7,6 +7,5 @@ router = APIRouter()
 
 @router.post("/predict", response_model=PredictionResponse)
 async def predict_digit(request: PredictRequest):
-    # Dùng hàm generate_prediction (sẽ chạy AI thật nếu có model, hoặc mock nếu chưa train)
     response = generate_prediction(request.image)
     return response

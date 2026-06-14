@@ -1,5 +1,3 @@
-# backend/core/nequip_wrapper.py
-
 import os
 # Force CPU only (hide GPU to prevent CUDA initialization error)
 os.environ["CUDA_VISIBLE_DEVICES"] = ""
@@ -16,26 +14,18 @@ logger = logging.getLogger("nequip_predictor")
 
 
 class NequIPException(Exception):
-    """Base exception for NequIP molecular energy predictor."""
     pass
 
 
 class ModelLoadError(NequIPException):
-    """Exception raised when loading the NequIP checkpoint fails."""
     pass
 
 
 class InferenceError(NequIPException):
-    """Exception raised when running inference fails."""
     pass
 
 
 class NequIPPredictor:
-    """Thread-safe, singleton-friendly wrapper around NequIP model for energy-only inference.
-
-    Supports lazy loading and automatically handles device placement.
-    """
-
     def __init__(self, checkpoint_path: str, device: str = "cpu"):
         self.checkpoint_path = checkpoint_path
         # Force CPU device for NequIP molecular energy prediction
@@ -46,7 +36,6 @@ class NequIPPredictor:
         self._lock = threading.Lock()
 
     def load_model(self) -> None:
-        """Load the model and hparams from checkpoint in a thread-safe manner."""
         if self._model is not None:
             return
 
@@ -56,10 +45,10 @@ class NequIPPredictor:
 
             logger.info(f"Loading NequIP model checkpoint from '{self.checkpoint_path}'...")
             try:
-                # 1. Initialize NequIP global state (CRITICAL)
+                # Initialize NequIP global state
                 set_global_state()
 
-                # 2. Restore model from checkpoint using NequIP's ModelFromCheckpoint API
+                # Restore model from checkpoint using NequIP's ModelFromCheckpoint API
                 model = ModelFromCheckpoint(self.checkpoint_path)
                 if isinstance(model, torch.nn.ModuleDict):
                     model = model["sole_model"]
@@ -67,7 +56,7 @@ class NequIPPredictor:
                 model.to(self.device)
                 model.eval()
 
-                # 3. Extract metadata parameters for preprocessing
+                # Extract metadata parameters for preprocessing
                 if hasattr(model, "type_names"):
                     type_names = list(model.type_names)
                 else:
@@ -94,35 +83,23 @@ class NequIPPredictor:
 
     @property
     def model(self) -> torch.nn.Module:
-        """Get the loaded PyTorch model."""
         self.load_model()
         assert self._model is not None
         return self._model
 
     @property
     def type_names(self) -> List[str]:
-        """Get the list of chemical type names registered in the model."""
         self.load_model()
         assert self._type_names is not None
         return self._type_names
 
     @property
     def r_max(self) -> float:
-        """Get the cutoff radius of the model."""
         self.load_model()
         assert self._r_max is not None
         return self._r_max
 
     def predict(self, graph: AtomicDataDict.Type) -> float:
-        """Run energy-only inference on the processed graph representation.
-
-        Args:
-            graph: The dictionary representation of the graph, containing POSITIONS_KEY,
-                   ATOM_TYPE_KEY, EDGE_INDEX_KEY, and other required fields.
-
-        Returns:
-            The total molecular energy as a float.
-        """
         self.load_model()
         assert self._model is not None
 
