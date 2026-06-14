@@ -1,5 +1,3 @@
-# backend/api/part3_routes.py
-
 import logging
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from schemas.prediction import MoleculeInput, EnergyResponse
@@ -11,7 +9,6 @@ router = APIRouter()
 
 
 def get_predictor(request: Request) -> NequIPPredictor:
-    """Dependency helper to retrieve the predictor instance from app state."""
     predictor = getattr(request.app.state, "predictor", None)
     if predictor is None:
         raise HTTPException(
@@ -22,7 +19,6 @@ def get_predictor(request: Request) -> NequIPPredictor:
 
 
 def get_graph_service(request: Request) -> MoleculeGraphService:
-    """Dependency helper to retrieve the graph conversion service from app state."""
     graph_service = getattr(request.app.state, "graph_service", None)
     if graph_service is None:
         raise HTTPException(
@@ -44,18 +40,17 @@ def predict_energy(
     predictor: NequIPPredictor = Depends(get_predictor),
     graph_service: MoleculeGraphService = Depends(get_graph_service)
 ):
-    """Energy-only prediction route."""
     logger.info(
         f"Received prediction request with {len(payload.atomic_numbers)} atoms."
     )
     try:
-        # 1. Transform structure to graph dictionary
+        # Transform structure to graph dictionary
         graph = graph_service.create_graph(
             atomic_numbers=payload.atomic_numbers,
             positions=payload.positions
         )
 
-        # 2. Run model prediction
+        # Run model prediction
         energy = predictor.predict(graph)
 
         logger.info(f"Successful prediction. Energy: {energy:.6f}")

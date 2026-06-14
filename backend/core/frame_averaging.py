@@ -1,19 +1,10 @@
-"""
-Frame Averaging CNN Model — Kiến trúc SimpleCNN + FrameAveragingCNN.
-
-Di chuyển từ services/model_service.py sang core/ để tách biệt
-model definition khỏi service logic.
-"""
-
 import torch
 import torch.nn as nn
 import torchvision.transforms.functional as TF
 import math
 
 
-# ─────────────────────────────────────────────────────────────
-# SimpleCNN — Backbone CNN cho MNIST
-# ─────────────────────────────────────────────────────────────
+# SimpleCNN
 class SimpleCNN(nn.Module):
     def __init__(self):
         super(SimpleCNN, self).__init__()
@@ -33,9 +24,7 @@ class SimpleCNN(nn.Module):
         return x
 
 
-# ─────────────────────────────────────────────────────────────
-# PCA Logic — y hệt như lúc huấn luyện
-# ─────────────────────────────────────────────────────────────
+# PCA Logic
 def get_pca_angles_batch(images):
     B = images.shape[0]
     angles = torch.zeros(B, device=images.device)
@@ -67,9 +56,7 @@ def get_pca_angles_batch(images):
     return angles
 
 
-# ─────────────────────────────────────────────────────────────
-# FrameAveragingCNN — Wrapper với PCA frame averaging
-# ─────────────────────────────────────────────────────────────
+# FrameAveragingCNN
 class FrameAveragingCNN(nn.Module):
     def __init__(self, backbone):
         super(FrameAveragingCNN, self).__init__()
