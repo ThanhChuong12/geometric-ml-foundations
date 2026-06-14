@@ -1,0 +1,42 @@
+# ==============================================================================
+# AI Core Environment Requirements
+# ==============================================================================
+# This requirements file lists the complete set of dependencies required to run
+# the training scripts, notebooks, and models in `ai_core`.
+# ==============================================================================
+
+# Core PyTorch Ecosystem
+torch==2.6.0
+torchvision
+torchmetrics==1.9.0
+torch-geometric==2.7.0
+
+# Numerical, Scientific & Plotting Libraries
+numpy==2.4.6
+pandas==3.0.3
+scipy==1.17.1
+matplotlib==3.10.9
+Pillow==12.2.0
+
+# Geometric Machine Learning & Chemistry Packages
+ase==3.28.0
+e3nn==0.6.0
+nequip @ git+https://github.com/mir-group/nequip.git@0cb886607c20c22c17a4ab7703d8eba7a13b4ad2
+
+# Configuration & Training Management
+hydra-core==1.3.2
+omegaconf==2.3.0
+lightning==2.6.5
+pytorch-lightning==2.6.5
+lightning-utilities==0.15.3
+
+# Optimization & Utilities
+opt-einsum-fx==0.1.4
+opt_einsum==3.4.0
+PyYAML==6.0.3
+tqdm==4.67.3
+requests==2.34.2
+lmdb==2.2.0
+
+# Experiment Tracking & Logging
+wandb==0.27.0
