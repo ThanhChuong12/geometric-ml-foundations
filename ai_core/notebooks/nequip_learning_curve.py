@@ -1,7 +1,4 @@
-#!/usr/bin/env python3
 """
-03_nequip_learning_curve.py
-===========================
 Evaluation and visualization script for the NequIP l=0 vs l=1 ablation study.
 
 Parses training metrics from NequIP Lightning CSV logs (or accepts manually
