@@ -1,13 +1,7 @@
-% 
 \section{Lý thuyết nâng cao và các hướng nghiên cứu mới}
 \label{sec:ly-thuyet-nang-cao}
 
-Chương trước đã cho thấy bằng hàng loạt ví dụ cụ thể rằng việc nhúng tính đối xứng vào kiến trúc mang lại lợi ích thực nghiệm rõ rệt, từ NequIP cho thế năng nguyên tử, PointNet trên đám mây điểm, cho tới các mạng tích chập nhóm. Tuy nhiên, một bức tranh chỉ dừng ở mức quan sát thực nghiệm là chưa đủ. Vì sao đối xứng lại giúp ích, mức lợi ích chính xác là bao nhiêu, cái giá tính toán phải trả ra sao, và liệu giả định về đối xứng có thực sự đúng với dữ liệu hay không, đó là những câu hỏi mà chương này tập trung trả lời.
-
-
-% ─────────────────────────────────────────────────────────────
-% PHẦN A: LÝ THUYẾT VỀ LỢI ÍCH CỦA ĐỐI XỨNG
-% ─────────────────────────────────────────────────────────────
+Chương trước đã cho thấy bằng các ví dụ cụ thể rằng việc nhúng tính đối xứng vào kiến trúc mang lại lợi ích thực nghiệm rõ rệt, từ NequIP cho thế năng nguyên tử, PointNet trên đám mây điểm, cho tới các mạng tích chập nhóm. Tuy nhiên, một bức tranh chỉ dừng ở mức quan sát thực nghiệm là chưa đủ. Vì sao đối xứng lại giúp ích, mức lợi ích chính xác là bao nhiêu, cái giá tính toán phải trả ra sao, và liệu giả định về đối xứng có thực sự đúng với dữ liệu hay không, đó là những câu hỏi mà chương này tập trung trả lời.
 
 \subsection{Lợi ích về độ phức tạp mẫu}
 \label{subsec:sample-complexity}
@@ -86,26 +80,20 @@ Bây giờ áp đặt tính đối xứng bằng nhóm phản xạ $G$ qua trụ
  
 \begin{figure}[H]
     \centering
-    \begin{tikzpicture}[scale=1.8] % Tăng nhẹ scale để hình thoáng hơn
-        % Vòng tròn cơ sở
+    \begin{tikzpicture}[scale=1.8] 
         \draw[thick] (0,0) circle (1);
         
-        % Trục phản xạ (Đẩy nhãn chữ xuống dưới cùng để tránh chen chúc phía trên)
         \draw[dashed, gray, thick] (0,-1.4) -- (0,1.4);
         \node[gray, font=\footnotesize, below] at (0,-1.4) {trục phản xạ};
         
-        % Nửa giữ lại
         \draw[line width=2.5pt, blue!70!black] (-90:1) arc (-90:90:1);
         
-        % Mũi tên gập: đặt cao hơn để tránh dính nhãn điểm cố định
         \draw[->, >=latex, red!80!black, thick] (145:1.45) arc (145:35:1.45);
         \node[red!80!black, font=\small, above] at (90:1.48) {$\tau:\theta \mapsto \pi-\theta$};
         
-        % Các nhãn chữ bên trong vòng tròn (Dùng align=center để xuống dòng gọn gàng)
         \node[gray, font=\footnotesize] at (-0.5, 0) {gập $\rightarrow$};
         \node[blue!70!black, font=\footnotesize, align=center] at (0.45, 0) {nửa\\giữ lại};
         
-        % Điểm cố định: đặt nhãn lệch ra ngoài để không dính vào đường tròn
         \filldraw[black] (0,1) circle (1.5pt);
         \node[font=\footnotesize, anchor=east] at (-0.22,1.10) {$(0,1)$};
         
@@ -115,9 +103,9 @@ Bây giờ áp đặt tính đối xứng bằng nhóm phản xạ $G$ qua trụ
     \caption{Phản xạ qua trục tung gập vòng tròn thành nửa vòng tròn, chỉ một nửa số Fourier modes còn lại nên $\mathrm{vol}(M/G) = \tfrac{1}{2}\mathrm{vol}(M)$.}
     \label{fig:circle-reflection}
     \vspace{2mm}
-
-    \textit{Ghi chú: Hình do nhóm tự vẽ dựa trên ví dụ vòng tròn trong \cite{tahmasebi2023exact}; hai điểm $(0, \pm 1)$ là các điểm cố định, nơi xuất hiện biên của quotient space.}
 \end{figure}
+\vspace{-2.0em}
+\noindent\textit{Ghi chú: Hình do nhóm tự vẽ dựa trên ví dụ vòng tròn trong \cite{tahmasebi2023exact}; hai điểm $(0, \pm 1)$ là các điểm cố định, nơi xuất hiện biên của quotient space.}
  
 \subsubsection{Ý tưởng chứng minh: định luật Weyl mở rộng}
  
@@ -188,37 +176,12 @@ Hình \ref{fig:error-curve} tổng kết bằng trực giác cuối cùng: ở c
     \caption{Cùng một mức sai số mục tiêu, mô hình bất biến đạt được với số mẫu nhỏ hơn, và nhóm đối xứng càng lớn thì đường cong càng dốc.}
     \label{fig:error-curve}
     \vspace{2mm}
-
-    \textit{Ghi chú: Hình do nhóm tự vẽ mang tính minh họa định tính cho Định lý 4.1 trong \cite{tahmasebi2023exact}, không phải kết quả thực nghiệm.}
 \end{figure}
+\vspace{-2.0em}
+\noindent\textit{Ghi chú: Hình do nhóm tự vẽ mang tính minh họa định tính cho Định lý 4.1 trong \cite{tahmasebi2023exact}, không phải kết quả thực nghiệm.}
 
 \subsection{Giải quyết chi phí tính toán bằng Expanders}
 \label{subsec:expanders}
-
-% Trình bày:
-%   - Vấn đề: |S_50| ≈ 3×10^64 > số atoms trên Trái Đất
-%     → group averaging/augmentation bùng nổ
-%   - Generating sets: S ⊆ G s.t. mọi g = s₁s₂...sₖ
-%     * f*(s·x)=f*(x) ∀s∈S ⟹ f*(g·x)=f*(x) ∀g∈G
-%     * Min size |S| ≤ log₂|G| (exponential saving!)
-%     * Tìm min-size: NP-hard
-%   - Random Cayley graphs (Expanders):
-%     Random subset S size ~2.67×log|G| là generating set w.h.p.
-
-% Ba ứng dụng cụ thể:
-%   1. Computational complexity: learning exact invariances
-%      in O_{n,d}((log|G|)³) time (Soleymani et al ICML 2025)
-%   2. Data augmentation: O(log|G|) random elements đủ
-%      full statistical gain (Tahmasebi et al 2025)
-%   3. Approximate group averaging:
-%      sup_f |avg_G f - avg_S f| ≤ O(log|G|/|S|)^{1/2}
-%      (uniform over all f, all epochs)
-%
-% Kết luận quan trọng (phân biệt rõ):
-%   - Exact symmetry via averaging: HARD (cần full group)
-%   - Approximate symmetry via averaging: EASY (O(log|G|))
-%   - Full statistical gain: EASY (O(log|G|))
-%   → Exponential separation!
 
 Các phương pháp khai thác tính đối xứng như \textit{group averaging} và \textit{data augmentation} có thể cải thiện khả năng tổng quát hóa của mô hình bằng cách buộc mô hình tôn trọng các phép biến đổi không làm thay đổi bản chất dữ liệu. Tuy nhiên, khi nhóm biến đổi có kích thước lớn, việc xét toàn bộ các phần tử của nhóm trở nên không khả thi về mặt tính toán. Một ví dụ điển hình là nhóm hoán vị $S_{50}$, có kích thước
 \begin{equation}
@@ -305,9 +268,10 @@ có thể đủ để $\mathcal{S}$ trở thành tập sinh với xác suất ca
     \vspace{0.15cm}
     \begin{minipage}{0.9\linewidth}
         \centering
-        \small\textit{Ghi chú: Khi $\mathcal{S}$ là tập sinh, các cạnh tương ứng với phép nhân bởi phần tử sinh giúp kết nối toàn bộ các phần tử của nhóm. Hình chỉ mang tính minh họa định tính.}
     \end{minipage}
 \end{figure}
+\vspace{-2.0em}
+\noindent\textit{Ghi chú: Khi $\mathcal{S}$ là tập sinh, các cạnh tương ứng với phép nhân bởi phần tử sinh giúp kết nối toàn bộ các phần tử của nhóm. Hình chỉ mang tính minh họa định tính.}
 
 \subsubsection{Ứng dụng trong học máy hình học}
 
@@ -366,23 +330,9 @@ Các kết quả trên cho thấy cần phân biệt rõ giữa ba mục tiêu k
 
 Do đó, expander cung cấp một sự phân tách quan trọng về mặt tính toán. Tính bất biến chính xác thông qua trung bình đầy đủ vẫn là một bài toán khó khi nhóm có kích thước lớn. Ngược lại, bất biến xấp xỉ và lợi ích thống kê của đối xứng có thể đạt được bằng một số lượng phần tử nhỏ hơn rất nhiều. Với những nhóm có kích thước thiên văn như $S_{50}$, sự phân tách này biến một bài toán không khả thi thành một chiến lược có thể triển khai trong thực nghiệm.
 
-\subsection{Kiểm định tính đối xứng trong dữ liệu (Symmetry Testing)}
+\subsection{Kiểm định tính đối xứng trong dữ liệu}
 \label{subsec:symmetry-testing}
 
-% Trình bày:
-%   - Động lực: GeoML giả định data có symmetry, nhưng thực tế?
-%     (MRI images rotationally symmetric không?)
-%   - Formulation:
-%     H₀: μ ≡ g·μ ∀g∈G (invariant)
-%     H₁: sup_g D(g·μ, μ) ≥ ε (exists violating g)
-%   - Hardness: finding arg sup_g NP-hard (reduces from TSP)
-%   - Randomized solution:
-%     E_g[D(g·μ,μ)] ≤ sup_g D(g·μ,μ) ≤ 2·E_g[D(g·μ,μ)]
-%     → Random g ∈ G là sufficient certificate
-%   - Deterministic algorithms: dùng group structure
-%     D(g₁(g₂·μ),μ) ≤ D(g₁·μ,μ) + D(g₂·μ,μ)
-%     → Reduced covering size: O(d²/ε) thay vì O(ε^{-d²})
-%   (Soleymani et al AISTATS 2025 oral)
 Các mô hình học máy hình học thường được xây dựng dựa trên một giả định tiên nghiệm: phân bố dữ liệu tuân theo một nhóm đối xứng nhất định. Giả định này cho phép mã hóa trực tiếp tính bất biến hoặc tính tương biến vào kiến trúc mô hình, qua đó cải thiện hiệu quả dữ liệu và khả năng tổng quát hóa. Tuy nhiên, trong các bài toán thực tế, đối xứng của dữ liệu không phải lúc nào cũng hiển nhiên hoặc đúng tuyệt đối. Chẳng hạn, ảnh MRI có thực sự bất biến với mọi phép quay hay không còn phụ thuộc vào quy ước thu nhận ảnh, tư thế bệnh nhân và cấu trúc giải phẫu đang được khảo sát. Tương tự, một hệ phân tử có thể bất biến với phép tịnh tiến và phép quay toàn cục, nhưng không nhất thiết bất biến với mọi phép biến đổi rộng hơn nếu dữ liệu chứa ràng buộc môi trường hoặc điều kiện biên cụ thể.
 
 Vì vậy, trước khi mã hóa một đối xứng vào mô hình, cần có một cơ chế kiểm định xem phân bố dữ liệu có thực sự tôn trọng đối xứng đó hay không. Vấn đề này được nghiên cứu có hệ thống trong bài báo về \textit{Symmetry Testing} của Soleymani và cộng sự. Trọng tâm của hướng nghiên cứu này là chuyển câu hỏi ``dữ liệu có đối xứng hay không'' thành một bài toán kiểm định giả thuyết thống kê có thể phân tích được về mặt lý thuyết và triển khai được về mặt thuật toán.
@@ -423,10 +373,11 @@ Về mặt thực nghiệm, $D$ có thể được chọn là \textit{maximum me
     \end{tikzpicture}
     \caption[Quy trình kiểm định tính đối xứng ở cấp độ phân bố]{%
       Quy trình kiểm định tính đối xứng ở cấp độ phân bố.\\[4pt]
-      \textit{Ghi chú: Dữ liệu ban đầu được so sánh với dữ liệu sau khi tác động bởi phần tử nhóm để đánh giá mức độ vi phạm tính bất biến.}%
     }
     \label{fig:symmetry-testing-pipeline}
 \end{figure}
+\vspace{-2.0em}
+\noindent\textit{Ghi chú: Dữ liệu ban đầu được so sánh với dữ liệu sau khi tác động bởi phần tử nhóm để đánh giá mức độ vi phạm tính bất biến.}
 
 \subsubsection{Độ khó tính toán}
 
@@ -495,7 +446,6 @@ của cách phủ tập không khai thác cấu trúc nhóm. Sự cải thiện 
     ]
         \node[smallbox] (naive) {Phủ tập thông thường\\$\mathcal{O}(\varepsilon^{-d^2})$};
         
-        % Tăng xshift lên 4.5cm để tạo đủ khoảng trống cho chữ trên mũi tên
         \node[smallbox, right of=naive, xshift=4.5cm] (structure) {Khai thác cấu trúc nhóm\\$D(g_1g_2 \cdot \mu,\mu)$};
         
         \node[smallbox, right of=structure, xshift=4.5cm] (efficient) {Covering set rút gọn\\$\mathcal{O}(d^2/\varepsilon)$};
@@ -511,9 +461,10 @@ của cách phủ tập không khai thác cấu trúc nhóm. Sự cải thiện 
     \vspace{0.15cm}
     \begin{minipage}{0.9\linewidth}
         \centering
-        \small\textit{Ghi chú: Thay vì phủ trực tiếp toàn bộ không gian biến đổi, thuật toán sử dụng quan hệ hợp thành nhóm để giảm kích thước tập kiểm định.}
     \end{minipage}
 \end{figure}
+\vspace{-2.0em}
+\noindent\textit{Ghi chú: Thay vì phủ trực tiếp toàn bộ không gian biến đổi, thuật toán sử dụng quan hệ hợp thành nhóm để giảm kích thước tập kiểm định.}
 
 \subsubsection{Ý nghĩa đối với học máy hình học}
 
@@ -521,27 +472,10 @@ Symmetry Testing cung cấp một lớp công cụ quan trọng cho học máy h
 
 Do đó, kiểm định tính đối xứng đóng vai trò như một bước trung gian giữa phân tích dữ liệu và thiết kế kiến trúc. Thay vì chọn nhóm đối xứng hoàn toàn dựa trên trực giác miền ứng dụng, nhà nghiên cứu có thể sử dụng kiểm định thống kê để đánh giá mức độ phù hợp của nhóm đó với phân bố dữ liệu quan sát được. Đây là một hướng nghiên cứu quan trọng vì nó làm cho quá trình thiết kế mô hình hình học trở nên có căn cứ hơn, đặc biệt trong các miền dữ liệu phức tạp như ảnh y sinh, phân tử, đồ thị xã hội và hệ thống vật lý nhiều hạt.
 
-
-% ─────────────────────────────────────────────────────────────
 % PHẦN B: ĐỐI XỨNG BÊN TRONG MẠNG NƠ-RON
-% ─────────────────────────────────────────────────────────────
 
-\subsection{Tính đối xứng tham số mạng nơ-ron (Neural Parameter Symmetries)}
+\subsection{Tính đối xứng tham số mạng nơ-ron}
 \label{subsec:parameter-symmetries}
-
-% Trình bày:
-%   - Khái niệm: f_θ = f_{g·θ} (same function, different weights)
-%   - Ví dụ 1 — MLPs:
-%     * Scale invariance (ReLU homogeneous):
-%       W₂σ(W₁x) = (1/α)W₂σ(αW₁x)
-%     * Permutation invariance (pointwise activation):
-%       W₂σ(W₁x) = W₂P^T σ(PW₁x)
-%   - Ví dụ 2 — Matrix products (LoRA, Attention):
-%     * UV^T = UR·R^{-1}V^T → GL(r)-invariance
-%   - Ví dụ 3 — Transformers (Theus et al 2025):
-%     * MLP symmetries + Attention head permutation
-%     * RMSNorm: orthogonal group
-%     * LoRA/Attention: GL(r)
 
 Góc nhìn của Geometric Machine Learning không chỉ dừng lại ở dữ liệu đầu vào mà còn được mở rộng vào sâu bên trong không gian tham số của chính mạng nơ-ron. Xét một mạng nơ-ron $f_\theta$ với tập tham số $\theta$. Ta nói $\theta$ và $\theta'$ là tương đương về mặt hàm nếu $f_\theta \equiv f_{\theta'}$, tức hai bộ tham số khác nhau xác định cùng một ánh xạ đầu vào-đầu ra. Tập hợp tất cả các phép biến đổi $g$ trên không gian tham số thỏa mãn $f_\theta = f_{g \cdot \theta}$ tạo thành một nhóm, gọi là nhóm đối xứng tham số  của mạng.
 
@@ -574,23 +508,8 @@ Công trình của Theus và cộng sự \cite{theus2025transformers} đã hệ 
 
 Nhận thức về đối xứng tham số có hệ quả quan trọng cho nhiều tác vụ: so sánh hai mô hình đã huấn luyện đòi hỏi phải căn chỉnh chúng về cùng một orbit trước khi tính khoảng cách; việc hợp nhất nhiều checkpoint không thể thực hiện trực tiếp bằng cách lấy trung bình số học mà phải căn chỉnh orbit trước; và các phương pháp tối ưu hóa nhận thức được đối xứng, chẳng hạn Path-SGD, có thể khai thác cấu trúc này để tăng tốc hội tụ.
 
-
-
-\subsection{Cảnh quan hàm mất mát và Gộp mô hình}
+\subsection{Tổng quan hàm mất mát và gộp mô hình}
 \label{subsec:loss-landscape}
-
-% Trình bày:
-%   - Nếu θ là local minimum thì g·θ cũng là local minimum
-%   - Continuous symmetries (Lie groups):
-%     → Mode connectivity: minima nối bởi low-loss curves
-%     → Giải thích empirical observations (Garipov 2018, Draxler 2018)
-%   - Discrete symmetries (permutations):
-%     → Replicas of minima, not connected
-%     → Linear mode connectivity sau khi align
-%     → Model merging: cần align trước khi average
-%   - Ứng dụng: optimization (Path-SGD), Bayesian inference,
-%     model merging/ensembling
-
 
 Đối xứng tham số không chỉ làm xuất hiện nhiều biểu diễn tham số khác nhau cho cùng một hàm dự đoán, mà còn quyết định trực tiếp hình học của \textit{loss landscape}. Giả sử $\Theta$ là không gian tham số, $\mathcal{L}: \Theta \rightarrow \mathbb{R}$ là hàm mất mát và $G$ là nhóm đối xứng tác động lên tham số. Nếu tác động của $G$ không làm thay đổi hàm được biểu diễn bởi mạng nơ-ron, thì hàm mất mát thỏa mãn
 \begin{equation}
@@ -684,9 +603,11 @@ Trong trường hợp chưa căn chỉnh, đường nội suy tuyến tính có 
     \vspace{0.15cm}
     \begin{minipage}{0.9\linewidth}
         \centering
-        \small\textit{Ghi chú: Khi hai nghiệm chưa được căn chỉnh, đoạn nối giữa chúng có thể đi qua vùng mất mát cao. Sau khi căn chỉnh orbit, nội suy tuyến tính giữa hai nghiệm có thể duy trì mất mát thấp.}
     \end{minipage}
 \end{figure}
+
+\vspace{-2.0em}
+\noindent\textit{Ghi chú: Khi hai nghiệm chưa được căn chỉnh, đoạn nối giữa chúng có thể đi qua vùng mất mát cao. Sau khi căn chỉnh orbit, nội suy tuyến tính giữa hai nghiệm có thể duy trì mất mát thấp.}
 
 \subsubsection{Gộp mô hình thông qua căn chỉnh orbit}
 
@@ -715,23 +636,8 @@ Trong \textit{model merging} và \textit{ensembling}, đối xứng tham số ch
 Tóm lại, đối xứng tham số cung cấp một lăng kính hình học để hiểu vì sao \textit{loss landscape} của mạng nơ-ron chứa nhiều nghiệm tương đương, vì sao các đường nối mất mát thấp có thể xuất hiện, và vì sao gộp mô hình cần đi kèm với căn chỉnh. Những kết quả này tạo nền tảng cho các hướng nghiên cứu hiện đại về tối ưu hóa bất biến, suy luận Bayesian trong không gian tham số và kết hợp mô hình sau huấn luyện.
 
 
-\subsection{Học trên không gian trọng số (Weight Space Learning)}
+\subsection{Học trên không gian trọng số}
 \label{subsec:weight-space-learning}
-
-% Trình bày:
-%   - Động lực: >2M models trên Hugging Face, INRs, NeRFs
-%   - Mục tiêu: analyze, understand, edit model collections
-%   - Ứng dụng:
-%     1. Predict accuracy without evaluating (50,000x faster)
-%     2. Derive model info: training data, IP, bias estimation
-%     3. Edit: domain adaptation, pruning, compression
-%   - Kỹ thuật:
-%     * Deep Weight Space Networks: linear equivariant layers
-%     * Neural Functional Transformers: attention + equivariance
-%     * GNN on parameter graph (Lim et al 2023)
-%   - Thách thức: scale + symmetries (cần alignment trước)
-%   - Case study: LoRA metanetworks → symmetry-aware methods
-%     generally perform more robustly
 
 \subsubsection{Động lực: kho mô hình như dữ liệu}
 
@@ -761,9 +667,10 @@ Câu hỏi trung tâm của hướng nghiên cứu này là liệu có thể xâ
     \vspace{0.15cm}
     \begin{minipage}{0.9\linewidth}
         \centering
-        \small\textit{Ghi chú: Thay vì học trực tiếp từ dữ liệu gốc, một metanetwork nhận tham số của các mạng nơ-ron đã huấn luyện làm đầu vào để thực hiện các tác vụ phân tích hoặc chỉnh sửa.}
     \end{minipage}
 \end{figure}
+\vspace{-2.0em}
+\noindent\textit{Ghi chú: Thay vì học trực tiếp từ dữ liệu gốc, một metanetwork nhận tham số của các mạng nơ-ron đã huấn luyện làm đầu vào để thực hiện các tác vụ phân tích hoặc chỉnh sửa.}
 
 \subsubsection{Các tác vụ trên không gian trọng số}
 
@@ -802,24 +709,8 @@ Mặc dù học trên không gian trọng số mở ra nhiều ứng dụng mớ
 Thách thức thứ hai là đối xứng tham số. Trước khi so sánh hoặc kết hợp các bộ trọng số, cần xét đến khả năng chúng nằm trên các orbit khác nhau nhưng biểu diễn các hàm tương đương. Nếu không căn chỉnh, metanetwork có thể nhầm lẫn giữa khác biệt do đối xứng tham số và khác biệt thực sự về chức năng. Các nghiên cứu trường hợp với LoRA metanetworks cho thấy những phương pháp nhận thức được đối xứng thường ổn định hơn so với các phương pháp bỏ qua cấu trúc đối xứng, đặc biệt khi số lượng mô hình huấn luyện có sẵn còn hạn chế.
 
 
-% ─────────────────────────────────────────────────────────────
-% PHẦN C: HƯỚNG NGHIÊN CỨU MỚI
-% ─────────────────────────────────────────────────────────────
-
-\subsection{Đối xứng linh hoạt và Khám phá đối xứng}
+\subsection{Đối xứng linh hoạt và khám phá đối xứng}
 \label{subsec:flexible-symmetries}
-
-% Trình bày:
-%   - Vấn đề: hard-coding symmetries restrictive cho foundation models
-%   - Hướng Adaptivity:
-%     * Contextual World Models (Gupta et al 2024):
-%       in-context selection of symmetry subset
-%     * Any-subgroup equivariant networks (Goel et al 2025):
-%       f(x) = h(x,v), if g·v=v then f(g·x) = g·f(x)
-%   - Hướng Symmetry Discovery:
-%     * Learn augmentations/transformations từ data
-%     * Learn weight sharing patterns
-%     * Probe trained networks (post-hoc analysis)
 
 \subsubsection{Hạn chế của việc mã hóa cứng đối xứng}
 
@@ -862,7 +753,6 @@ Nhóm con
         \node[box] (input) {Dữ liệu đầu vào\\$x$};
         \node[box, below of=input, yshift=-0.5cm] (context) {Ngữ cảnh\\$v$};
         
-        % Tăng xshift lên 2cm để tạo khoảng trống vừa phải (khoảng 0.8cm) cho mũi tên
         \node[box, right of=input, xshift=2.0cm] (select) {Xác định nhóm con\\$G_v$};
         \node[box, right of=select, xshift=2.0cm] (model) {Mô hình tương biến\\theo $G_v$};
         \node[box, right of=model, xshift=2.0cm] (output) {Đầu ra\\$f(x,v)$};
@@ -887,16 +777,6 @@ Một hướng bổ sung là không giả định trước nhóm đối xứng, 
 
 \subsection{Mô hình không phụ thuộc số chiều}
 \label{subsec:any-dimensional}
-
-
-% Trình bày:
-%   - Ý tưởng: fixed parameters, varying input sizes
-%   - Nền tảng lý thuyết: Representation Stability (Farb 2014)
-%     * Permutation-invariant linear f → 1 parameter (thay vì d)
-%     * Quadratic perm-inv → 2 parameters
-%     * k-th degree → p(k) ≈ exp(Ck) parameters (dimension-free!)
-%   - Ứng dụng: GNNs train trên small graphs, test trên large graphs
-%   - Câu hỏi mở: universality, evaluation across sizes
 
 Một hạn chế thực tiễn của nhiều mạng tương biến là kiến trúc thường được thiết kế cho một kích thước đầu vào cố định. Ví dụ, một mạng tương biến với nhóm hoán vị $S_n$ được xây dựng cho tập hợp gồm $n$ phần tử thường không thể áp dụng trực tiếp cho tập hợp gồm $m \neq n$ phần tử nếu kiến trúc phụ thuộc tường minh vào $n$. Hướng nghiên cứu mô hình không phụ thuộc số chiều nhằm xây dựng các mô hình có tham số cố định nhưng vẫn hoạt động trên đầu vào có kích thước thay đổi.
 
@@ -945,19 +825,6 @@ Mặc dù nền tảng lý thuyết đã cung cấp động lực rõ ràng, hư
 \subsection{Hình học vượt đối xứng: Topology và Curvature}
 \label{subsec:beyond-symmetry}
 
-% Trình bày:
-%   - Topological Deep Learning:
-%     * Leverages topological structure (3D shapes, molecules)
-%     * Simplicial/cell/combinatorial complexes
-%     * Higher-order message passing (HOMP)
-%     * Multi-cellular networks (MCN) cho các features
-%       mà HOMP không capture được (diameter, orientability)
-%   - Learning theory và Curvature:
-%     * Manifold hypothesis + curse of dimensionality
-%     * Positive Ricci curvature → efficiently learnable
-%     * Bounded curvature + unbounded volume → provably hard
-%     * Real-world data: heterogeneous regime
-
 Các phương pháp học máy hình học đã trình bày ở các phần trước chủ yếu khai thác đối xứng được mô tả bởi nhóm. Tuy nhiên, dữ liệu hình học trong thực tế còn mang nhiều đặc trưng quan trọng không được nắm bắt đầy đủ bởi đối xứng nhóm. Hai lớp cấu trúc tiêu biểu là topo học và độ cong. Topo học mô tả các quan hệ kết nối và tương tác bậc cao không thay đổi dưới biến dạng liên tục, trong khi độ cong mô tả hình học cục bộ của không gian dữ liệu và ảnh hưởng trực tiếp đến độ khó của bài toán học.
 
 \subsubsection{Topological Deep Learning}
@@ -969,36 +836,51 @@ Cơ chế truyền thông tin trong các cấu trúc topo học được thực 
 \begin{figure}[H]
     \centering
     \begin{tikzpicture}[
-        scale=1.1,
-        vertex/.style={circle, draw, fill=white, minimum size=6mm, font=\small},
+        scale=1.2,
+        vertex/.style={
+            circle, 
+            draw=blue!70!black, 
+            fill=blue!5, 
+            thick,
+            minimum size=7mm, 
+            font=\small\bfseries
+        },
+        vertex2/.style={
+            circle, 
+            draw=orange!80!black, 
+            fill=orange!5, 
+            thick,
+            minimum size=7mm, 
+            font=\small\bfseries
+        },
         every node/.style={font=\small}
     ]
         \node[vertex] (a) at (0,0) {$v_1$};
-        \node[vertex] (b) at (2,0) {$v_2$};
-        \node[vertex] (c) at (1,1.6) {$v_3$};
-        \node[vertex] (d) at (4,0) {$v_4$};
-        \node[vertex] (e) at (6,0) {$v_5$};
-        \node[vertex] (f) at (5,1.6) {$v_6$};
+        \node[vertex] (b) at (2.5,0) {$v_2$};
+        \node[vertex] (c) at (1.25,1.8) {$v_3$};
+        
+        \node[vertex2] (d) at (4.5,0) {$v_4$};
+        \node[vertex2] (e) at (7.0,0) {$v_5$};
+        \node[vertex2] (f) at (5.75,1.8) {$v_6$};
 
-        \draw[thick] (a) -- (b) -- (c) -- (a);
-        \draw[fill=gray!20, opacity=0.7] (a.center) -- (b.center) -- (c.center) -- cycle;
+        \fill[blue!15, opacity=0.6] (a.center) -- (b.center) -- (c.center) -- cycle;
+        \draw[very thick, blue!80!black] (a) -- (b) -- (c) -- (a);
 
-        \draw[thick] (d) -- (e) -- (f) -- (d);
-        \draw[thick] (b) -- (d);
+        \fill[orange!15, opacity=0.6] (d.center) -- (e.center) -- (f.center) -- cycle;
+        \draw[very thick, orange!80!black] (d) -- (e) -- (f) -- (d);
 
-        \node[draw=none] at (1,-0.7) {tương tác bậc hai và bậc ba};
-        \node[draw=none] at (5,-0.7) {cấu trúc tế bào};
+        \draw[very thick, gray!80, dashed] (b) -- (d);
+
+        \node[text width=3cm, align=center, font=\small\itshape] at (1.25,-0.7) {Tương tác bậc hai\\và bậc ba};
+        \node[text width=3.0cm, align=center, font=\small\itshape] at (5.75,-0.7) {Cấu trúc tế bào};
+        
     \end{tikzpicture}
     
-    \caption[Minh họa cấu trúc topo học bậc cao]{Minh họa cấu trúc topo học bậc cao.}
+    \caption{Minh họa cấu trúc topo học bậc cao.}
     \label{fig:topological-complex}
-    
-    \vspace{0.15cm}
-    \begin{minipage}{0.9\linewidth}
-        \centering
-        \small\textit{Ghi chú: Ngoài nút và cạnh như trong đồ thị, phức đơn hình hoặc phức tế bào có thể biểu diễn các tương tác nhiều phần tử thông qua tam giác và các tế bào bậc cao.}
-    \end{minipage}
 \end{figure}
+\vspace{-2.0em}
+\noindent\textit{Ghi chú: Ngoài nút và cạnh như trong đồ thị, phức đơn hình hoặc phức tế bào có thể biểu diễn các tương tác nhiều phần tử thông qua tam giác và các tế bào bậc cao.}
 
 \subsubsection{Lý thuyết học và độ cong}
 

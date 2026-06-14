@@ -57,7 +57,6 @@ Từ sự phân loại này, một bản thiết kế chung được đề xuấ
 
 \begin{center}
     \begin{tikzpicture}[node distance=3.5cm, auto, thick, >=Stealth]
-        % Sơ đồ Equivariance (Trái)
         \node (X) at (0, 0) {$\mathcal{X}$};
         \node (Y) at (3, 0) {$\mathcal{Y}$};
         \node (TX) at (0, -2.5) {$\mathcal{X}$};
@@ -66,10 +65,7 @@ Từ sự phân loại này, một bản thiết kế chung được đề xuấ
         \draw[->] (X) -- node[swap] {$\mathfrak{g}$} (TX);
         \draw[->] (Y) -- node {$\mathfrak{g}'$} (TY);
         \draw[->] (TX) -- node[swap] {$f$} (TY);
-        
         \node[below=0.5cm of TX, xshift=1.5cm] {\textbf{(a) Equivariance}};
-
-        % Sơ đồ Invariance (Phải)
         \node (X2) at (6, 0) {$\mathcal{X}$};
         \node (Y2) at (9, -1.25) {$\mathcal{Y}$};
         \node (TX2) at (6, -2.5) {$\mathcal{X}$};
@@ -91,7 +87,7 @@ Bản thiết kế này cung cấp một khuôn khổ toán học minh bạch, c
 \subsection{Sự dịch chuyển sang không gian trọng số}
 \label{subsec:su-dich-chuyen-khong-gian-trong-so}
 
-Nếu như giai đoạn đầu của Geometric Deep Learning tập trung giải quyết các bài toán liên quan đến đối xứng trong không gian dữ liệu, thì xu hướng nghiên cứu hiện đại đang chứng kiến một bước chuyển dịch chiến lược. Sự dịch chuyển này được khảo sát và hệ thống hóa một cách toàn diện trong nghiên cứu \textit{Symmetry in Neural Network Parameter Spaces} do Zhao và cộng sự (2026) thực hiện \cite{zhao2026symmetry}. Nhóm tác giả đã chuyển hướng phân tích trọng tâm từ dữ liệu đầu vào sang việc khám phá tính đối xứng nằm ngay bên trong cấu trúc tham số của mạng nơ-ron (Parameter space symmetry).
+Nếu như giai đoạn đầu của Geometric Deep Learning tập trung giải quyết các bài toán liên quan đến đối xứng trong không gian dữ liệu, thì xu hướng nghiên cứu hiện đại đang chứng kiến một bước chuyển dịch chiến lược. Sự dịch chuyển này được khảo sát và hệ thống hóa một cách toàn diện trong nghiên cứu \textit{Symmetry in Neural Network Parameter Spaces} do Zhao và cộng sự (2026) thực hiện \cite{zhao2026symmetry}. Nhóm tác giả đã chuyển hướng phân tích trọng tâm từ dữ liệu đầu vào sang việc khám phá tính đối xứng nằm ngay bên trong cấu trúc tham số của mạng nơ-ron.
 
 Theo phân tích của Zhao và cộng sự, các mô hình học sâu hiện đại thường ở trạng thái siêu tham số hóa, dẫn đến hiện tượng vô số cấu hình trọng số khác nhau nhưng lại sản sinh ra cùng một hàm tính toán ở đầu ra. Sự dư thừa này bắt nguồn từ các phép biến đổi nội tại, chẳng hạn như hoán vị các nơ-ron ẩn hoặc thay đổi tỷ lệ trọng số của hàm kích hoạt ReLU, mà không làm thay đổi giá trị dự đoán cuối cùng. Việc nhận diện Parameter space symmetry giúp giải mã cấu trúc phức tạp của Loss landscape, giải thích nguyên nhân hình thành các vùng bình nguyên và hiện tượng Mode connectivity giữa các điểm cực tiểu cục bộ.
 
@@ -116,14 +112,15 @@ Khám phá này mở ra những kỹ thuật tối ưu hóa đột phá, điển
 \subsubsection{Phạm vi và cấu trúc báo cáo}
 \label{subsubsec:pham-vi-cau-truc}
 
-Báo cáo tổng hợp các kỹ thuật từ nền tảng toán học cơ bản đến những hướng tiếp cận mới nhất về đối xứng tham số và học không gian trọng số. Nội dung chi tiết được tổ chức thành năm chương tiếp theo:
+Báo cáo tổng hợp các kỹ thuật từ nền tảng toán học cơ bản đến những hướng tiếp cận mới nhất về đối xứng tham số và học không gian trọng số. Nội dung chi tiết được cấu trúc thành sáu chương tiếp theo:
 
 \begin{itemize}
-    \item \textbf{Chương 2} trình bày kiến thức nền tảng toán học, tập trung vào lý thuyết nhóm, tính bất biến và tính đẳng biến.
-    \item \textbf{Chương 3} phân tích các phương pháp cốt lõi để xây dựng mô hình tương biến, bao gồm các phép tích chập nhóm và cơ chế chia sẻ tham số.
-    \item \textbf{Chương 4} mở rộng sang các kỹ thuật xử lý dữ liệu hiện đại như Frame averaging và các lý thuyết mới về học không gian trọng số.
-    \item \textbf{Chương 5} mô tả chi tiết thiết lập thực nghiệm, cấu hình phần cứng và phân tích kết quả so sánh giữa mô hình đề xuất và các phương pháp cơ sở.
-    \item \textbf{Chương 6} tổng hợp các đánh giá ưu nhược điểm, rút ra kết luận về tính ứng dụng thực tiễn và định hướng các nghiên cứu trong tương lai.
+    \item \textbf{Chương 2 (Kiến thức nền tảng):} Thiết lập cơ sở toán học cho báo cáo bằng cách giới thiệu lý thuyết nhóm, tác động nhóm, biểu diễn nhóm và khái niệm quỹ đạo. Chương này cũng trình bày các định nghĩa hình thức của tính bất biến và tính đẳng biến, làm tiền đề lý thuyết để xây dựng các mô hình nhận thức được hình học của dữ liệu.
+    \item \textbf{Chương 3 (Các phương pháp xây dựng mô hình bảo toàn tính đối xứng):} Hệ thống hóa hai hướng tiếp cận chính để tích hợp tính đối xứng. Hướng thứ nhất can thiệp trên dữ liệu thông qua tăng cường dữ liệu, chuẩn hóa dữ liệu cùng định lý giới hạn về tính liên tục, lấy trung bình nhóm và lấy trung bình khung. Hướng thứ hai thiết kế kiến trúc tương biến từ đầu thông qua các lớp tuyến tính tương biến và cơ chế chia sẻ tham số như tích chập nhóm và DeepSets.
+    \item \textbf{Chương 4 (Lý thuyết nâng cao và các hướng nghiên cứu mới):} Khảo sát các kết quả lý thuyết mới về độ phức tạp mẫu minimax optimal và các phương pháp tối ưu chi phí tính toán bằng đồ thị expander. Chương này cũng phân tích các bài toán kiểm định đối xứng trong dữ liệu, tính đối xứng không gian tham số của mạng nơ-ron, học không gian trọng số và các hướng mở rộng như mô hình không phụ thuộc số chiều hay học sâu tô-pô.
+    \item \textbf{Chương 5 (Thực nghiệm và kết quả):} Trình bày các kết quả thực nghiệm định lượng trên các tập dữ liệu chuẩn để kiểm chứng lý thuyết. Các thực nghiệm bao gồm phân tích định luật tỷ lệ của NequIP trên QM9, kiểm chứng độ chính xác xấp xỉ lấy trung bình nhóm, học không gian trọng số qua mạng meta trên LoRA, gộp mô hình bằng căn chỉnh hoán vị Git Re-Basin và đánh giá định hướng của dữ liệu QM9.
+    \item \textbf{Chương 6 (Đánh giá và kết luận):} Thảo luận chi tiết về các điều kiện áp dụng mô hình tương biến trong thực tế, bao gồm việc so sánh hiệu quả dữ liệu với định luật tỷ lệ khi tăng quy mô tính toán, phân biệt đối xứng chính xác và đối xứng xấp xỉ, đồng thời tổng hợp các ưu nhược điểm cốt lõi và định hướng phát triển tương lai.
+    \item \textbf{Chương 7 (Demo minh họa):} Trình bày quá trình hiện thực hóa ba demo tương tác trên giao diện web sử dụng Next.js và FastAPI. Các demo minh họa hành vi của ba phương pháp: nhận diện chữ số viết tay bất biến với phép xoay trên MNIST, phân loại đám mây điểm bất biến với phép hoán vị bằng PointNet trên ModelNet40, và dự đoán năng lượng phân tử bất biến với nhóm Euclidean $E(3)$ bằng NequIP.
 \end{itemize}
 
 \clearpage

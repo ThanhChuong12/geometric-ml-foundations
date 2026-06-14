@@ -74,21 +74,18 @@ Thêm vào đó, mô hình equivariant rất khó áp dụng cho các bài toán
 
 \begin{table}[H]
     \centering
+    \small
     \renewcommand{\arraystretch}{1.3}
-    \begin{tabularx}{\textwidth}{|L|L|}
-        \hline
-        \rowcolor{blue!10}
+    \begin{tabular}{p{0.46\textwidth}p{0.46\textwidth}}
+        \toprule
         \textbf{Ưu điểm} & \textbf{Hạn chế} \\
-        \hline
+        \midrule
         Tiết kiệm dữ liệu và học nhanh hơn vì không phải học lại các phép biến đổi không gian. & Lập trình khó, cần nền tảng toán học sâu để thiết kế và sửa lỗi. \\
-        \hline
         Dự đoán ổn định ngay cả khi dữ liệu đầu vào bị biến đổi. & Chi phí tính toán cao khi áp dụng group averaging trên các nhóm lớn. \\
-        \hline
         Giảm lượng tham số nhờ dùng chung trọng số. & Khó làm các bài toán sinh dữ liệu (vì cần phá vỡ tính đối xứng). \\
-        \hline
         Bảo toàn được khả năng xấp xỉ hàm của mô hình nền. & Hiệu quả giảm mạnh nếu đoán sai tính đối xứng hoặc dùng tập dữ liệu đã căn lề sẵn. \\
-        \hline
-    \end{tabularx}
+        \bottomrule
+    \end{tabular}
     \caption[Tóm tắt ưu nhược điểm của geometric machine learning]{Bảng tóm tắt các điểm mạnh và điểm yếu của geometric machine learning}
     \label{tab:uu-nhuoc-diem}
 \end{table}
@@ -163,11 +160,5 @@ Tất nhiên, geometric ML cũng có nhiều lỗi sai hay gặp. Việc phải 
 \begin{infobox}{Bài học cốt lõi}
 Việc thêm tính chất không gian của dữ liệu vào mạng nơ-ron giúp chúng ta hiểu rằng: mô hình học máy tốt không chỉ cần biết học được gì từ dữ liệu, mà còn cần biết những thuộc tính gì của dữ liệu luôn luôn được giữ nguyên, bất kể chúng ta có biến đổi nó như thế nào.
 \end{infobox}
-
-\clearpage
-
-\section*{Phụ lục: Phân công công việc nhóm}
-\addcontentsline{toc}{section}{Phụ lục: Phân công công việc nhóm}
-% Bảng chi tiết: MSSV | Họ và tên | Phần đóng góp cụ thể
 
 \clearpage
