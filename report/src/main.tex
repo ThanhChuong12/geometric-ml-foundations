@@ -1,0 +1,485 @@
+\documentclass[oneside]{hcmus-report}
+\usepackage{codespace}
+
+% Encodings
+\usepackage{gensymb,textcomp}
+
+% Better tables
+\usepackage{array,longtable,multicol,multirow,siunitx,tabularx}
+
+% Better enum
+\usepackage{enumitem}
+
+% Graphics
+\usepackage{caption,float,graphicx,subcaption}
+\usepackage[export]{adjustbox}
+\captionsetup{hypcap=false}
+
+% Math
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{mathtools}
+
+% Theorem environments
+\theoremstyle{plain}
+\newtheorem{theorem}{Định lý}[section]
+\newtheorem{lemma}[theorem]{Bổ đề}
+\newtheorem{corollary}[theorem]{Hệ quả}
+\newtheorem{proposition}[theorem]{Mệnh đề}
+
+\theoremstyle{definition}
+\newtheorem{definition}[theorem]{Định nghĩa}
+\newtheorem{example}[theorem]{Ví dụ}
+\newtheorem{remark}[theorem]{Nhận xét}
+
+\usepackage{caption}
+\usepackage{placeins}
+\usepackage{tikz}
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.18}
+\usetikzlibrary{angles, quotes, arrows.meta, calc, automata, positioning, fit, shapes.geometric}
+\usepackage{xcolor}
+
+\usepackage{pgfplotstable}
+\usetikzlibrary{arrows.meta, positioning, shapes.geometric, shapes.misc, fit, backgrounds, calc,decorations.pathreplacing, matrix, patterns}
+\usepackage{booktabs}
+
+
+% Box cho phần [MỞ RỘNG]
+\usepackage{tcolorbox}
+\tcbuselibrary{breakable,skins}
+\newtcolorbox{morong}[1][]{
+  colback=yellow!8!white,
+  colframe=orange!70!black,
+  fonttitle=\bfseries,
+  title={\textbf{} #1},
+  breakable
+}
+
+\usepackage{tcolorbox}
+\tcbuselibrary{breakable,skins}
+
+% Hộp ghi chú cam (dùng cho cảnh báo / morong gốc)
+\newtcolorbox{morong}[1][]{
+  colback=yellow!8!white,
+  colframe=orange!70!black,
+  fonttitle=\bfseries,
+  title={\textbf{} #1},
+  breakable
+}
+
+% Hộp thông tin xanh dương
+\newtcolorbox{InfoBox}[1]{
+  colback=blue!5!white,
+  colframe=blue!55!black,
+  fonttitle=\bfseries,
+  title={#1},
+  breakable
+}
+
+% Hộp ghi chú xanh lá
+\newtcolorbox{NoteBox}[1]{
+  colback=green!5!white,
+  colframe=green!45!black,
+  fonttitle=\bfseries,
+  title={#1},
+  breakable
+}
+
+% Hộp cảnh báo vàng
+\newtcolorbox{WarningBox}[1]{
+  colback=yellow!10!white,
+  colframe=orange!80!black,
+  fonttitle=\bfseries,
+  title={#1},
+  breakable
+}
+
+% Code listing
+\usepackage{listings}
+
+\lstdefinelanguage{Julia}{
+  morekeywords={abstract,break,case,catch,const,continue,do,else,elseif,end,export,false,for,function,if,import,in,let,macro,module,mutable,quote,return,struct,true,try,using,while},
+  sensitive=true,
+  morecomment=[l]{\#},
+  morestring=[b]",
+}
+
+\lstset{
+  language=Python,
+  basicstyle=\ttfamily\small,
+  keywordstyle=\color{blue}\bfseries,
+  commentstyle=\color{gray}\itshape,
+  stringstyle=\color{orange!80!black},
+  numbers=left,
+  numberstyle=\tiny\color{gray},
+  numbersep=8pt,
+  breaklines=true,
+  frame=single,
+  showstringspaces=false,
+  tabsize=4,
+  captionpos=b,
+}
+
+% Algorithm
+\usepackage[ruled,vlined,linesnumbered]{algorithm2e}
+\SetAlgorithmName{Thuật toán}{thuattoan}{Danh sách thuật toán}
+
+% References
+\usepackage[nameinlink]{cleveref}
+\usepackage{xurl}
+\usepackage{hyperref}
+
+% Extra packages
+\usepackage{longtable,ltablex}
+\keepXColumns
+\usepackage{xcolor,colortbl}
+
+% Configurations
+\coursename{Nhập môn học máy}
+\reporttype{BÁO CÁO ĐỒ ÁN 3}
+\title{CÁC BƯỚC TIẾN MỚI TRONG GEOMETRIC MACHINE LEARNING}
+\advisor{& ThS. Lê Nhựt Nam &}
+\stuname{%
+  & 23120195 & Lê Hà Thanh Chương \\
+  & 23120197 & Trà Văn Sỹ \\
+  & 23120199 & Huỳnh Đức Thịnh \\
+  & 23120257 & Bùi Trung Hiếu \\
+  & 23120330 & Lê Công Phúc \\
+}
+
+% Counter settings
+\AtBeginDocument{\counterwithin{lstlisting}{section}}
+\AtBeginDocument{\counterwithin{equation}{section}}
+
+% Vietnamese section names
+\AtBeginDocument{\renewcommand{\contentsname}{Mục lục}}
+\AtBeginDocument{\renewcommand{\listfigurename}{Danh sách các hình}}
+\AtBeginDocument{\renewcommand{\listtablename}{Danh sách các bảng}}
+\AtBeginDocument{\renewcommand{\tablename}{Bảng}}
+\AtBeginDocument{\renewcommand{\figurename}{Hình}}
+\AtBeginDocument{\renewcommand{\refname}{Tài liệu tham khảo}}
+\AtBeginDocument{\renewcommand{\proofname}{Chứng minh}}
+
+% Layout
+\setlength{\headheight}{41pt}
+\setlength{\hfuzz}{100pt}
+\hbadness=10000
+\emergencystretch=2em
+
+% Custom math commands
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\N}{\mathbb{N}}
+\renewcommand{\H}{\mathbb{H}}
+\newcommand{\X}{\mathcal{X}}
+\newcommand{\inner}[2]{\langle #1, #2 \rangle}
+\newcommand{\norm}[1]{\left\| #1 \right\|}
+\newcommand{\Tr}{\operatorname{Tr}}
+
+\newcommand{\RKHS}{\mathcal{H}}
+\newcommand{\featmap}{\Phi}
+\newcommand{\kernel}{k}
+
+% (1) Hai màu dùng cho các hình minh hoạ tự vẽ trong Chương 2
+\definecolor{gmlblue}{HTML}{2C5F8E}
+\definecolor{gmlorange}{HTML}{B5651D}
+ 
+% (2) Kiểu cột tabularx canh trái + tự xuống dòng (cho 2 bảng trong chương).
+%     (tabularx đã được nạp trong main.tex; chỉ cần khai báo thêm cột L.)
+\newcolumntype{L}{>{\raggedright\arraybackslash}X}
+ 
+% (3) Macro vẽ "mặt mèo" cho hình minh hoạ bất biến/đẳng biến.
+%     Cách dùng: \catface{x}{y}{scale}
+\newcommand{\catface}[3]{%
+  \begin{scope}[shift={(#1,#2)}, scale=#3]
+    \fill[orange!72!yellow]    (-0.42,0.30)--(-0.12,0.74)--(0.02,0.34)--cycle; % tai trái
+    \fill[orange!72!yellow]    ( 0.42,0.30)--( 0.12,0.74)--(-0.02,0.34)--cycle;% tai phải
+    \fill[orange!45!yellow]    (-0.34,0.36)--(-0.16,0.62)--(-0.04,0.38)--cycle;
+    \fill[orange!45!yellow]    ( 0.34,0.36)--( 0.16,0.62)--( 0.04,0.38)--cycle;
+    \fill[orange!72!yellow]    (0,0) circle (0.48);
+    \fill[black] (-0.18,0.06) circle (0.055);
+    \fill[black] ( 0.18,0.06) circle (0.055);
+    \fill[pink!80!red] (0,-0.10) ellipse (0.07 and 0.05);
+    \draw[black!70, line width=0.3pt] (0,-0.15)--(0,-0.24);
+    \draw[black!70, line width=0.3pt] (-0.40,-0.02)--(-0.18,-0.06);
+    \draw[black!70, line width=0.3pt] (-0.42,-0.12)--(-0.18,-0.12);
+    \draw[black!70, line width=0.3pt] ( 0.40,-0.02)--( 0.18,-0.06);
+    \draw[black!70, line width=0.3pt] ( 0.42,-0.12)--( 0.18,-0.12);
+  \end{scope}}
+  
+% (4) Macro vẽ "mặt CHÓ" cho hình minh hoạ Ví dụ 2.3 / 2.4.
+%     Cách dùng: \dogface{x}{y}{scale}
+\newcommand{\dogface}[3]{%
+  \begin{scope}[shift={(#1,#2)}, scale=#3]
+    \begin{scope}[shift={(-0.40,0.10)}, rotate=30]
+      \fill[brown!55!black] (0,0) ellipse [x radius=0.15, y radius=0.34];
+    \end{scope}
+    \begin{scope}[shift={(0.40,0.10)}, rotate=-30]
+      \fill[brown!55!black] (0,0) ellipse [x radius=0.15, y radius=0.34];
+    \end{scope}
+    \fill[brown!62!orange] (0,0) circle (0.46);
+    \fill[brown!28!white] (0,-0.16) ellipse [x radius=0.27, y radius=0.21];
+    \fill[black] (-0.17,0.12) circle (0.052);
+    \fill[black] ( 0.17,0.12) circle (0.052);
+    \fill[white] (-0.155,0.135) circle (0.016);
+    \fill[white] ( 0.185,0.135) circle (0.016);
+    \fill[black] (0,0.0) ellipse [x radius=0.085, y radius=0.065];
+    \fill[white!75!black] (0.022,0.02) circle (0.012);
+    \draw[black!75, line width=0.5pt] (0,-0.065) -- (0,-0.17);
+    \draw[black!75, line width=0.5pt] (0,-0.17) .. controls (-0.05,-0.22) and (-0.12,-0.20) .. (-0.16,-0.15);
+    \draw[black!75, line width=0.5pt] (0,-0.17) .. controls ( 0.05,-0.22) and ( 0.12,-0.20) .. ( 0.16,-0.15);
+    \fill[red!55!pink] (0,-0.205) ellipse [x radius=0.05, y radius=0.07];
+  \end{scope}}
+
+% (5) Shortcut màu cho hình Ví dụ 2.6/2.7
+\colorlet{c1}{gmlblue}          % xanh  – nút 1 / nguyên tử chính
+\colorlet{c2}{gmlorange}        % cam   – nút 2
+\colorlet{c3}{green!55!black}   % lục   – nút 3
+
+\begin{document}
+\coverpage%
+
+% Đánh số trang La Mã cho phần mở đầu (front matter)
+\pagenumbering{roman}
+
+% Mục lục
+\tableofcontents
+
+\clearpage
+\phantomsection
+\addcontentsline{toc}{section}{Danh sách các hình}
+\listoffigures
+
+\clearpage
+\phantomsection
+\addcontentsline{toc}{section}{Danh sách các bảng}
+\listoftables
+
+% ==============================================================================
+% DANH SÁCH CÁC KÝ HIỆU VÀ CHỮ VIẾT TẮT
+% ==============================================================================
+\clearpage
+\section*{Danh sách các ký hiệu và chữ viết tắt}
+\addcontentsline{toc}{section}{Danh sách các ký hiệu và chữ viết tắt}
+
+\begin{longtable}{p{0.25\textwidth} p{0.70\textwidth}}
+\textbf{Ký hiệu / Viết tắt} & \textbf{Ý nghĩa} \\
+\hline
+\endfirsthead
+
+\textbf{Ký hiệu / Viết tắt} & \textbf{Ý nghĩa} (tiếp theo) \\
+\hline
+\endhead
+
+% ==========================================
+% PHẦN 1: CHỮ VIẾT TẮT
+% ==========================================
+\multicolumn{2}{c}{\textbf{Chữ viết tắt}} \\
+\hline
+API & Giao diện lập trình ứng dụng (Application Programming Interface) \\
+AUC & Diện tích dưới đường cong ROC (Area Under the Curve) \\
+CNN & Mạng tích chập (Convolutional Neural Network) \\
+DA & Tăng cường dữ liệu (Data Augmentation) \\
+DQN & Deep Q-network, thuật toán học tăng cường dựa trên xấp xỉ $Q$-function bằng mạng nơ-ron.\\
+FLOPs & Số phép toán dấu phẩy động mỗi giây (Floating Point Operations Per Second) \\
+GNN & Mạng nơ-ron đồ thị (Graph Neural Network) \\
+KRR & Hồi quy kernel ridge (Kernel Ridge Regression) \\
+MDP & Markov decision process, mô hình toán học cho bài toán ra quyết định tuần tự.\\
+MLP & Perceptron đa lớp (Multi-Layer Perceptron) \\
+MVCNN & Mạng chập đa góc nhìn (Multi-view Convolutional Neural Network) \\
+PCA & Phân tích thành phần chính (Principal Component Analysis) \\
+RKHS & Không gian Hilbert tái sinh (Reproducing Kernel Hilbert Space) \\
+SAC & Soft Actor-Critic, thuật toán actor-critic có entropy regularization.\\
+SSL & Học tự giám sát (Self-Supervised Learning) \\
+
+\hline
+
+% ==========================================
+% PHẦN 2: KÝ HIỆU
+% ==========================================
+
+% --- Nhóm 1: Không gian, tập hợp và cấu trúc hình học ---
+\multicolumn{2}{c}{\textbf{Không gian, tập hợp và cấu trúc hình học}} \\
+\hline
+$\mathbb{R}$ & Tập hợp các số thực \\
+$(M, g)$ & Đa tạp Riemann compact, liên thông, không biên với metric $g$ \\
+$\mathcal{X}$ & Không gian dữ liệu / không gian đầu vào \\
+$\mathcal{Y}$ & Không gian đầu ra của mô hình \\
+$\mathcal{H}$ & Không gian Hilbert tái sinh của kernel Sobolev \\
+$H^s_{\mathrm{inv}}(M)$ & Không gian Sobolev bậc $s$ gồm các hàm bất biến trên $M$ \\
+$M/G$ & Không gian thương gồm các quỹ đạo $[x] = \{\tau(x) : \tau \in G\}$ \\
+$\mathrm{Orb}_G(x)$ & Quỹ đạo của $x$ dưới tác động của $G$: tập $\{g \cdot x \mid g \in G\}$ \\
+$\mathcal{P}_n$ & Tập các ma trận hoán vị kích thước $n$ \\
+$\mathcal{F}(X)$ & Tập hợp khung (Frame) trích xuất từ điểm dữ liệu $X$ \\
+
+\hline
+
+% --- Nhóm 2: Nhóm đối xứng và tác động nhóm ---
+\multicolumn{2}{c}{\textbf{Nhóm đối xứng và tác động nhóm}} \\
+\hline
+$G$ & Nhóm đối xứng; trong Chương 4 là compact Lie group tác động trơn, đẳng cự lên $M$ \\
+$G$ & Group đối xứng tác động lên state và action.\\
+$g \in G$ & Phần tử nhóm, đại diện cho một phép biến đổi \\
+$g$ & Một phần tử thuộc group $G$.\\
+$g \cdot x$ & Tác động của phần tử $g$ lên điểm dữ liệu $x$ \\
+$S_n$ & Nhóm hoán vị $n$ phần tử \\
+$C_n, C_4$ & Nhóm xoay tuần hoàn; $C_4$ gồm bốn phép quay cách nhau $90^\circ$ \\
+$SO(d)$ & Nhóm quay đặc biệt trong $\mathbb{R}^d$ \\
+$SO(2)$ & Nhóm các phép xoay trong mặt phẳng.\\
+$SE(2), SE(3)$ & Nhóm Euclid đặc biệt trong 2D/3D, gồm quay và tịnh tiến \\
+$SE(2)$ & Nhóm các phép tịnh tiến và xoay trong mặt phẳng.\\
+$SE(3)$ & Nhóm các phép tịnh tiến và xoay trong không gian ba chiều.\\
+$E(3)$ & Nhóm Euclidean trong $\mathbb{R}^3$ (quay, phản xạ, tịnh tiến) \\
+$GL(V)$ & Nhóm các ánh xạ tuyến tính khả nghịch trên không gian vector $V$ \\
+
+\hline
+
+% --- Nhóm 3: MDP, state, action và robotics ---
+\multicolumn{2}{c}{\textbf{MDP, state, action và robotics}} \\
+\hline
+$\mathcal{M}$ & Markov decision process biểu diễn bài toán ra quyết định của robot.\\
+$\mathcal{S}$ & State space của MDP.\\
+$\mathcal{A}$ & Action space của MDP.\\
+$\mathcal{T}$ & Transition function của MDP.\\
+$\mathcal{R}$ & Reward function của MDP.\\
+$\gamma$ & Discount factor trong MDP.\\
+$s$ & State của robot hoặc môi trường.\\
+$a$ & Action của robot.\\
+$g \cdot s$ & State sau khi chịu tác động của phép biến đổi $g$.\\
+$g \cdot a$ & Action sau khi chịu tác động của phép biến đổi $g$.\\
+$\pi^*$ & Optimal policy.\\
+$Q^*$ & Optimal action-value function.\\
+$V^*$ & Optimal value function.\\
+
+\hline
+
+% --- Nhóm 4: Toán tử, hàm số và phép toán ---
+\multicolumn{2}{c}{\textbf{Toán tử, hàm số và phép toán}} \\
+\hline
+$f$ & Mô hình hoặc hàm ánh xạ từ đầu vào sang đầu ra \\
+$T, T'$ & Phép biến đổi trên không gian đầu vào và phép biến đổi tương ứng trên không gian đầu ra \\
+$\tau_v$ & Phép tịnh tiến theo vector $v$ \\
+$P$ & Ma trận hoán vị dùng để đánh số lại phần tử hoặc nút \\
+$P_\sigma$ & Ma trận hoán vị biểu diễn hoán vị $\sigma$ \\
+$\rho, \rho(g)$ & Biểu diễn nhóm, ánh xạ phần tử nhóm thành phép biến đổi tuyến tính \\
+$\rho_1, \rho_2$ & Biểu diễn nhóm (group representations) \\
+$K(x, y)$ & Hàm hạt nhân đánh giá giữa hai điểm $x$ và $y$ \\
+$f_{\star}$ & Hàm mục tiêu bất biến / hàm sinh nhãn thật \\
+$\hat{f}$ & Hàm ước lượng học được từ dữ liệu huấn luyện \\
+$\eta$ & Tham số điều chuẩn trong hồi quy kernel ridge \\
+$\mathrm{vol}(M/G)$ & Thể tích của không gian thương $M/G$ \\
+$T_a, R_a$ & Phép biến đổi tuyến tính trong không gian ẩn tương ứng với phép tăng cường $a$ \\
+$A$ & Ma trận biến đổi afin dự đoán bởi mạng học sâu (ví dụ T-Net) \\
+$c(x)$ & Dạng chuẩn (canonical form) của điểm dữ liệu $x$ \\
+$\mathcal{L}$ & Hàm mất mát (loss function) \\
+$\langle \Phi \rangle_G$ & Phép toán lấy trung bình nhóm (Group averaging) \\
+$\langle \Phi \rangle_{\mathcal{F}}$ & Phép toán lấy trung bình khung (Frame averaging) \\
+$L_{reg}$ & Hàm mất mát chính quy hóa (regularization loss) \\
+
+\hline
+
+% --- Nhóm 5: Biến số, chỉ số và ký hiệu Hy Lạp ---
+\multicolumn{2}{c}{\textbf{Biến số, chỉ số và ký hiệu Hy Lạp}} \\
+\hline
+$n, N$ & Số lượng phần tử hoặc số lượng điểm đầu vào \\
+$\alpha$ & Biên an toàn (margin) / Giới hạn độ tin cậy / Ngưỡng kiểm soát tỷ lệ lỗi \\
+$d' = \dim(M) - \dim(G)$ & Số chiều hiệu dụng sau khi loại bỏ bậc tự do đối xứng \\
+$\epsilon_i$ & Nhiễu quan sát của mẫu thứ $i$ \\
+$\sigma^2$ & Phương sai của nhiễu quan sát \\
+$\sigma$ & Một hoán vị, thường là phần tử của nhóm hoán vị $S_n$ \\
+
+\hline
+\end{longtable}
+
+\clearpage
+\phantomsection
+
+\section*{Danh mục các thuật ngữ}
+\addcontentsline{toc}{section}{Danh mục các thuật ngữ}
+
+\begin{longtable}{p{0.44\textwidth} p{0.46\textwidth}}
+\textbf{Thuật ngữ tiếng Anh} & \textbf{Thuật ngữ tiếng Việt} \\
+\hline
+\endfirsthead
+\textbf{Thuật ngữ tiếng Anh} & \textbf{Thuật ngữ tiếng Việt} \\
+\hline
+\endhead
+
+Absolute convergence & Hội tụ tuyệt đối \\
+Accepting path & Đường đi chấp nhận \\
+Affine transformation & Phép biến đổi afin \\
+Canonical form / Canonicalization & Dạng chuẩn / Chuẩn hóa \\
+Compact Lie group & Nhóm Lie compact \\
+Commutative diagram & Sơ đồ giao hoán \\
+Contrastive learning & Học tương phản \\
+Critical points & Điểm tới hạn \\
+Cyclic group & Nhóm tuần hoàn \\
+Data augmentation & Tăng cường dữ liệu \\
+Equivariance & Đẳng biến / tương biến \\
+Euclidean group & Nhóm Euclid \\
+Frame averaging & Lấy trung bình khung \\
+Generator (of a group) & Tập sinh (của một nhóm) \\
+Graph isomorphism & Đẳng cấu đồ thị \\
+Grasp learning & Bài toán học cách xác định và thực hiện thao tác gắp vật thể.\\
+Group & Nhóm (đại số) \\
+Group action & Tác động nhóm \\
+Group averaging / Reynolds operator & Lấy trung bình nhóm / Toán tử Reynolds \\
+Group representation & Biểu diễn nhóm \\
+Invariance & Bất biến (invariance) \\
+Latent space & Không gian ẩn \\
+Max pooling & Gộp cực đại \\
+Monte Carlo & Phương pháp Monte Carlo \\
+Orbit & Quỹ đạo \\
+Orthogonal matrix & Ma trận trực giao \\
+Partially equivariant model & Mô hình chỉ áp dụng equivariance cho một phần state hoặc action phù hợp với đối xứng của bài toán.\\
+Permutation group & Nhóm hoán vị \\
+Point cloud & Đám mây điểm \\
+Quotient space & Không gian thương \\
+Reproducing kernel Hilbert space & Không gian Hilbert tái sinh \\
+Representer theorem & Định lý biểu diễn nghiệm \\
+Representation learning & Học biểu diễn \\
+Riemannian manifold & Đa tạp Riemann \\
+Robot manipulation & Bài toán điều khiển robot tương tác vật lý với vật thể.\\
+Robust frames & Khung bền vững \\
+Rotation group & Nhóm xoay \\
+Sample-efficient learning & Khả năng học được chính sách tốt với ít dữ liệu hoặc ít lần tương tác hơn.\\
+Self-supervised learning & Học tự giám sát \\
+Set equivariance & Tương biến tập hợp \\
+Sobolev space & Không gian Sobolev \\
+Spatial action space & Action space có cấu trúc không gian, thường gắn với vị trí, hướng hoặc pose.\\
+Spectral averaging & Lấy trung bình phổ \\
+Symmetry & Tính đối xứng \\
+Symmetry function & Hàm đối xứng \\
+Translation group & Nhóm tịnh tiến \\
+Universal approximation & Xấp xỉ phổ quát \\
+Weighted frame & Khung có trọng số \\
+
+\end{longtable}
+
+\clearpage
+
+% Reset về số Ả Rập từ trang 1 bắt đầu từ Chương 1
+\pagenumbering{arabic}
+\section*{Lời mở đầu}
+\addcontentsline{toc}{section}{Lời mở đầu}
+
+Đồ án của nhóm tập trung vào 
+
+\clearpage
+
+\input{chapters/01_gioi_thieu}
+\input{chapters/02_kien_thuc_chuan_bi}
+\input{chapters/03_mo_hinh_equivariant}
+\input{chapters/04_data_aug_va_huong_moi}
+\input{chapters/05_thuc_nghiem}
+\input{chapters/06_danh_gia_ket_luan}
+\input{chapters/07_demo}
+
+\clearpage
+
+\phantomsection
+\addcontentsline{toc}{section}{Tài liệu tham khảo}
+\bibliographystyle{IEEEtran}
+\bibliography{refs/references.bib}
+\nocite{*}
+
+\end{document}
