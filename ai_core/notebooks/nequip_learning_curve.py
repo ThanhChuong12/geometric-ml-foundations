@@ -1,27 +1,3 @@
-"""
-Evaluation and visualization script for the NequIP l=0 vs l=1 ablation study.
-
-Parses training metrics from NequIP Lightning CSV logs (or accepts manually
-entered results), then generates publication-quality log-log learning curve
-plots comparing:
-  - Invariant GNN  (l_max=0) at dataset sizes {100, 1000}
-  - Equivariant GNN (l_max=1) at dataset sizes {100, 1000}
-
-Outputs:
-  - Log-log learning curve: Dataset Size vs MAE (Energy and Forces)
-  - Slope annotations showing convergence rate
-  - Saved figure as PNG and PDF
-
-Usage:
-    python 03_nequip_learning_curve.py --results-dir ../../outputs
-    python 03_nequip_learning_curve.py --use-placeholder-data
-
-This script can also be converted to a Jupyter notebook via:
-    jupytext --to notebook 03_nequip_learning_curve.py
-
-Author: AI/ML Engineering Pipeline
-"""
-
 from __future__ import annotations
 
 import argparse
@@ -35,35 +11,16 @@ import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
 
-# ---------------------------------------------------------------------------
 # Logging
-# ---------------------------------------------------------------------------
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s [%(levelname)s] %(name)s — %(message)s",
 )
 logger = logging.getLogger("nequip_learning_curve")
 
-
-# ===========================================================================
-# 1. Log Parsing — Extract Final MAE from NequIP Lightning CSV Logs
-# ===========================================================================
+# Log Parsing — Extract Final MAE from NequIP Lightning CSV Logs
 
 def parse_csv_metrics(csv_path: str | Path) -> Dict[str, float]:
-    """Parse a Lightning CSVLogger ``metrics.csv`` file.
-
-    Extracts the final (last-epoch) values for energy MAE.
-
-    Parameters
-    ----------
-    csv_path : str or Path
-        Path to the ``metrics.csv`` file produced by Lightning's CSVLogger.
-
-    Returns
-    -------
-    dict
-        Keys: ``'energy_mae'`` (float value).
-    """
     import csv
 
     csv_path = Path(csv_path)
@@ -118,37 +75,17 @@ def parse_csv_metrics(csv_path: str | Path) -> Dict[str, float]:
         energy_mae = float("nan")
 
     result = {"energy_mae": energy_mae}
-    logger.info("  → Energy MAE: %.6f", energy_mae)
+    logger.info("  -> Energy MAE: %.6f", energy_mae)
     return result
 
 
 def collect_results_from_logs(
     results_dir: str | Path,
 ) -> Dict[str, Dict[int, Dict[str, float]]]:
-    """Scan the results directory for NequIP training outputs and extract MAE.
-
-    Expected directory structure (produced by Hydra + CSVLogger):
-    ::
-
-        results_dir/
-        ├── baseline_l0_100/
-        │   └── version_0/metrics.csv
-        ├── baseline_l0_1000/
-        │   └── version_0/metrics.csv
-        ├── nequip_l1_100/
-        │   └── version_0/metrics.csv
-        └── nequip_l1_1000/
-            └── version_0/metrics.csv
-
-    Returns
-    -------
-    dict
-        Nested dict: ``{model_label: {dataset_size: {energy_mae}}}``
-    """
     results_dir = Path(results_dir)
     logger.info("Scanning results directory: %s", results_dir)
 
-    # Mapping from directory name prefix → (model_label, dataset_size)
+    # Mapping from directory name prefix -> (model_label, dataset_size)
     experiment_map = {
         "baseline_l0_100": ("Invariant ($\\ell=0$)", 100),
         "baseline_l0_1000": ("Invariant ($\\ell=0$)", 1000),
@@ -187,21 +124,9 @@ def collect_results_from_logs(
     return results
 
 
-# ===========================================================================
-# 2. Placeholder Data (for when logs are not yet available)
-# ===========================================================================
+# Placeholder Data (for when logs are not yet available)
 
 def get_placeholder_results() -> Dict[str, Dict[int, Dict[str, float]]]:
-    """Return placeholder results for visualization scaffolding.
-
-    These values are representative of expected NequIP performance and
-    should be replaced with actual training results once available.
-
-    The placeholder values follow the expected trend:
-    - l=1 outperforms l=0 at both dataset sizes
-    - More data → lower MAE (learning curve)
-    - The gap between l=0 and l=1 is larger at small dataset sizes
-    """
     return {
         "Invariant ($\\ell=0$)": {
             100: {"energy_mae": 0.150},
@@ -214,9 +139,7 @@ def get_placeholder_results() -> Dict[str, Dict[int, Dict[str, float]]]:
     }
 
 
-# ===========================================================================
-# 3. Plotting — Log-Log Learning Curve
-# ===========================================================================
+# Plotting — Log-Log Learning Curve
 
 # Publication-quality style parameters
 STYLE_CONFIG = {
@@ -256,12 +179,6 @@ def compute_slope(
     sizes: List[int],
     maes: List[float],
 ) -> float:
-    """Compute the slope of the log-log learning curve.
-
-    slope = Δ log(MAE) / Δ log(N)
-
-    A steeper negative slope indicates faster learning with more data.
-    """
     if len(sizes) < 2 or any(m <= 0 for m in maes):
         return float("nan")
     log_sizes = np.log10(sizes)
@@ -275,23 +192,6 @@ def plot_learning_curves(
     output_dir: str | Path = ".",
     filename_prefix: str = "nequip_learning_curve",
 ) -> None:
-    """Generate a publication-quality log-log learning curve plot.
-
-    Creates a figure with a single subplot:
-      - Energy MAE vs Dataset Size
-
-    Both axes use log scale. Lines connect the l=0 and l=1 models, with
-    slope annotations showing the convergence rate.
-
-    Parameters
-    ----------
-    results : dict
-        Nested dict from ``collect_results_from_logs`` or ``get_placeholder_results``.
-    output_dir : str or Path
-        Directory to save the output figures.
-    filename_prefix : str
-        Base name for the output files (without extension).
-    """
     plt.rcParams.update(STYLE_CONFIG)
 
     fig, ax = plt.subplots(figsize=(8, 6))
@@ -380,14 +280,11 @@ def plot_learning_curves(
     logger.info("Plot displayed successfully.")
 
 
-# ===========================================================================
-# 4. Summary Table
-# ===========================================================================
+# Summary Table
 
 def print_results_table(
     results: Dict[str, Dict[int, Dict[str, float]]],
 ) -> None:
-    """Print a formatted summary table of all ablation results."""
     header = f"{'Model':<30} {'N':>6} {'Energy MAE':>14} {'Slope (E)':>10}"
     separator = "─" * len(header)
 
@@ -417,10 +314,7 @@ def print_results_table(
     )
 
 
-# ===========================================================================
-# 5. Main
-# ===========================================================================
-
+# Main
 def parse_args(argv=None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description="NequIP Ablation Study — Learning Curve Visualization",

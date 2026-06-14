@@ -1,30 +1,3 @@
-#!/usr/bin/env python3
-"""
-prepare_qm9_subsets.py
-======================
-Data preparation pipeline for the NequIP ablation study on QM9.
-
-Downloads the QM9 dataset via PyTorch Geometric, converts each molecule
-into an ASE Atoms object with energy and forces labels, then samples
-reproducible subsets (100 and 1000 molecules) and exports them as .extxyz
-files compatible with NequIP's ASEDataModule.
-
-Design Principles:
-    - Single Responsibility: download, conversion, sampling, and I/O are
-      each handled by distinct, testable functions.
-    - Reproducibility: all random operations use a fixed seed.
-    - Robustness: comprehensive logging, type hints, and validation.
-
-Usage:
-    python prepare_qm9_subsets.py \\
-        --root ./data/qm9_raw \\
-        --output-dir ../data/qm9 \\
-        --seed 42 \\
-        --subset-sizes 100 1000
-
-Author: AI/ML Engineering Pipeline
-"""
-
 from __future__ import annotations
 
 import argparse
@@ -36,9 +9,7 @@ from typing import List, Optional, Sequence
 
 import numpy as np
 
-# ---------------------------------------------------------------------------
 # Logging Configuration
-# ---------------------------------------------------------------------------
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s [%(levelname)s] %(name)s — %(message)s",
@@ -47,23 +18,9 @@ logging.basicConfig(
 logger = logging.getLogger("prepare_qm9_subsets")
 
 
-# ===========================================================================
-# 1. Download
-# ===========================================================================
+# Download
 
 def download_qm9(root: str) -> "torch_geometric.datasets.QM9":
-    """Download (or load from cache) the QM9 dataset via PyTorch Geometric.
-
-    Parameters
-    ----------
-    root : str
-        Directory where the raw / processed QM9 data will be stored.
-
-    Returns
-    -------
-    torch_geometric.datasets.QM9
-        The full QM9 dataset object (≈130 k molecules).
-    """
     from torch_geometric.datasets import QM9
 
     logger.info("Loading QM9 dataset from '%s' (will download if needed)...", root)
@@ -76,15 +33,12 @@ def download_qm9(root: str) -> "torch_geometric.datasets.QM9":
     return dataset
 
 
-# ===========================================================================
-# 2. Conversion: PyG Data → ASE Atoms
-# ===========================================================================
+# Conversion: PyG Data → ASE Atoms
 
 # QM9 target index mapping (PyTorch Geometric convention):
 #   0: mu (Debye), 1: alpha (Bohr^3), 2: HOMO (Ha), 3: LUMO (Ha),
 #   4: gap (Ha),   5: R2 (Bohr^2),    6: ZPVE (Ha), 7: U0 (Ha),
 #   8: U (Ha),     9: H (Ha),        10: G (Ha),   11: Cv (cal/mol·K)
-# We use U0 (index 7) as the "energy" label — the internal energy at 0 K.
 _QM9_ENERGY_INDEX: int = 7
 
 # Mapping from atomic number to chemical symbol (elements present in QM9)
@@ -95,24 +49,6 @@ def _pyg_data_to_ase_atoms(
     data,  # torch_geometric.data.Data
     energy_index: int = _QM9_ENERGY_INDEX,
 ) -> "ase.Atoms":
-    """Convert a single PyG QM9 Data object to an ASE Atoms object.
-
-    The resulting Atoms object stores the energy (U0 in Hartree)
-    in its atoms.info dict. No force labels are attached since QM9
-    only contains scalar molecular properties.
-
-    Parameters
-    ----------
-    data : torch_geometric.data.Data
-        A single QM9 molecule from PyG.
-    energy_index : int
-        Column index in ``data.y`` to use as the total energy label.
-
-    Returns
-    -------
-    ase.Atoms
-        Atoms object with positions, atomic numbers, and energy in info.
-    """
     import ase
 
     atomic_numbers: np.ndarray = data.z.cpu().numpy().astype(int)
@@ -139,25 +75,8 @@ def extract_atoms_list(
     energy_index: int = _QM9_ENERGY_INDEX,
     max_molecules: Optional[int] = None,
 ) -> List["ase.Atoms"]:
-    """Convert the entire PyG QM9 dataset into a list of ASE Atoms.
-
-    Parameters
-    ----------
-    dataset : torch_geometric.datasets.QM9
-        The full QM9 dataset.
-    energy_index : int
-        Column index for energy in ``data.y``.
-    max_molecules : int or None
-        If set, only convert the first ``max_molecules`` entries (useful for
-        debugging).
-
-    Returns
-    -------
-    list[ase.Atoms]
-        List of ASE Atoms objects with energy attached in atoms.info.
-    """
     n = len(dataset) if max_molecules is None else min(max_molecules, len(dataset))
-    logger.info("Converting %d PyG Data objects → ASE Atoms...", n)
+    logger.info("Converting %d PyG Data objects -> ASE Atoms...", n)
 
     atoms_list: List["ase.Atoms"] = []
     skipped = 0
@@ -177,39 +96,12 @@ def extract_atoms_list(
     return atoms_list
 
 
-# ===========================================================================
-# 3. Subset Sampling (Pure Function)
-# ===========================================================================
-
+# Subset Sampling (Pure Function)
 def sample_subset(
     atoms_list: List["ase.Atoms"],
     n: int,
     seed: int,
 ) -> List["ase.Atoms"]:
-    """Randomly sample ``n`` molecules from ``atoms_list`` (reproducibly).
-
-    This is a *pure function* with respect to the random seed — calling it
-    with the same inputs always produces the same output.
-
-    Parameters
-    ----------
-    atoms_list : list[ase.Atoms]
-        The source pool of molecules.
-    n : int
-        Number of molecules to sample.
-    seed : int
-        Random seed for reproducibility.
-
-    Returns
-    -------
-    list[ase.Atoms]
-        The sampled subset (unordered).
-
-    Raises
-    ------
-    ValueError
-        If ``n`` exceeds the pool size.
-    """
     if n > len(atoms_list):
         raise ValueError(
             f"Requested subset size ({n}) exceeds pool size ({len(atoms_list)})."
@@ -228,10 +120,7 @@ def sample_subset(
     return subset
 
 
-# ===========================================================================
-# 4. I/O — Save to .extxyz
-# ===========================================================================
-
+# Save to .extxyz
 def save_extxyz(atoms_list: List["ase.Atoms"], path: str | Path) -> None:
     """Write a list of ASE Atoms to an extended XYZ file.
 
@@ -259,20 +148,6 @@ def save_extxyz(atoms_list: List["ase.Atoms"], path: str | Path) -> None:
     )
 
 def validate_extxyz(path: str | Path, expected_count: int) -> bool:
-    """Quick sanity check: re-read the file and verify molecule count + fields.
-
-    Parameters
-    ----------
-    path : str or Path
-        Path to the .extxyz file.
-    expected_count : int
-        Expected number of frames.
-
-    Returns
-    -------
-    bool
-        True if validation passes.
-    """
     from ase.io import read
 
     frames = read(str(path), index=":", format="extxyz")
@@ -310,9 +185,7 @@ def validate_extxyz(path: str | Path, expected_count: int) -> bool:
 
 
 
-# ===========================================================================
-# 5. Main Orchestration
-# ===========================================================================
+# Main Orchestration
 
 def parse_args(argv: Optional[Sequence[str]] = None) -> argparse.Namespace:
     """Parse command-line arguments."""
@@ -368,13 +241,13 @@ def main(argv: Optional[Sequence[str]] = None) -> None:
     logger.info("=" * 60)
     logger.info("Arguments: %s", vars(args))
 
-    # Step 1: Download / load QM9
+    # Download / load QM9
     dataset = download_qm9(args.root)
 
-    # Step 2: Convert to ASE Atoms
+    # Convert to ASE Atoms
     atoms_list = extract_atoms_list(dataset, energy_index=args.energy_index)
 
-    # Step 3 & 4: For each requested subset size, sample and save
+    # For each requested subset size, sample and save
     output_dir = Path(args.output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
 

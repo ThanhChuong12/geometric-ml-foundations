@@ -1,17 +1,3 @@
-"""
-Train PointNet tren 5 class demo (airplane, chair, car, lamp, table).
-Su dung synthetic data + augmentation de tao nhieu bien the train.
-
-Chay lenh:
-    python scripts/train_pointnet.py
-
-Output:
-    backend/models/pointnet_cls.pth   -- weights cua Full model (co T-Net)
-    backend/models/pointnet_basic.pth -- weights cua Basic model (khong T-Net)
-
-Thoi gian: ~10-20 phut tren CPU
-"""
-
 import os
 import sys
 import numpy as np
@@ -26,33 +12,23 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'backend'))
 # pyrefly: ignore [missing-import]
 from services.pointnet_model import PointNetBasic, PointNetFull, feature_transform_regularizer
 
-# ─────────────────────────────────────────────────────────────
 # Config
-# ─────────────────────────────────────────────────────────────
 CLASSES       = ['airplane', 'chair', 'car', 'lamp', 'table']
 NUM_CLASSES   = len(CLASSES)   # 5
 NUM_POINTS    = 1024
-BATCH_SIZE    = 16             # tăng từ 8: BN cần batch đủ lớn để ổn định
-EPOCHS        = 50             # tăng từ 30 để hội tụ tốt hơn
+BATCH_SIZE    = 16             
+EPOCHS        = 50             
 LR            = 0.001
-REG_WEIGHT    = 0.001          # FIX: paper dùng 0.001 — đủ mạnh để T-Net giữ orthogonality
-                               # Giá trị cũ 0.00001 quá nhỏ → T-Net collapse → bias về car
-
+REG_WEIGHT    = 0.001          
 DATA_DIR   = os.path.join(os.path.dirname(__file__), '..', 'backend', 'data', 'sample_clouds')
 MODELS_DIR = os.path.join(os.path.dirname(__file__), '..', 'backend', 'models')
 
 device = torch.device('cpu')
 
 
-# ─────────────────────────────────────────────────────────────
 # Data Augmentation
-# ─────────────────────────────────────────────────────────────
 def augment(pts):
-    """
-    Augment 1 point cloud: rotation, jitter, scale, random point drop.
-    Returns new numpy array shape (NUM_POINTS, 3).
-    """
-    # 1. Random rotation around ALL 3 axes (SO3)
+    # Random rotation around ALL 3 axes (SO3)
     angles = np.random.uniform(0, 2 * np.pi, 3)
     Rx = np.array([[1, 0, 0],
                    [0, np.cos(angles[0]), -np.sin(angles[0])],
@@ -66,19 +42,19 @@ def augment(pts):
     R = Rz @ Ry @ Rx
     pts = pts @ R.T
 
-    # 2. Random scale
+    # Random scale
     scale = np.random.uniform(0.85, 1.15)
     pts = pts * scale
 
-    # 3. Random jitter (Gaussian noise)
+    # Random jitter (Gaussian noise)
     pts = pts + np.random.randn(*pts.shape) * 0.02
 
-    # 4. Random point sampling
+    # Random point sampling
     N = pts.shape[0]
     idx = np.random.choice(N, NUM_POINTS, replace=(N < NUM_POINTS))
     pts = pts[idx]
 
-    # 5. Normalize to unit sphere
+    # Normalize to unit sphere
     pts -= pts.mean(axis=0)
     d = np.max(np.linalg.norm(pts, axis=1))
     if d > 0:
@@ -88,16 +64,13 @@ def augment(pts):
 
 
 def load_raw(class_name):
-    """Load raw .npy file, return (N, 3) array."""
     path = os.path.join(DATA_DIR, f"{class_name}_sample.npy")
     if not os.path.exists(path):
         raise FileNotFoundError(f"Sample not found: {path}\nRun: python scripts/download_assets.py")
     return np.load(path)
 
 
-# ─────────────────────────────────────────────────────────────
 # Dataset: generate augmented samples on-the-fly
-# ─────────────────────────────────────────────────────────────
 class AugmentedDataset(torch.utils.data.Dataset):
     def __init__(self, samples_per_class=300, augment=True):
         self.augment = augment
@@ -132,12 +105,9 @@ class AugmentedDataset(torch.utils.data.Dataset):
         return torch.from_numpy(pts), label
 
 
-# ─────────────────────────────────────────────────────────────
 # Training loop
-# ─────────────────────────────────────────────────────────────
 def train_one_model(model, model_name, is_full, train_loader, val_loader):
     optimizer = optim.Adam(model.parameters(), lr=LR, weight_decay=1e-4)
-    # CosineAnnealingLR: học mượt hơn StepLR trên small dataset
     scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=EPOCHS, eta_min=1e-5)
     criterion = nn.CrossEntropyLoss()
 
@@ -221,14 +191,11 @@ def train_one_model(model, model_name, is_full, train_loader, val_loader):
     return best_acc
 
 
-# ─────────────────────────────────────────────────────────────
 # Main
-# ─────────────────────────────────────────────────────────────
 if __name__ == '__main__':
     os.makedirs(MODELS_DIR, exist_ok=True)
 
     # Datasets
-    # Datasets — tăng samples để model không bị overfit vào 1 class
     train_set = AugmentedDataset(samples_per_class=400, augment=True)   # 400×5=2000 samples
     val_set   = AugmentedDataset(samples_per_class=80,  augment=False)  # 80×5=400 samples
 
@@ -239,14 +206,14 @@ if __name__ == '__main__':
         val_set, batch_size=BATCH_SIZE, shuffle=False, num_workers=0
     )
 
-    # ── Train PointNet Basic (khong T-Net) ──
+    # Train PointNet Basic
     basic_model = PointNetBasic(num_classes=NUM_CLASSES).to(device)
     basic_acc = train_one_model(
         basic_model, 'pointnet_basic.pth',
         is_full=False, train_loader=train_loader, val_loader=val_loader
     )
 
-    # ── Train PointNet Full (co T-Net) ──
+    # Train PointNet Full
     full_model = PointNetFull(num_classes=NUM_CLASSES).to(device)
     full_acc = train_one_model(
         full_model, 'pointnet_cls.pth',

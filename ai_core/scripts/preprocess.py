@@ -40,13 +40,6 @@ ATOMIC_MASSES = {
 }
 
 def get_atomic_mass(z):
-    """
-    Retrieve the atomic mass for a given atomic number z.
-    Attempts to use ASE (Atomic Simulation Environment) atomic masses if available.
-    If ASE is unavailable or the atomic number is out of range, falls back to the
-    pre-defined ATOMIC_MASSES dictionary. If still not found, falls back to the
-    atomic number itself as a float.
-    """
     try:
         from ase.data import atomic_masses
         if 0 < z < len(atomic_masses):
@@ -56,22 +49,12 @@ def get_atomic_mass(z):
     return ATOMIC_MASSES.get(z, float(z))
 
 def sort_edge_index_numpy(edge_index):
-    """
-    Sorts the edge_index array of shape [2, num_edges] lexicographically
-    by the first row (source nodes) then by the second row (target nodes).
-    Preserves the shape and type.
-    """
     if edge_index.shape[1] == 0:
         return edge_index
     idx = np.lexsort((edge_index[1], edge_index[0]))
     return edge_index[:, idx]
 
 def has_duplicate_coordinates(pos, tolerance=1e-5):
-    """
-    Checks if there are any duplicate coordinates in the given positions array.
-    Uses SciPy's cKDTree for O(N log N) scalability if available.
-    Falls back to NumPy pairwise O(N^2) comparison if SciPy is unavailable.
-    """
     num_atoms = pos.shape[0]
     if num_atoms <= 1:
         return False
@@ -88,7 +71,6 @@ def has_duplicate_coordinates(pos, tolerance=1e-5):
         return np.any(dist[mask] < tolerance)
 
 def set_seed(seed):
-    """Set random seed for reproducibility."""
     random.seed(seed)
     np.random.seed(seed)
     torch.manual_seed(seed)
@@ -97,12 +79,7 @@ def set_seed(seed):
     logger.info(f"Random seed set to: {seed}")
 
 def validate_sample(frame_idx, z, pos, energy, force):
-    """
-    Validate a single sample frame.
-    Checks for empty arrays, shapes, NaNs, Infs, invalid atomic numbers,
-    duplicate coordinate records, and shape mismatch.
-    """
-    # 1. Check for empty or missing inputs
+    # Check for empty or missing inputs
     if z is None or len(z) == 0:
         logger.warning(f"Frame {frame_idx} rejected: atomic numbers array 'z' is empty or None.")
         return False
@@ -116,7 +93,7 @@ def validate_sample(frame_idx, z, pos, energy, force):
         logger.warning(f"Frame {frame_idx} rejected: energy is None.")
         return False
 
-    # 2. Check for NaN or Inf in any of the inputs
+    # Check for NaN or Inf in any of the inputs
     if np.any(np.isnan(pos)) or np.any(np.isinf(pos)):
         logger.warning(f"Frame {frame_idx} rejected: coordinates contain NaN or Inf.")
         return False
@@ -127,7 +104,7 @@ def validate_sample(frame_idx, z, pos, energy, force):
         logger.warning(f"Frame {frame_idx} rejected: forces contain NaN or Inf.")
         return False
 
-    # 3. Check shape dimensions
+    # Check shape dimensions
     num_atoms = len(z)
     if pos.ndim != 2 or pos.shape[1] != 3:
         logger.warning(f"Frame {frame_idx} rejected: position coordinate dimensions are incorrect (expected Nx3, got {pos.shape}).")
@@ -136,7 +113,7 @@ def validate_sample(frame_idx, z, pos, energy, force):
         logger.warning(f"Frame {frame_idx} rejected: force coordinate dimensions are incorrect (expected Nx3, got {force.shape}).")
         return False
 
-    # 4. Check for inconsistent atom counts in this frame
+    # Check for inconsistent atom counts in this frame
     if pos.shape[0] != num_atoms:
         logger.warning(f"Frame {frame_idx} rejected: position row count {pos.shape[0]} does not match atomic numbers count {num_atoms}.")
         return False
@@ -144,7 +121,7 @@ def validate_sample(frame_idx, z, pos, energy, force):
         logger.warning(f"Frame {frame_idx} rejected: force row count {force.shape[0]} does not match atomic numbers count {num_atoms}.")
         return False
 
-    # 5. Check for invalid atomic numbers (z <= 0 or non-integer)
+    # Check for invalid atomic numbers (z <= 0 or non-integer)
     if not np.issubdtype(z.dtype, np.integer):
         logger.warning(f"Frame {frame_idx} rejected: atomic numbers 'z' are not integers (dtype {z.dtype}).")
         return False
@@ -152,7 +129,7 @@ def validate_sample(frame_idx, z, pos, energy, force):
         logger.warning(f"Frame {frame_idx} rejected: atomic numbers contain values <= 0.")
         return False
 
-    # 6. Check for duplicated or malformed records (overlapping coordinates)
+    # Check for duplicated or malformed records (overlapping coordinates)
     if has_duplicate_coordinates(pos, tolerance=1e-5):
         logger.warning(f"Frame {frame_idx} rejected: duplicate atom coordinates detected (distance < 1e-5).")
         return False
@@ -160,10 +137,6 @@ def validate_sample(frame_idx, z, pos, energy, force):
     return True
 
 def center_positions(pos, z):
-    """
-    Translate atomic positions to place the center of mass at the origin.
-    Uses atomic masses (or fallback to atomic numbers).
-    """
     masses = np.array([get_atomic_mass(int(zi)) for zi in z]).reshape(-1, 1)
     total_mass = np.sum(masses)
     if total_mass <= 0:
@@ -174,11 +147,6 @@ def center_positions(pos, z):
     return pos - com
 
 def compute_edge_index(pos, cutoff, backend="auto"):
-    """
-    Compute neighborhood edge index list based on a distance cutoff.
-    Returns a numpy array of shape [2, num_edges] representing directed edges.
-    Saves the edges in lexicographical order (sorted by source, then target node).
-    """
     num_atoms = pos.shape[0]
     if num_atoms <= 1:
         return np.empty((2, 0), dtype=np.int64)
@@ -254,7 +222,6 @@ def compute_edge_index(pos, cutoff, backend="auto"):
     return sort_edge_index_numpy(edge_index)
 
 def build_graph_data(z, pos, energy, force, cutoff, graph_object_type="dict", edge_backend="auto"):
-    """Construct PyTorch-ready dict representation or PyG Data of the graph with NequIP fields."""
     edge_index = compute_edge_index(pos, cutoff, backend=edge_backend)
     
     # Wrap in PyTorch tensors
@@ -281,7 +248,6 @@ def build_graph_data(z, pos, energy, force, cutoff, graph_object_type="dict", ed
 
 
 def save_csv_long(z, pos_list, energy_list, force_list, indices, output_path):
-    """Export dataset to a long-format CSV."""
     import csv
     with open(output_path, 'w', newline='', encoding='utf-8') as f:
         writer = csv.writer(f)
@@ -305,7 +271,6 @@ def save_csv_long(z, pos_list, energy_list, force_list, indices, output_path):
                 ])
 
 def save_csv_wide(z, pos_list, energy_list, force_list, indices, output_path):
-    """Export dataset to a wide-format CSV (one row per frame)."""
     import csv
     num_atoms = len(z)
     header = ['frame_idx', 'energy']
@@ -390,7 +355,7 @@ def main():
     # Set seed
     set_seed(args.seed)
     
-    # 1. Load Raw Data
+    # Load Raw Data
     if not os.path.exists(args.input_path):
         logger.error(f"Input file not found: {args.input_path}")
         sys.exit(1)
@@ -438,7 +403,7 @@ def main():
         logger.error(f"Atom count mismatch: 'F' has {F.shape[1]} atoms per frame, but 'z' has {num_atoms}.")
         sys.exit(1)
     
-    # 2. Validation & Cleaning
+    # Validation & Cleaning
     valid_indices = []
     for i in range(n_frames):
         # E might be shape [N] or [N, 1]
@@ -487,7 +452,7 @@ def main():
     # Convert energy to 1D array of values for scaling calculation
     E_flat = np.array([E[i][0] if E.ndim > 1 else E[i] for i in range(n_frames)])
     
-    # 3. Compute Normalization Parameters on Training Set
+    # Compute Normalization Parameters on Training Set
     energy_mean = 0.0
     energy_std = 1.0
     force_mean = 0.0
@@ -579,7 +544,7 @@ def main():
 
     logger.info(f"Using edge construction backend: {resolved_edge_backend} ({edge_backend_note})")
 
-    # 4. Export Outputs
+    # Export Outputs
     metadata = {
         'seed': args.seed,
         'cutoff': args.cutoff,
