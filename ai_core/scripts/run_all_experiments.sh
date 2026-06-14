@@ -1,30 +1,6 @@
-#!/bin/bash
-# =============================================================================
-# NequIP Ablation Study — Run All Experiments
-# =============================================================================
-#
-# Orchestrates the full 2×2 ablation grid:
-#   1. baseline_l0_100   — Invariant GNN, 100 molecules
-#   2. baseline_l0_1000  — Invariant GNN, 1000 molecules
-#   3. nequip_l1_100     — Equivariant GNN, 100 molecules
-#   4. nequip_l1_1000    — Equivariant GNN, 1000 molecules
-#
-# Prerequisites:
-#   - QM9 subsets prepared: python scripts/prepare_qm9_subsets.py
-#   - NequIP installed: pip install nequip
-#   - Configs in ai_core/configs/
-#
-# Usage:
-#   cd ai_core
-#   bash scripts/run_all_experiments.sh
-#
-# =============================================================================
-
 set -euo pipefail  # Exit on error, undefined vars, pipe failures
 
-# ---------------------------------------------------------------------------
 # Configuration
-# ---------------------------------------------------------------------------
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 AI_CORE_DIR="$(dirname "$SCRIPT_DIR")"
 CONFIG_DIR="${AI_CORE_DIR}/configs"
@@ -58,9 +34,7 @@ EXPERIMENTS=(
     "nequip_l1_1000"
 )
 
-# ---------------------------------------------------------------------------
-# Step 0: Data Preparation (if not already done)
-# ---------------------------------------------------------------------------
+# Data Preparation
 DATA_DIR="${AI_CORE_DIR}/data/qm9"
 if [ ! -f "${DATA_DIR}/qm9_subset_100.extxyz" ] || [ ! -f "${DATA_DIR}/qm9_subset_1000.extxyz" ]; then
     echo "============================================================"
@@ -77,9 +51,7 @@ else
     echo ""
 fi
 
-# ---------------------------------------------------------------------------
-# Step 1: Run NequIP Training for Each Configuration
-# ---------------------------------------------------------------------------
+# Run NequIP Training for Each Configuration
 echo "============================================================"
 echo "  NequIP Ablation Study — Starting All Experiments"
 echo "============================================================"
@@ -127,9 +99,7 @@ for exp_name in "${EXPERIMENTS[@]}"; do
     echo ""
 done
 
-# ---------------------------------------------------------------------------
-# Step 2: Summary
-# ---------------------------------------------------------------------------
+# Summary
 echo "============================================================"
 echo "  Experiment Summary"
 echo "============================================================"
@@ -151,9 +121,7 @@ fi
 echo "============================================================"
 echo ""
 
-# ---------------------------------------------------------------------------
-# Step 3: Generate Learning Curves (optional, only if all succeeded)
-# ---------------------------------------------------------------------------
+# Generate Learning Curves (optional, only if all succeeded)
 if [ ${#FAILED[@]} -eq 0 ]; then
     echo "All experiments completed. Generating learning curves..."
     python "${AI_CORE_DIR}/notebooks/03_nequip_learning_curve.py" \

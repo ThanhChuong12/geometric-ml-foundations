@@ -1,1 +1,1 @@
-# # File huấn luyện chính
+# Main training file

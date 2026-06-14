@@ -1,4 +1,3 @@
-"""Train PointNet Full - REG_WEIGHT=0 de fix mode collapse."""
 import os, sys, numpy as np, torch, torch.nn as nn, torch.optim as optim
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'backend'))
@@ -51,7 +50,6 @@ if __name__ == '__main__':
     model = PointNetFull(num_classes=5)
     # Freeze CA HAI T-Net de tranh mode collapse tren small synthetic dataset
     # Input T-Net (3x3) va Feature T-Net (64x64) deu bi freeze
-    # Chi train phan MLP chinh: conv layers + fc layers
     for name, param in model.named_parameters():
         if 'transform' in name:  # input_transform + feature_transform
             param.requires_grad = False

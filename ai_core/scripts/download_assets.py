@@ -1,16 +1,3 @@
-"""
-Script tải ModelNet40 HDF5 dataset và pretrained PointNet weights.
-
-Chạy lệnh (từ thư mục demo/geo-ml-web/):
-    python scripts/download_assets.py
-
-Sẽ tải về:
-    - backend/data/modelnet40_ply_hdf5_2048/ (~415MB) — ModelNet40 HDF5
-    - backend/models/pointnet_cls.pth  — pretrained PointNet Full weights
-    
-Nếu download tự động thất bại, xem hướng dẫn manual bên dưới.
-"""
-
 import os
 import sys
 import urllib.request
@@ -36,15 +23,8 @@ def show_progress(block_num, block_size, total_size):
         print(f"\r  {percent:.1f}% ({mb_done:.1f}/{mb_total:.1f} MB)", end="", flush=True)
 
 
-# ─────────────────────────────────────────────────────────────
-# Synthetic point clouds (fallback khi không download được data)
-# ─────────────────────────────────────────────────────────────
+# Synthetic point clouds
 def generate_synthetic_clouds():
-    """
-    Tạo point clouds giả cho 5 class demo (airplane, chair, car, lamp, table).
-    Dùng để web chạy được ngay mà không cần download ModelNet40.
-    Kết quả demo sẽ ít chính xác hơn data thực.
-    """
     import numpy as np
 
     sample_dir = os.path.join(DATA_DIR, 'sample_clouds')
@@ -164,7 +144,6 @@ def generate_synthetic_clouds():
 
 
 def save_class_names():
-    """Lưu danh sách 40 class ModelNet40."""
     CLASSES = [
         'airplane', 'bathtub', 'bed', 'bench', 'bookshelf',
         'bottle', 'bowl', 'car', 'chair', 'cone',
@@ -182,14 +161,8 @@ def save_class_names():
         print(f"  Saved: modelnet40_classes.json")
 
 
-# ─────────────────────────────────────────────────────────────
-# Download ModelNet40 HDF5 (thực)
-# ─────────────────────────────────────────────────────────────
+# Download ModelNet40 HDF5
 def download_modelnet40():
-    """
-    Tải ModelNet40 HDF5 từ nhiều mirror.
-    Nếu tất cả đều fail → tạo synthetic data.
-    """
     data_path = os.path.join(DATA_DIR, 'modelnet40_ply_hdf5_2048')
     if os.path.exists(data_path) and any(f.endswith('.h5') for f in os.listdir(data_path) if os.path.isfile(os.path.join(data_path, f))):
         print("[OK] ModelNet40 data already exists, skipping download.")
@@ -233,7 +206,6 @@ def download_modelnet40():
 
 
 def create_real_sample_npy_files():
-    """Trích xuất file .npy mẫu từ HDF5 dataset thực."""
     import h5py
 
     sample_dir = os.path.join(DATA_DIR, 'sample_clouds')
@@ -281,14 +253,8 @@ def create_real_sample_npy_files():
     print("[2/3] Sample extraction done.")
 
 
-# ─────────────────────────────────────────────────────────────
 # Download pretrained weights
-# ─────────────────────────────────────────────────────────────
 def download_pretrained_weights():
-    """
-    Tải pretrained PyTorch PointNet weights.
-    Source: fxia22/pointnet.pytorch (accuracy ~89.2% on ModelNet40)
-    """
     out_path = os.path.join(MODELS_DIR, 'pointnet_cls.pth')
     if os.path.exists(out_path):
         print("[OK] Pretrained weights already exist, skipping.")
@@ -314,9 +280,7 @@ def download_pretrained_weights():
     return False
 
 
-# ─────────────────────────────────────────────────────────────
 # Main
-# ─────────────────────────────────────────────────────────────
 if __name__ == '__main__':
     print("=" * 55)
     print("  PointNet Asset Downloader")
