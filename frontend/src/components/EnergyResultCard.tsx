@@ -75,7 +75,7 @@ export function EnergyResultCard({
             {/* Energy value card */}
             <div className="flex flex-col items-center gap-3 w-full border-2 border-stone-900 p-6 bg-stone-100 shadow-[2px_2px_0px_0px_rgba(28,25,23,1)]">
               <span className="text-xs font-bold text-stone-600 uppercase tracking-widest font-sans">
-                Năng lượng nội tại U₀ (eV)
+                Nội năng U₀ (eV)
               </span>
               <div className="text-4xl md:text-5xl font-black text-stone-900 font-serif tracking-tight text-center tabular-nums">
                 {displayEnergy !== null ? displayEnergy.toFixed(4) : '...'}

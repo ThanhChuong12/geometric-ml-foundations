@@ -64,7 +64,7 @@ export function MoleculeEditor({ atoms, onChangeAtoms }: MoleculeEditorProps) {
           2
         </div>
         <h2 className="text-xl font-black text-stone-900 font-serif uppercase tracking-tight">
-          Biên tập Tọa độ Phân tử
+          Chỉnh sửa tọa độ nguyên tử
         </h2>
       </div>
 
