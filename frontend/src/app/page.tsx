@@ -60,7 +60,7 @@ export default function Home() {
   useEffect(() => {
     getSampleCloud('airplane')
       .then(data => setRawPoints(data.points))
-      .catch(() => {});
+      .catch(() => { });
   }, []);
 
   const handlePredictEnergy = async () => {
@@ -301,263 +301,258 @@ export default function Home() {
 
       <main className="w-full px-4 md:px-8 pb-4">
         <div key={activeTab} className="tab-enter">
-        {activeTab === 'part1' && (
-          <>
-            {/* Part 1: Frame Averaging */}
-            <div className="grid lg:grid-cols-5 gap-8 mb-12">
-              <div className="lg:col-span-3 flex flex-col bg-stone-50 border-2 border-stone-900 p-8 shadow-[8px_8px_0px_0px_rgba(28,25,23,1)]">
-                <div className="flex items-center gap-4 mb-8 pb-4 border-b-2 border-stone-900">
-                  <div className="w-10 h-10 bg-rose-500 border-2 border-stone-900 shadow-[2px_2px_0px_0px_rgba(28,25,23,1)] flex items-center justify-center text-stone-900 font-black font-sans text-xl">1</div>
-                  <h2 className="text-2xl font-black text-stone-900 font-serif uppercase tracking-tight">Vẽ & Mô phỏng</h2>
-                </div>
-                <div className="flex-1 flex flex-col justify-center">
-                  <DigitCanvas onImageChange={setImageData} rotation={rotation} />
-                  {!imageData && (
-                    <p className="mt-4 text-center text-[10px] font-black font-sans uppercase tracking-widest text-stone-400 animate-pulse">
-                      Vẽ chữ số vào canvas để bắt đầu
-                    </p>
-                  )}
-                </div>
-              </div>
-
-              <div className="lg:col-span-2 space-y-8 flex flex-col">
-                <div className="bg-stone-50 border-2 border-stone-900 p-8 shadow-[8px_8px_0px_0px_rgba(28,25,23,1)]">
+          {activeTab === 'part1' && (
+            <>
+              {/* Part 1: Frame Averaging */}
+              <div className="grid lg:grid-cols-5 gap-8 mb-12">
+                <div className="lg:col-span-3 flex flex-col bg-stone-50 border-2 border-stone-900 p-8 shadow-[8px_8px_0px_0px_rgba(28,25,23,1)]">
                   <div className="flex items-center gap-4 mb-8 pb-4 border-b-2 border-stone-900">
-                    <div className="w-10 h-10 bg-sky-400 border-2 border-stone-900 shadow-[2px_2px_0px_0px_rgba(28,25,23,1)] flex items-center justify-center text-stone-900 font-black font-sans text-xl">2</div>
-                    <h2 className="text-2xl font-black text-stone-900 font-serif uppercase tracking-tight">Xoay Ảnh</h2>
+                    <div className="w-10 h-10 bg-rose-500 border-2 border-stone-900 shadow-[2px_2px_0px_0px_rgba(28,25,23,1)] flex items-center justify-center text-stone-900 font-black font-sans text-xl">1</div>
+                    <h2 className="text-2xl font-black text-stone-900 font-serif uppercase tracking-tight">Vẽ & Mô phỏng</h2>
                   </div>
-                  <RotationSlider value={rotation} onChange={setRotation} />
+                  <div className="flex-1 flex flex-col justify-center">
+                    <DigitCanvas onImageChange={setImageData} rotation={rotation} />
+                  </div>
                 </div>
 
-                <div className="bg-stone-50 border-2 border-stone-900 p-8 shadow-[8px_8px_0px_0px_rgba(28,25,23,1)] flex-1 flex flex-col">
-                  <div className="flex items-center gap-4 mb-8 pb-4 border-b-2 border-stone-900">
-                    <div className="w-10 h-10 bg-violet-400 border-2 border-stone-900 shadow-[2px_2px_0px_0px_rgba(28,25,23,1)] flex items-center justify-center text-stone-900 font-black font-sans text-xl">3</div>
-                    <h2 className="text-2xl font-black text-stone-900 font-serif uppercase tracking-tight">Phân loại</h2>
-                  </div>
-                  <button
-                    onClick={handlePredict}
-                    disabled={isLoading || !imageData}
-                    className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-stone-300 disabled:border-stone-300 disabled:text-stone-500 disabled:cursor-not-allowed text-white font-black py-5 px-6 transition-colors border-2 border-stone-900 disabled:shadow-none shadow-[6px_6px_0px_0px_rgba(28,25,23,1)] active:shadow-none active:translate-y-1 active:translate-x-1 flex items-center justify-center gap-3 text-lg font-sans uppercase tracking-widest mt-auto mb-auto"
-                  >
-                    {isLoading ? (<><Loader2 className="w-6 h-6 animate-spin" />Đang xử lý...</>) : 'Chạy Phân loại'}
-                  </button>
-                  {predictions && (
-                    <div className="mt-8 bg-stone-100 border-2 border-stone-900 p-5">
-                      <p className="text-sm text-stone-800 leading-relaxed font-sans">
-                        <span className="font-bold text-stone-900 uppercase tracking-widest text-xs block mb-1">Quan sát:</span>
-                        Baseline CNN rất dễ đoán sai nếu bạn xoay ảnh chữ số. Mặc dù Data Augmentation đã tốt hơn, nhưng Frame Averaging mới là thuật toán đảm bảo dự đoán ổn định ở mọi góc độ xoay nhờ tính toán trung bình từ 4 khung.
-                      </p>
+                <div className="lg:col-span-2 space-y-8 flex flex-col">
+                  <div className="bg-stone-50 border-2 border-stone-900 p-8 shadow-[8px_8px_0px_0px_rgba(28,25,23,1)]">
+                    <div className="flex items-center gap-4 mb-8 pb-4 border-b-2 border-stone-900">
+                      <div className="w-10 h-10 bg-sky-400 border-2 border-stone-900 shadow-[2px_2px_0px_0px_rgba(28,25,23,1)] flex items-center justify-center text-stone-900 font-black font-sans text-xl">2</div>
+                      <h2 className="text-2xl font-black text-stone-900 font-serif uppercase tracking-tight">Xoay Ảnh</h2>
                     </div>
-                  )}
-                </div>
-              </div>
-            </div>
+                    <RotationSlider value={rotation} onChange={setRotation} />
+                  </div>
 
-            <div className="bg-stone-50 border-2 border-stone-900 p-8 shadow-[8px_8px_0px_0px_rgba(28,25,23,1)]">
-              <div className="flex items-center gap-4 mb-10 pb-4 border-b-2 border-stone-900">
-                <div className="w-12 h-12 bg-pink-400 border-2 border-stone-900 shadow-[2px_2px_0px_0px_rgba(28,25,23,1)] flex items-center justify-center text-stone-900 font-black text-2xl font-serif">*</div>
-                <h2 className="text-3xl font-black text-stone-900 font-serif uppercase tracking-tight">Phân tích So sánh</h2>
-              </div>
-              <div className="grid md:grid-cols-3 gap-8">
-                <PredictionCard title="Baseline CNN" description="Chỉ học ảnh thẳng đứng" result={predictions?.baseline || null} variant="baseline" />
-                <PredictionCard title="Data Augmentation" description="Thêm ảnh xoay lúc train" result={predictions?.augmentation || null} variant="augmentation" />
-                <PredictionCard title="Frame Averaging" description="Trung bình kết quả 4 góc xoay" result={predictions?.averaging || null} variant="averaging" />
-              </div>
-            </div>
-          </>
-        )}
-
-        {activeTab === 'part2' && (
-          // PART 2: PointNet 3D Demo
-          <div className="space-y-8">
-            {/* Row 1: Viewer + Controls */}
-            <div className="grid lg:grid-cols-5 gap-8">
-              {/* Left: 3D Viewer */}
-              <div className="lg:col-span-3 flex flex-col bg-stone-50 border-2 border-stone-900 p-8 shadow-[8px_8px_0px_0px_rgba(28,25,23,1)]">
-                <div className="flex items-center gap-4 mb-6 pb-4 border-b-2 border-stone-900">
-                  <div className="w-10 h-10 bg-violet-400 border-2 border-stone-900 shadow-[2px_2px_0px_0px_rgba(28,25,23,1)] flex items-center justify-center text-stone-900 font-black font-sans text-xl">1</div>
-                  <h2 className="text-2xl font-black text-stone-900 font-serif uppercase tracking-tight">Đám Mây Điểm 3D</h2>
-                  {p2Result && (
+                  <div className="bg-stone-50 border-2 border-stone-900 p-8 shadow-[8px_8px_0px_0px_rgba(28,25,23,1)] flex-1 flex flex-col">
+                    <div className="flex items-center gap-4 mb-8 pb-4 border-b-2 border-stone-900">
+                      <div className="w-10 h-10 bg-violet-400 border-2 border-stone-900 shadow-[2px_2px_0px_0px_rgba(28,25,23,1)] flex items-center justify-center text-stone-900 font-black font-sans text-xl">3</div>
+                      <h2 className="text-2xl font-black text-stone-900 font-serif uppercase tracking-tight">Phân loại</h2>
+                    </div>
                     <button
-                      onClick={() => setShowCritical(v => !v)}
-                      className={`ml-auto px-4 py-2 text-xs font-black font-sans uppercase tracking-widest border-2 border-stone-900 transition-all ${showCritical
-                        ? 'bg-red-500 text-white shadow-[3px_3px_0px_0px_rgba(28,25,23,1)]'
-                        : 'bg-white text-stone-900 shadow-none hover:bg-stone-50'
-                        }`}
+                      onClick={handlePredict}
+                      disabled={isLoading || !imageData}
+                      className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-stone-300 disabled:border-stone-300 disabled:text-stone-500 disabled:cursor-not-allowed text-white font-black py-5 px-6 transition-colors border-2 border-stone-900 disabled:shadow-none shadow-[6px_6px_0px_0px_rgba(28,25,23,1)] active:shadow-none active:translate-y-1 active:translate-x-1 flex items-center justify-center gap-3 text-lg font-sans uppercase tracking-widest mt-auto mb-auto"
                     >
-                      {showCritical ? 'Chế độ Tới hạn' : 'Chế độ Bình thường'}
+                      {isLoading ? (<><Loader2 className="w-6 h-6 animate-spin" />Đang xử lý...</>) : 'Chạy Phân loại'}
                     </button>
+                    {predictions && (
+                      <div className="mt-8 bg-stone-100 border-2 border-stone-900 p-5">
+                        <p className="text-sm text-stone-800 leading-relaxed font-sans">
+                          <span className="font-bold text-stone-900 uppercase tracking-widest text-xs block mb-1">Quan sát:</span>
+                          Baseline CNN rất dễ đoán sai nếu bạn xoay ảnh chữ số. Mặc dù Data Augmentation đã tốt hơn, nhưng Frame Averaging mới là thuật toán đảm bảo dự đoán ổn định ở mọi góc độ xoay nhờ tính toán trung bình từ 4 khung.
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-stone-50 border-2 border-stone-900 p-8 shadow-[8px_8px_0px_0px_rgba(28,25,23,1)]">
+                <div className="flex items-center gap-4 mb-10 pb-4 border-b-2 border-stone-900">
+                  <div className="w-12 h-12 bg-pink-400 border-2 border-stone-900 shadow-[2px_2px_0px_0px_rgba(28,25,23,1)] flex items-center justify-center text-stone-900 font-black text-2xl font-serif">*</div>
+                  <h2 className="text-3xl font-black text-stone-900 font-serif uppercase tracking-tight">Phân tích So sánh</h2>
+                </div>
+                <div className="grid md:grid-cols-3 gap-8">
+                  <PredictionCard title="Baseline CNN" description="Chỉ học ảnh thẳng đứng" result={predictions?.baseline || null} variant="baseline" />
+                  <PredictionCard title="Data Augmentation" description="Thêm ảnh xoay lúc train" result={predictions?.augmentation || null} variant="augmentation" />
+                  <PredictionCard title="Frame Averaging" description="Trung bình kết quả 4 góc xoay" result={predictions?.averaging || null} variant="averaging" />
+                </div>
+              </div>
+            </>
+          )}
+
+          {activeTab === 'part2' && (
+            // PART 2: PointNet 3D Demo
+            <div className="space-y-8">
+              {/* Row 1: Viewer + Controls */}
+              <div className="grid lg:grid-cols-5 gap-8">
+                {/* Left: 3D Viewer */}
+                <div className="lg:col-span-3 flex flex-col bg-stone-50 border-2 border-stone-900 p-8 shadow-[8px_8px_0px_0px_rgba(28,25,23,1)]">
+                  <div className="flex items-center gap-4 mb-6 pb-4 border-b-2 border-stone-900">
+                    <div className="w-10 h-10 bg-violet-400 border-2 border-stone-900 shadow-[2px_2px_0px_0px_rgba(28,25,23,1)] flex items-center justify-center text-stone-900 font-black font-sans text-xl">1</div>
+                    <h2 className="text-2xl font-black text-stone-900 font-serif uppercase tracking-tight">Đám Mây Điểm 3D</h2>
+                    {p2Result && (
+                      <button
+                        onClick={() => setShowCritical(v => !v)}
+                        className={`ml-auto px-4 py-2 text-xs font-black font-sans uppercase tracking-widest border-2 border-stone-900 transition-all ${showCritical
+                          ? 'bg-red-500 text-white shadow-[3px_3px_0px_0px_rgba(28,25,23,1)]'
+                          : 'bg-white text-stone-900 shadow-none hover:bg-stone-50'
+                          }`}
+                      >
+                        {showCritical ? 'Chế độ Tới hạn' : 'Chế độ Bình thường'}
+                      </button>
+                    )}
+                  </div>
+                  <div className="flex-1" style={{ minHeight: 340 }}>
+                    <PointCloudViewer
+                      points={p2Result ? p2Result.point_cloud : rawPoints}
+                      criticalPoints={p2Result ? (showCritical ? p2Result.full_model.critical_points : []) : []}
+                      showCritical={showCritical}
+                      isLoading={p2Loading}
+                      rotationX={perturbation.rotation_x}
+                      rotationY={perturbation.rotation_y}
+                      rotationZ={perturbation.rotation_z}
+                      onRotationChange={handleRotationChange}
+                      onRotationChangeZ={handleRotationChangeZ}
+                    />
+                  </div>
+                </div>
+
+                {/* Right: Controls */}
+                <div className="lg:col-span-2 space-y-6 flex flex-col">
+                  {/* Object selector */}
+                  <div className="bg-stone-50 border-2 border-stone-900 p-6 shadow-[8px_8px_0px_0px_rgba(28,25,23,1)]">
+                    <div className="flex items-center gap-4 mb-5 pb-4 border-b-2 border-stone-900">
+                      <div className="w-10 h-10 bg-sky-400 border-2 border-stone-900 shadow-[2px_2px_0px_0px_rgba(28,25,23,1)] flex items-center justify-center text-stone-900 font-black font-sans text-xl">2</div>
+                      <h2 className="text-xl font-black text-stone-900 font-serif uppercase tracking-tight">Chọn Vật Thể</h2>
+                    </div>
+                    <div className="grid grid-cols-5 gap-2 mb-4">
+                      {DEMO_CLASSES.map((cls) => (
+                        <button
+                          key={cls}
+                          onClick={() => handleLoadSample(cls)}
+                          className={`flex flex-col items-center gap-1 py-3 px-1 border-2 border-stone-900 text-xs font-black font-sans uppercase tracking-wide transition-all ${selectedClass === cls
+                            ? 'bg-emerald-400 shadow-[3px_3px_0px_0px_rgba(28,25,23,1)]'
+                            : 'bg-white shadow-none hover:bg-stone-50 translate-y-0.5 translate-x-0.5'
+                            }`}
+                        >
+                          <span className="text-stone-800">
+                            {cls === 'airplane' ? <Plane className="w-5 h-5" /> :
+                              cls === 'chair' ? <Sofa className="w-5 h-5" /> :
+                                cls === 'car' ? <Car className="w-5 h-5" /> :
+                                  cls === 'lamp' ? <Lamp className="w-5 h-5" /> :
+                                    <LayoutGrid className="w-5 h-5" />}
+                          </span>
+                          <span className="truncate w-full text-center" style={{ fontSize: '9px' }}>{cls === 'airplane' ? 'Máy bay' : cls === 'chair' ? 'Ghế' : cls === 'car' ? 'Ô tô' : cls === 'lamp' ? 'Đèn' : 'Bàn'}</span>
+                        </button>
+                      ))}
+                    </div>
+                    {rawPoints.length > 0 && (
+                      <p className="text-xs text-stone-500 font-sans border-t border-stone-200 pt-2">
+                        Đã tải: <span className="font-bold text-stone-900">{selectedClass}</span> ({rawPoints.length} điểm)
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Num Points slider */}
+                  <div className="bg-stone-50 border-2 border-stone-900 p-6 shadow-[8px_8px_0px_0px_rgba(28,25,23,1)]">
+                    <div className="flex items-center gap-4 mb-5 pb-4 border-b-2 border-stone-900">
+                      <div className="w-10 h-10 bg-amber-400 border-2 border-stone-900 shadow-[2px_2px_0px_0px_rgba(28,25,23,1)] flex items-center justify-center text-stone-900 font-black font-sans text-xl">3</div>
+                      <h2 className="text-xl font-black text-stone-900 font-serif uppercase tracking-tight">Số Điểm</h2>
+                    </div>
+                    <NumPointsSlider value={numPoints} onChange={setNumPoints} />
+                  </div>
+
+                  {/* Classify button */}
+                  <button
+                    onClick={handleClassify}
+                    disabled={p2Loading || rawPoints.length === 0}
+                    className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-stone-300 disabled:border-stone-300 disabled:text-stone-500 disabled:cursor-not-allowed text-white font-black py-5 px-6 transition-colors border-2 border-stone-900 disabled:shadow-none shadow-[6px_6px_0px_0px_rgba(28,25,23,1)] active:shadow-none active:translate-y-1 active:translate-x-1 flex items-center justify-center gap-3 text-lg font-sans uppercase tracking-widest"
+                  >
+                    {p2Loading ? (<><Loader2 className="w-6 h-6 animate-spin" />Đang phân tích...</>) : 'Chạy Phân Loại'}
+                  </button>
+                </div>
+              </div>
+
+              {/* Row 2: Perturbation Controls */}
+              <PerturbationControls
+                value={perturbation}
+                onChange={setPerturbation}
+                onReset={() => setPerturbation(DEFAULT_PERTURBATION)}
+              />
+
+              {/* Row 3: Results */}
+              <div className="bg-stone-50 border-2 border-stone-900 p-8 shadow-[8px_8px_0px_0px_rgba(28,25,23,1)]">
+                <div className="flex items-center gap-4 mb-8 pb-4 border-b-2 border-stone-900">
+                  <div className="w-12 h-12 bg-pink-400 border-2 border-stone-900 shadow-[2px_2px_0px_0px_rgba(28,25,23,1)] flex items-center justify-center text-stone-900 font-black text-2xl font-serif">*</div>
+                  <h2 className="text-3xl font-black text-stone-900 font-serif uppercase tracking-tight">Phân tích So sánh</h2>
+                  {p2Result && (
+                    <span className="ml-auto text-xs font-bold font-sans text-stone-500 border border-stone-300 px-3 py-1">
+                      {p2Result.processing_time_ms.toFixed(0)} ms
+                    </span>
                   )}
                 </div>
-                <div className="flex-1" style={{ minHeight: 340 }}>
-                  <PointCloudViewer
-                    points={p2Result ? p2Result.point_cloud : rawPoints}
-                    criticalPoints={p2Result ? (showCritical ? p2Result.full_model.critical_points : []) : []}
-                    showCritical={showCritical}
-                    isLoading={p2Loading}
-                    rotationX={perturbation.rotation_x}
-                    rotationY={perturbation.rotation_y}
-                    rotationZ={perturbation.rotation_z}
-                    onRotationChange={handleRotationChange}
-                    onRotationChangeZ={handleRotationChangeZ}
+                <div className="grid md:grid-cols-2 gap-8">
+                  <PointNetResultCard
+                    title="PointNet Basic"
+                    description="Shared MLP + Max Pool, không có T-Net (baseline)"
+                    result={p2Result?.basic_model ?? null}
+                    variant="basic"
+                  />
+                  <PointNetResultCard
+                    title="PointNet Full"
+                    description="Có Input & Feature Transform (T-Net), regularization loss"
+                    result={p2Result?.full_model ?? null}
+                    variant="full"
+                  />
+                </div>
+                {p2Result && (
+                  <div className="mt-6 bg-stone-100 border-2 border-stone-900 p-5">
+                    <p className="text-sm text-stone-800 leading-relaxed font-sans">
+                      <span className="font-bold text-stone-900 uppercase tracking-widest text-xs block mb-1">Quan sát:</span>
+                      Full model (có T-Net) thường có độ tự tin cao hơn Basic model. Chuyển sang{' '}
+                      <span className="font-bold text-red-600">Chế độ Tới hạn</span> để xem những điểm nào quyết định kết quả (Theorem 2).
+                      Thử điều chỉnh các thanh <span className="font-bold text-violet-700">Kiểm Chứng Robustness</span> bên trên rồi phân loại lại để thấy tác động.
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'part3' && (
+            // PART 3: NequIP Molecular Energy Prediction
+            <div className="space-y-8">
+              {/* Row 1: Viewer + Editor */}
+              <div className="grid lg:grid-cols-5 gap-8">
+                {/* Left: 3D Viewer */}
+                <div className="lg:col-span-3 flex flex-col bg-stone-50 border-2 border-stone-900 p-8 shadow-[8px_8px_0px_0px_rgba(28,25,23,1)]">
+                  <div className="flex items-center gap-4 mb-6 pb-4 border-b-2 border-stone-900">
+                    <div className="w-10 h-10 bg-cyan-400 border-2 border-stone-900 shadow-[2px_2px_0px_0px_rgba(28,25,23,1)] flex items-center justify-center text-stone-900 font-black font-sans text-xl">1</div>
+                    <h2 className="text-2xl font-black text-stone-900 font-serif uppercase tracking-tight">Trực quan hóa Phân tử 3D</h2>
+                  </div>
+                  <div className="flex-1" style={{ minHeight: 400 }}>
+                    <MoleculeViewer3D atoms={atoms} isLoading={p3Loading} />
+                  </div>
+                </div>
+
+                {/* Right: Coordinate Editor */}
+                <div className="lg:col-span-2">
+                  <MoleculeEditor atoms={atoms} onChangeAtoms={setAtoms} />
+                </div>
+              </div>
+
+              {/* Row 2: Controls + Result */}
+              <div className="grid lg:grid-cols-5 gap-8">
+                {/* Controls */}
+                <div className="lg:col-span-2">
+                  <PredictionPanel
+                    onPredict={handlePredictEnergy}
+                    onReset={handleResetMolecule}
+                    isLoading={p3Loading}
+                    isDisabled={atoms.length === 0}
+                  />
+                </div>
+
+                {/* Result Card */}
+                <div className="lg:col-span-3">
+                  <EnergyResultCard
+                    energy={energyResult}
+                    isLoading={p3Loading}
+                    error={p3Error}
+                    durationMs={latencyMs}
                   />
                 </div>
               </div>
 
-              {/* Right: Controls */}
-              <div className="lg:col-span-2 space-y-6 flex flex-col">
-                {/* Object selector */}
-                <div className="bg-stone-50 border-2 border-stone-900 p-6 shadow-[8px_8px_0px_0px_rgba(28,25,23,1)]">
-                  <div className="flex items-center gap-4 mb-5 pb-4 border-b-2 border-stone-900">
-                    <div className="w-10 h-10 bg-sky-400 border-2 border-stone-900 shadow-[2px_2px_0px_0px_rgba(28,25,23,1)] flex items-center justify-center text-stone-900 font-black font-sans text-xl">2</div>
-                    <h2 className="text-xl font-black text-stone-900 font-serif uppercase tracking-tight">Chọn Vật Thể</h2>
-                  </div>
-                  <div className="grid grid-cols-5 gap-2 mb-4">
-                    {DEMO_CLASSES.map((cls) => (
-                      <button
-                        key={cls}
-                        onClick={() => handleLoadSample(cls)}
-                        className={`flex flex-col items-center gap-1 py-3 px-1 border-2 border-stone-900 text-xs font-black font-sans uppercase tracking-wide transition-all ${selectedClass === cls
-                          ? 'bg-emerald-400 shadow-[3px_3px_0px_0px_rgba(28,25,23,1)]'
-                          : 'bg-white shadow-none hover:bg-stone-50 translate-y-0.5 translate-x-0.5'
-                          }`}
-                      >
-                        <span className="text-stone-800">
-                          {cls === 'airplane' ? <Plane      className="w-5 h-5" /> :
-                           cls === 'chair'    ? <Sofa       className="w-5 h-5" /> :
-                           cls === 'car'      ? <Car        className="w-5 h-5" /> :
-                           cls === 'lamp'     ? <Lamp       className="w-5 h-5" /> :
-                                               <LayoutGrid  className="w-5 h-5" />}
-                        </span>
-                        <span className="truncate w-full text-center" style={{ fontSize: '9px' }}>{cls === 'airplane' ? 'Máy bay' : cls === 'chair' ? 'Ghế' : cls === 'car' ? 'Ô tô' : cls === 'lamp' ? 'Đèn' : 'Bàn'}</span>
-                      </button>
-                    ))}
-                  </div>
-                  {rawPoints.length > 0 && (
-                    <p className="text-xs text-stone-500 font-sans border-t border-stone-200 pt-2">
-                      Đã tải: <span className="font-bold text-stone-900">{selectedClass}</span> ({rawPoints.length} điểm)
-                    </p>
-                  )}
-                </div>
-
-                {/* Num Points slider */}
-                <div className="bg-stone-50 border-2 border-stone-900 p-6 shadow-[8px_8px_0px_0px_rgba(28,25,23,1)]">
-                  <div className="flex items-center gap-4 mb-5 pb-4 border-b-2 border-stone-900">
-                    <div className="w-10 h-10 bg-amber-400 border-2 border-stone-900 shadow-[2px_2px_0px_0px_rgba(28,25,23,1)] flex items-center justify-center text-stone-900 font-black font-sans text-xl">3</div>
-                    <h2 className="text-xl font-black text-stone-900 font-serif uppercase tracking-tight">Số Điểm</h2>
-                  </div>
-                  <NumPointsSlider value={numPoints} onChange={setNumPoints} />
-                </div>
-
-                {/* Classify button */}
-                <button
-                  onClick={handleClassify}
-                  disabled={p2Loading || rawPoints.length === 0}
-                  className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-stone-300 disabled:border-stone-300 disabled:text-stone-500 disabled:cursor-not-allowed text-white font-black py-5 px-6 transition-colors border-2 border-stone-900 disabled:shadow-none shadow-[6px_6px_0px_0px_rgba(28,25,23,1)] active:shadow-none active:translate-y-1 active:translate-x-1 flex items-center justify-center gap-3 text-lg font-sans uppercase tracking-widest"
-                >
-                  {p2Loading ? (<><Loader2 className="w-6 h-6 animate-spin" />Đang phân tích...</>) : 'Chạy Phân Loại'}
-                </button>
-              </div>
+              {/* Row 3: Presets selection */}
+              <ExampleMolecules
+                selectedMoleculeName={selectedMoleculeName}
+                onSelectMolecule={handleSelectExampleMolecule}
+              />
             </div>
-
-            {/* Row 2: Perturbation Controls */}
-            <PerturbationControls
-              value={perturbation}
-              onChange={setPerturbation}
-              onReset={() => setPerturbation(DEFAULT_PERTURBATION)}
-            />
-
-            {/* Row 3: Results */}
-            <div className="bg-stone-50 border-2 border-stone-900 p-8 shadow-[8px_8px_0px_0px_rgba(28,25,23,1)]">
-              <div className="flex items-center gap-4 mb-8 pb-4 border-b-2 border-stone-900">
-                <div className="w-12 h-12 bg-pink-400 border-2 border-stone-900 shadow-[2px_2px_0px_0px_rgba(28,25,23,1)] flex items-center justify-center text-stone-900 font-black text-2xl font-serif">*</div>
-                <h2 className="text-3xl font-black text-stone-900 font-serif uppercase tracking-tight">Phân tích So sánh</h2>
-                {p2Result && (
-                  <span className="ml-auto text-xs font-bold font-sans text-stone-500 border border-stone-300 px-3 py-1">
-                    {p2Result.processing_time_ms.toFixed(0)} ms
-                  </span>
-                )}
-              </div>
-              <div className="grid md:grid-cols-2 gap-8">
-                <PointNetResultCard
-                  title="PointNet Basic"
-                  description="Shared MLP + Max Pool, không có T-Net (baseline)"
-                  result={p2Result?.basic_model ?? null}
-                  variant="basic"
-                />
-                <PointNetResultCard
-                  title="PointNet Full"
-                  description="Có Input & Feature Transform (T-Net), regularization loss"
-                  result={p2Result?.full_model ?? null}
-                  variant="full"
-                />
-              </div>
-              {p2Result && (
-                <div className="mt-6 bg-stone-100 border-2 border-stone-900 p-5">
-                  <p className="text-sm text-stone-800 leading-relaxed font-sans">
-                    <span className="font-bold text-stone-900 uppercase tracking-widest text-xs block mb-1">Quan sát:</span>
-                    Full model (có T-Net) thường có độ tự tin cao hơn Basic model. Chuyển sang{' '}
-                    <span className="font-bold text-red-600">Chế độ Tới hạn</span> để xem những điểm nào quyết định kết quả (Theorem 2).
-                    Thử điều chỉnh các thanh <span className="font-bold text-violet-700">Kiểm Chứng Robustness</span> bên trên rồi phân loại lại để thấy tác động.
-                  </p>
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-
-        {activeTab === 'part3' && (
-          // PART 3: NequIP Molecular Energy Prediction
-          <div className="space-y-8">
-            {/* Row 1: Viewer + Editor */}
-            <div className="grid lg:grid-cols-5 gap-8">
-              {/* Left: 3D Viewer */}
-              <div className="lg:col-span-3 flex flex-col bg-stone-50 border-2 border-stone-900 p-8 shadow-[8px_8px_0px_0px_rgba(28,25,23,1)]">
-                <div className="flex items-center gap-4 mb-6 pb-4 border-b-2 border-stone-900">
-                  <div className="w-10 h-10 bg-cyan-400 border-2 border-stone-900 shadow-[2px_2px_0px_0px_rgba(28,25,23,1)] flex items-center justify-center text-stone-900 font-black font-sans text-xl">1</div>
-                  <h2 className="text-2xl font-black text-stone-900 font-serif uppercase tracking-tight">Trực quan hóa Phân tử 3D</h2>
-                </div>
-                <div className="flex-1" style={{ minHeight: 400 }}>
-                  <MoleculeViewer3D atoms={atoms} isLoading={p3Loading} />
-                </div>
-              </div>
-
-              {/* Right: Coordinate Editor */}
-              <div className="lg:col-span-2">
-                <MoleculeEditor atoms={atoms} onChangeAtoms={setAtoms} />
-              </div>
-            </div>
-
-            {/* Row 2: Controls + Result */}
-            <div className="grid lg:grid-cols-5 gap-8">
-              {/* Controls */}
-              <div className="lg:col-span-2">
-                <PredictionPanel
-                  onPredict={handlePredictEnergy}
-                  onReset={handleResetMolecule}
-                  isLoading={p3Loading}
-                  isDisabled={atoms.length === 0}
-                />
-              </div>
-
-              {/* Result Card */}
-              <div className="lg:col-span-3">
-                <EnergyResultCard
-                  energy={energyResult}
-                  isLoading={p3Loading}
-                  error={p3Error}
-                  durationMs={latencyMs}
-                />
-              </div>
-            </div>
-
-            {/* Row 3: Presets selection */}
-            <ExampleMolecules
-              selectedMoleculeName={selectedMoleculeName}
-              onSelectMolecule={handleSelectExampleMolecule}
-            />
-          </div>
-        )}
+          )}
         </div>
       </main>
     </div>
