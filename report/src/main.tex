@@ -167,14 +167,20 @@
 \newcommand{\featmap}{\Phi}
 \newcommand{\kernel}{k}
 
+% (1) Hai màu dùng cho các hình minh hoạ tự vẽ trong Chương 2
 \definecolor{gmlblue}{HTML}{2C5F8E}
 \definecolor{gmlorange}{HTML}{B5651D}
  
+% (2) Kiểu cột tabularx canh trái + tự xuống dòng (cho 2 bảng trong chương).
+%     (tabularx đã được nạp trong main.tex; chỉ cần khai báo thêm cột L.)
 \newcolumntype{L}{>{\raggedright\arraybackslash}X}
+ 
+% (3) Macro vẽ "mặt mèo" cho hình minh hoạ bất biến/đẳng biến.
+%     Cách dùng: \catface{x}{y}{scale}
 \newcommand{\catface}[3]{%
   \begin{scope}[shift={(#1,#2)}, scale=#3]
-    \fill[orange!72!yellow]    (-0.42,0.30)--(-0.12,0.74)--(0.02,0.34)--cycle;
-    \fill[orange!72!yellow]    ( 0.42,0.30)--( 0.12,0.74)--(-0.02,0.34)--cycle;
+    \fill[orange!72!yellow]    (-0.42,0.30)--(-0.12,0.74)--(0.02,0.34)--cycle; % tai trái
+    \fill[orange!72!yellow]    ( 0.42,0.30)--( 0.12,0.74)--(-0.02,0.34)--cycle;% tai phải
     \fill[orange!45!yellow]    (-0.34,0.36)--(-0.16,0.62)--(-0.04,0.38)--cycle;
     \fill[orange!45!yellow]    ( 0.34,0.36)--( 0.16,0.62)--( 0.04,0.38)--cycle;
     \fill[orange!72!yellow]    (0,0) circle (0.48);
@@ -187,7 +193,9 @@
     \draw[black!70, line width=0.3pt] ( 0.40,-0.02)--( 0.18,-0.06);
     \draw[black!70, line width=0.3pt] ( 0.42,-0.12)--( 0.18,-0.12);
   \end{scope}}
-
+  
+% (4) Macro vẽ "mặt CHÓ" cho hình minh hoạ Ví dụ 2.3 / 2.4.
+%     Cách dùng: \dogface{x}{y}{scale}
 \newcommand{\dogface}[3]{%
   \begin{scope}[shift={(#1,#2)}, scale=#3]
     \begin{scope}[shift={(-0.40,0.10)}, rotate=30]
@@ -210,9 +218,10 @@
     \fill[red!55!pink] (0,-0.205) ellipse [x radius=0.05, y radius=0.07];
   \end{scope}}
 
-\colorlet{c1}{gmlblue}
-\colorlet{c2}{gmlorange}
-\colorlet{c3}{green!55!black}
+% (5) Shortcut màu cho hình Ví dụ 2.6/2.7
+\colorlet{c1}{gmlblue}          % xanh  – nút 1 / nguyên tử chính
+\colorlet{c2}{gmlorange}        % cam   – nút 2
+\colorlet{c3}{green!55!black}   % lục   – nút 3
 
 \begin{document}
 \coverpage%

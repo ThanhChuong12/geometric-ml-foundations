@@ -20,13 +20,14 @@ Tuy nhiên, dữ liệu trong thế giới thực hiếm khi tồn tại dưới
 \subsubsection{Tính đối xứng tham số và học không gian trọng số}
 \label{subsubsec:doi-xung-tham-so}
 
-Sự chuyển dịch bối cảnh thứ hai xuất phát từ chính cấu trúc bên trong của các mô hình ngôn ngữ và mô hình tạo sinh quy mô lớn hiện nay. Các mô hình học sâu hiện đại có đặc điểm chung là bị siêu tham số hóa, dẫn đến sự suy biến nghiêm trọng trong không gian tối ưu: có vô số cấu hình trọng số khác nhau nhưng lại sản sinh ra cùng một hàm tính toán ở đầu ra.
+Trong các mô hình ngôn ngữ và mô hình sinh dữ liệu hiện nay, có một đặc điểm quan trọng: chúng thường có rất nhiều tham số (trọng số) hơn mức cần thiết. Vì vậy, tồn tại vô số cách sắp xếp trọng số khác nhau nhưng cuối cùng lại cho ra cùng một kết quả ở đầu ra.
 
-Tính dôi dư này bắt nguồn từ tính đối xứng không gian tham số. Khác với đối xứng của dữ liệu đầu vào trong \textit{Geometric Deep Learning} truyền thống, đối xứng tham số là những phép biến đổi áp dụng trực tiếp lên các ma trận trọng số mà không làm thay đổi hành vi của toàn bộ mạng. Sự tồn tại của các đa tạp chứa điểm cực tiểu tương đương này định hình cấu trúc của cảnh quan hàm mất mát, gây ra các hiện tượng như sự kết nối cực tiểu và làm phức tạp hóa quá trình tối ưu hóa.
+Điều này xuất phát từ tính đối xứng trong không gian tham số. Khác với đối xứng dữ liệu đầu vào (như trong \textit{Geometric Deep Learning}), ở đây ta nói đến những phép biến đổi trực tiếp trên ma trận trọng số mà vẫn giữ nguyên hành vi của mạng. Nói cách khác, bạn có thể thay đổi trọng số theo nhiều cách khác nhau, nhưng mô hình vẫn hoạt động giống hệt. Sự tồn tại của những đa tạp chứa nhiều điểm cực tiểu tương đương này đã định hình cấu trúc của tổng quan của hàm mất mát. Nó tạo ra hiện tượng các cực tiểu được nối liền với nhau và khiến quá trình tối ưu hóa trở nên phức tạp hơn.
 
 \begin{morong}[Xu hướng học không gian trọng số trong kỷ nguyên mô hình nền tảng]
 Với sự bùng nổ của hàng triệu mô hình được lưu trữ trên các nền tảng mã nguồn mở, cộng đồng đang chứng kiến một hệ quả tất yếu là sự ra đời của hướng nghiên cứu học không gian trọng số. Hướng đi này coi chính các kiến trúc mạng nơ-ron là dữ liệu đầu vào, sử dụng \textit{meta-networks} để phân tích, nén và tinh chỉnh trực tiếp trên cấu trúc tham số. Trong kỷ nguyên của mô hình nền tảng, việc hiểu và tận dụng các đối xứng tham số linh hoạt thay vì \textit{hard-coding} trở thành chìa khóa để cải thiện định luật tỷ lệ và tăng cường hiệu quả tính toán.
 \end{morong}
+
 
 \subsubsection{Ý nghĩa và tầm quan trọng thực tiễn}
 \label{subsubsec:y-nghia-thuc-tien}
