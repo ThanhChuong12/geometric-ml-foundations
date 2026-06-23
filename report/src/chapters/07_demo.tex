@@ -36,13 +36,18 @@ Cấu trúc thư mục thực tế trong repository được sử dụng như sa
     \item \texttt{backend/services/pointnet\_service.py}: logic inference cho demo PointNet.
     \item \texttt{backend/services/qm9\_service.py}: xây dựng đồ thị phân tử đầu vào cho NequIP.
     \item \texttt{backend/core/nequip\_wrapper.py}: tải và chạy checkpoint NequIP.
-    \item \texttt{backend/api/part3\_routes.py}: endpoint \texttt{/api/part3/predict-energy}.
+    \item \texttt{backend/api/part1\_routes.py}: endpoint \texttt{/api/part1/predict} phục vụ demo nhận diện chữ số MNIST.
+    \item \texttt{backend/api/part2\_routes.py}: các endpoint \texttt{/api/part2/classify}, \texttt{/api/part2/sample/\{class\}} và \texttt{/api/part2/classes} phục vụ demo PointNet.
+    \item \texttt{backend/api/part3\_routes.py}: endpoint \texttt{/api/part3/predict-energy} phục vụ demo dự đoán năng lượng NequIP.
     \item \texttt{backend/core/}: định nghĩa kiến trúc \texttt{SimpleCNN}, \texttt{FrameAveragingCNN}, \texttt{PointNetBasic} và \texttt{PointNetFull}.
     \item \texttt{storage/weights/}: các file trọng số cho Part 1 và Part 2.
     \item \texttt{ai\_core/outputs/nequip\_l1\_1000/best.ckpt}: checkpoint NequIP tốt nhất được triển khai trong demo.
     \item \texttt{ai\_core/outputs/}: bốn thư mục kết quả huấn luyện: \texttt{baseline\_l0\_100}, \texttt{baseline\_l0\_1000}, \texttt{nequip\_l1\_100} và \texttt{nequip\_l1\_1000}.
     \item \texttt{ai\_core/configs/}: bốn file cấu hình Hydra tương ứng với từng thực nghiệm.
-    \item \texttt{ai\_core/notebooks/}: script phân tích \texttt{03\_nequip\_learning\_curve.py} và các notebook huấn luyện.
+    \item \texttt{ai\_core/notebooks/01\_mnist\_rotation\_invariance.ipynb}: notebook huấn luyện và đánh giá độ bền xoay cho Part 1.
+    \item \texttt{ai\_core/notebooks/02\_modelnet\_pointcloud\_classification.ipynb}: notebook huấn luyện PointNet và trực quan hóa critical points cho Part 2.
+    \item \texttt{ai\_core/notebooks/03\_qm9\_molecular\_energy\_prediction.ipynb}: notebook phân tích kết quả ablation NequIP và vẽ learning curve cho Part 3.
+    \item \texttt{ai\_core/notebooks/nequip\_learning\_curve.py}: tiện ích vẽ đường cong học từ các checkpoint thực nghiệm.
 \end{itemize}
 
 Các thí nghiệm được thiết kế để có thể chạy trên CPU. Với quy mô demo hiện tại, việc dùng CPU giúp quá trình cài đặt và trình diễn đơn giản hơn, trong khi vẫn đủ để minh họa tác động của đối xứng lên hành vi mô hình. Các thư viện chính gồm PyTorch, torchvision, NumPy, Matplotlib, FastAPI và các thư viện frontend được khai báo trong \texttt{backend/requirements.txt} và \texttt{frontend/package.json}.
